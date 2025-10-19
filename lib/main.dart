@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'screens/splash_screen.dart';
 import 'screens/splash_screen_2.dart';
+import 'screens/splash_screen_3.dart';
+import 'screens/splash_screen_4.dart';
+import 'screens/splash_screen_5.dart';
+import 'screens/register_screen.dart';
 
 void main() {
   runApp(const TjiTelimanApp());
@@ -28,6 +32,10 @@ class TjiTelimanApp extends StatelessWidget {
       routes: {
         '/': (context) => const SplashScreen(),
         '/onboarding': (context) => const SplashScreen2(),
+        '/onboarding3': (context) => const SplashScreen3(),
+        '/onboarding4': (context) => const SplashScreen4(),
+        '/onboarding5': (context) => const SplashScreen5(),
+        '/register': (context) => const RegisterScreen(),
         '/home': (context) => const HomeScreen(),
       },
     );

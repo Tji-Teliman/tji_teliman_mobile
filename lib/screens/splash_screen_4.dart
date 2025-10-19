@@ -1,94 +1,83 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-class SplashScreen2 extends StatefulWidget {
-  const SplashScreen2({super.key});
+class SplashScreen4 extends StatefulWidget {
+  const SplashScreen4({super.key});
 
   @override
-  State<SplashScreen2> createState() => _SplashScreen2State();
+  State<SplashScreen4> createState() => _SplashScreen4State();
 }
 
-class _SplashScreen2State extends State<SplashScreen2> {
+class _SplashScreen4State extends State<SplashScreen4> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
           image: DecorationImage(
-            image: AssetImage('assets/images/image splash screen 2.png'),
+            image: AssetImage('assets/images/image splash screen 4.png'),
             fit: BoxFit.cover,
           ),
         ),
         child: SafeArea(
           child: Stack(
             children: [
-              // Main content column (unchanged layout)
               Column(
                 children: [
-                  // Section du haut avec le texte (prend toute la largeur)
+                  // Titre en haut de l'écran
                   Expanded(
-                    flex: 2,
+                    flex: 5,
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 60.0),
                       child: Align(
                         alignment: Alignment.topCenter,
-                        child: SizedBox(
-                          width: double.infinity,
-                          child: Text(
-                            'DÉCOUVREZ DES MISSIONS RAPIDES PRÈS DE CHEZ VOUS',
-                            textAlign: TextAlign.center,
-                            style: GoogleFonts.inter(
-                              fontSize: 20, // Taille réduite
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                              height: 1.2,
-                              shadows: [
-                                Shadow(
-                                  color: Colors.black.withOpacity(0.5),
-                                  blurRadius: 4,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
-                            ),
+                        child: Text(
+                          'GAGNER FACILEMENT , PAYÉ RAPIDEMENT',
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.inter(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                            height: 1.2,
+                            shadows: [
+                              Shadow(
+                                color: Colors.black.withOpacity(0.4),
+                                blurRadius: 3,
+                                offset: Offset(0, 1),
+                              ),
+                            ],
                           ),
                         ),
                       ),
                     ),
                   ),
-                  
-                  // Section centrale (espace pour l'image de fond)
-                  const Expanded(
-                    flex: 3,
-                    child: SizedBox.shrink(),
-                  ),
-                  
-                  // Section du bas avec le bouton et les indicateurs
+
+                  // Section du bas
                   Expanded(
                     flex: 2,
                     child: Padding(
                       padding: const EdgeInsets.all(20.0),
                       child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          // Texte "Tji teliman" avec la nouvelle couleur
+                          const Spacer(),
+                          const SizedBox(height: 60),
                           Text(
-                            'Tji teliman',
+                            'Tchi teliman',
                             style: GoogleFonts.inter(
                               fontSize: 28,
                               fontWeight: FontWeight.bold,
-                              color: const Color(0xFF2563EB), // Nouvelle couleur #2563EB
+                              color: const Color(0xFF2563EB),
                               shadows: [
                                 Shadow(
-                                  color: Colors.black.withOpacity(0.3),
-                                  blurRadius: 2,
-                                  offset: const Offset(0, 1),
+                                  color: Colors.black.withOpacity(0.2),
+                                  blurRadius: 1,
+                                  offset: Offset(0, 1),
                                 ),
                               ],
                             ),
                           ),
-                          const SizedBox(height: 15),
-                          
-                          // Bouton principal (libellé déjà modifié par l'utilisateur)
+                          const SizedBox(height: 2),
+
                           SizedBox(
                             width: 250,
                             height: 50,
@@ -96,16 +85,16 @@ class _SplashScreen2State extends State<SplashScreen2> {
                               decoration: BoxDecoration(
                                 gradient: const LinearGradient(
                                   colors: [
-                                    Color(0xFFFF9800), // Orange
-                                    Color(0xFFFFC107), // Jaune
+                                    Color(0xFFFF9800),
+                                    Color(0xFFFFC107),
                                   ],
                                 ),
                                 borderRadius: BorderRadius.circular(25),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: const Color(0xFFFF9800).withOpacity(0.4),
-                                    blurRadius: 15,
-                                    offset: const Offset(0, 8),
+                                    color: Colors.black.withOpacity(0.25),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 6),
                                   ),
                                 ],
                               ),
@@ -114,11 +103,11 @@ class _SplashScreen2State extends State<SplashScreen2> {
                                 child: InkWell(
                                   borderRadius: BorderRadius.circular(25),
                                   onTap: () {
-                                    Navigator.of(context).pushReplacementNamed('/onboarding3');
+                                    Navigator.of(context).pushReplacementNamed('/onboarding5');
                                   },
                                   child: Center(
                                     child: Text(
-                                      'Continuer',
+                                      'Passer',
                                       style: GoogleFonts.inter(
                                         fontSize: 18,
                                         fontWeight: FontWeight.bold,
@@ -130,9 +119,8 @@ class _SplashScreen2State extends State<SplashScreen2> {
                               ),
                             ),
                           ),
-                          const SizedBox(height: 30),
-                          
-                          // Indicateurs de page
+                          const SizedBox(height: 28),
+
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: List.generate(5, (index) {
@@ -141,8 +129,8 @@ class _SplashScreen2State extends State<SplashScreen2> {
                                 width: 8,
                                 height: 8,
                                 decoration: BoxDecoration(
-                                  color: index == 0 
-                                      ? const Color(0xFF4CAF50) // Vert pour la page actuelle
+                                  color: index == 3
+                                      ? const Color(0xFF4CAF50)
                                       : Colors.white.withOpacity(0.6),
                                   shape: BoxShape.circle,
                                   boxShadow: [
@@ -163,14 +151,27 @@ class _SplashScreen2State extends State<SplashScreen2> {
                 ],
               ),
 
-              // Top overlay: skip button only (no back arrow on screen 2)
+              // Overlay header
               Positioned(
                 top: 8,
                 left: 8,
                 right: 8,
                 child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
+                    Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(24),
+                        onTap: () {
+                          Navigator.of(context).pushReplacementNamed('/onboarding3');
+                        },
+                        child: const Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 22),
+                        ),
+                      ),
+                    ),
                     Container(
                       height: 36,
                       padding: const EdgeInsets.symmetric(horizontal: 14),
