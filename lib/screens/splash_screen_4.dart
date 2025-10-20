@@ -52,99 +52,128 @@ class _SplashScreen4State extends State<SplashScreen4> {
                     ),
                   ),
 
-                  // Section du bas
+                  // Section du bas: texte + bouton + indicateurs (espacements calculés)
                   Expanded(
                     flex: 2,
                     child: Padding(
                       padding: const EdgeInsets.all(20.0),
-                      child: Column(
-                        children: [
-                          const Spacer(),
-                          const SizedBox(height: 60),
-                          Text(
-                            'Tchi teliman',
-                            style: GoogleFonts.inter(
-                              fontSize: 28,
-                              fontWeight: FontWeight.bold,
-                              color: const Color(0xFF2563EB),
-                              shadows: [
-                                Shadow(
-                                  color: Colors.black.withOpacity(0.2),
-                                  blurRadius: 1,
-                                  offset: Offset(0, 1),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 2),
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          final double maxH = constraints.maxHeight;
+                          // Hauteurs fixes des éléments
+                          const double brandH = 32; // "Tchi teliman"
+                          const double buttonH = 50;
+                          const double indicatorsH = 20; // points + marges
+                          const double minNeeded = brandH + buttonH + indicatorsH;
 
-                          SizedBox(
-                            width: 250,
-                            height: 50,
-                            child: Container(
-                              decoration: BoxDecoration(
-                                gradient: const LinearGradient(
-                                  colors: [
-                                    Color(0xFFFF9800),
-                                    Color(0xFFFFC107),
+                          final double spare = (maxH - minNeeded).clamp(0, 1000);
+
+                          // Exiger le même espacement que sur les écrans 2 et 3: 2px
+                          final double gapBrandToButton = spare >= 2 ? 2.0 : spare;
+                          final double remaining = (spare - gapBrandToButton).clamp(0, 1000);
+
+                          // Répartir le reste entre haut du texte et indicateurs
+                          double gapBeforeBrand = remaining * 0.6;
+                          if (gapBeforeBrand > 60) gapBeforeBrand = 60;
+                          double gapButtonToIndicators = remaining - gapBeforeBrand;
+                          if (gapButtonToIndicators > 28) gapButtonToIndicators = 28;
+                          if (gapButtonToIndicators < 0) gapButtonToIndicators = 0;
+
+                          // Descendre le bloc texte+button ensemble sans changer leur espacement
+                          const double shiftBlockDown = 10; // px
+                          final double canShift = gapButtonToIndicators >= shiftBlockDown
+                              ? shiftBlockDown
+                              : gapButtonToIndicators;
+                          gapBeforeBrand += canShift;
+                          gapButtonToIndicators -= canShift;
+
+                          return Column(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              SizedBox(height: gapBeforeBrand),
+                              Text(
+                                'Tchi teliman',
+                                style: GoogleFonts.inter(
+                                  fontSize: 28,
+                                  fontWeight: FontWeight.bold,
+                                  color: const Color(0xFF2563EB),
+                                  shadows: [
+                                    Shadow(color: Colors.black.withOpacity(0.55), blurRadius: 6, offset: const Offset(0, 2)),
+                                    Shadow(color: Colors.black.withOpacity(0.45), blurRadius: 6, offset: const Offset(2, 0)),
+                                    Shadow(color: Colors.black.withOpacity(0.45), blurRadius: 6, offset: const Offset(-2, 0)),
+                                    Shadow(color: Colors.black.withOpacity(0.45), blurRadius: 6, offset: const Offset(0, -2)),
                                   ],
                                 ),
-                                borderRadius: BorderRadius.circular(25),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.25),
-                                    blurRadius: 10,
-                                    offset: const Offset(0, 6),
-                                  ),
-                                ],
                               ),
-                              child: Material(
-                                color: Colors.transparent,
-                                child: InkWell(
-                                  borderRadius: BorderRadius.circular(25),
-                                  onTap: () {
-                                    Navigator.of(context).pushReplacementNamed('/onboarding5');
-                                  },
-                                  child: Center(
-                                    child: Text(
-                                      'Passer',
-                                      style: GoogleFonts.inter(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white,
+                              SizedBox(height: gapBrandToButton),
+                              SizedBox(
+                                width: 250,
+                                height: buttonH,
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    gradient: const LinearGradient(
+                                      colors: [
+                                        Color(0xFFFF9800),
+                                        Color(0xFFFFC107),
+                                      ],
+                                    ),
+                                    borderRadius: BorderRadius.circular(25),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.25),
+                                        blurRadius: 10,
+                                        offset: const Offset(0, 6),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Material(
+                                    color: Colors.transparent,
+                                    child: InkWell(
+                                      borderRadius: BorderRadius.circular(25),
+                                      onTap: () {
+                                        Navigator.of(context).pushReplacementNamed('/onboarding5');
+                                      },
+                                      child: Center(
+                                        child: Text(
+                                          'Continuer',
+                                          style: GoogleFonts.inter(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.white,
+                                          ),
+                                        ),
                                       ),
                                     ),
                                   ),
                                 ),
                               ),
-                            ),
-                          ),
-                          const SizedBox(height: 28),
-
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: List.generate(5, (index) {
-                              return Container(
-                                margin: const EdgeInsets.symmetric(horizontal: 4),
-                                width: 8,
-                                height: 8,
-                                decoration: BoxDecoration(
-                                  color: index == 3
-                                      ? const Color(0xFF4CAF50)
-                                      : Colors.white.withOpacity(0.6),
-                                  shape: BoxShape.circle,
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.2),
-                                      blurRadius: 2,
-                                      offset: const Offset(0, 1),
+                              SizedBox(height: gapButtonToIndicators),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: List.generate(5, (index) {
+                                  return Container(
+                                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                                    width: 8,
+                                    height: 8,
+                                    decoration: BoxDecoration(
+                                      color: index == 3
+                                          ? const Color(0xFF4CAF50)
+                                          : Colors.white.withOpacity(0.6),
+                                      shape: BoxShape.circle,
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.2),
+                                          blurRadius: 2,
+                                          offset: const Offset(0, 1),
+                                        ),
+                                      ],
                                     ),
-                                  ],
-                                ),
-                              );
-                            }),
-                          ),
-                        ],
+                                  );
+                                }),
+                              ),
+                            ],
+                          );
+                        },
                       ),
                     ),
                   ),

@@ -69,21 +69,20 @@ class _SplashScreen3State extends State<SplashScreen3> {
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
                         Text(
-                          'Tchi teliman',
+                          'Tchi Teliman',
                           style: GoogleFonts.inter(
                             fontSize: 28,
                             fontWeight: FontWeight.bold,
                             color: const Color(0xFF2563EB),
                             shadows: [
-                              Shadow(
-                                color: Colors.black.withOpacity(0.25),
-                                blurRadius: 2,
-                                offset: const Offset(0, 1),
-                              ),
+                              Shadow(color: Colors.black.withOpacity(0.55), blurRadius: 6, offset: const Offset(0, 2)),
+                              Shadow(color: Colors.black.withOpacity(0.45), blurRadius: 6, offset: const Offset(2, 0)),
+                              Shadow(color: Colors.black.withOpacity(0.45), blurRadius: 6, offset: const Offset(-2, 0)),
+                              Shadow(color: Colors.black.withOpacity(0.45), blurRadius: 6, offset: const Offset(0, -2)),
                             ],
                           ),
                         ),
-                        const SizedBox(height: 5),
+                        const SizedBox(height: 2),
                         SizedBox(
                           width: 250,
                           height: 50,
@@ -110,7 +109,7 @@ class _SplashScreen3State extends State<SplashScreen3> {
                                 },
                                 child: Center(
                                   child: Text(
-                                    'Passer',
+                                    'Continuer',
                                     style: GoogleFonts.inter(
                                       fontSize: 18,
                                       fontWeight: FontWeight.bold,

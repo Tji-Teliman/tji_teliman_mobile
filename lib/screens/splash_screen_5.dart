@@ -33,7 +33,7 @@ class _SplashScreen5State extends State<SplashScreen5> {
                       child: SizedBox(
                         width: double.infinity,
                         child: Text(
-                          'Chaque mission réussie est un pas vers ton sommet. Construis ta réputation, ouvre tes portes.',
+                          'Chaque mission t’élève. Bâtis ta réputation, ouvre ton avenir.',
                           textAlign: TextAlign.center,
                           style: GoogleFonts.inter(
                             fontSize: 20,
@@ -73,15 +73,14 @@ class _SplashScreen5State extends State<SplashScreen5> {
                             fontWeight: FontWeight.bold,
                             color: const Color(0xFF2563EB),
                             shadows: [
-                              Shadow(
-                                color: Colors.black.withOpacity(0.25),
-                                blurRadius: 2,
-                                offset: const Offset(0, 1),
-                              ),
+                              Shadow(color: Colors.black.withOpacity(0.55), blurRadius: 6, offset: const Offset(0, 2)),
+                              Shadow(color: Colors.black.withOpacity(0.45), blurRadius: 6, offset: const Offset(2, 0)),
+                              Shadow(color: Colors.black.withOpacity(0.45), blurRadius: 6, offset: const Offset(-2, 0)),
+                              Shadow(color: Colors.black.withOpacity(0.45), blurRadius: 6, offset: const Offset(0, -2)),
                             ],
                           ),
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 2),
                         SizedBox(
                           width: 250,
                           height: 50,
