@@ -8,20 +8,56 @@ class SplashScreen4 extends StatefulWidget {
   State<SplashScreen4> createState() => _SplashScreen4State();
 }
 
-class _SplashScreen4State extends State<SplashScreen4> {
+class _SplashScreen4State extends State<SplashScreen4> with SingleTickerProviderStateMixin {
+  late AnimationController _bgController;
+  late Animation<double> _bgScale;
+  bool _navigated = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _bgController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 3),
+    );
+    _bgScale = Tween<double>(begin: 1.0, end: 1.08).animate(
+      CurvedAnimation(parent: _bgController, curve: Curves.easeOut),
+    );
+    _bgController.forward();
+
+    Future.delayed(const Duration(seconds: 3), () {
+      if (!mounted || _navigated) return;
+      Navigator.of(context).pushReplacementNamed('/onboarding5');
+    });
+  }
+
+  @override
+  void dispose() {
+    _bgController.dispose();
+    super.dispose();
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          image: DecorationImage(
-            image: AssetImage('assets/images/image splash screen 4.png'),
-            fit: BoxFit.cover,
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: AnimatedBuilder(
+              animation: _bgController,
+              builder: (context, _) {
+                return Transform.scale(
+                  scale: _bgScale.value,
+                  child: Image.asset(
+                    'assets/images/image splash screen 4.png',
+                    fit: BoxFit.cover,
+                  ),
+                );
+              },
+            ),
           ),
-        ),
-        child: SafeArea(
-          child: Stack(
-            children: [
+          SafeArea(
+            child: Stack(
+              children: [
               Column(
                 children: [
                   // Titre en haut de l'écran
@@ -131,11 +167,12 @@ class _SplashScreen4State extends State<SplashScreen4> {
                                     child: InkWell(
                                       borderRadius: BorderRadius.circular(25),
                                       onTap: () {
-                                        Navigator.of(context).pushReplacementNamed('/onboarding5');
+                                        _navigated = true;
+                                        Navigator.of(context).pushReplacementNamed('/register');
                                       },
                                       child: Center(
                                         child: Text(
-                                          'Continuer',
+                                          "S'inscrire",
                                           style: GoogleFonts.inter(
                                             fontSize: 18,
                                             fontWeight: FontWeight.bold,
@@ -150,13 +187,13 @@ class _SplashScreen4State extends State<SplashScreen4> {
                               SizedBox(height: gapButtonToIndicators),
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
-                                children: List.generate(5, (index) {
+                                children: List.generate(4, (index) {
                                   return Container(
                                     margin: const EdgeInsets.symmetric(horizontal: 4),
                                     width: 8,
                                     height: 8,
                                     decoration: BoxDecoration(
-                                      color: index == 3
+                                      color: index == 2
                                           ? const Color(0xFF4CAF50)
                                           : Colors.white.withOpacity(0.6),
                                       shape: BoxShape.circle,
@@ -179,66 +216,11 @@ class _SplashScreen4State extends State<SplashScreen4> {
                   ),
                 ],
               ),
-
-              // Overlay header
-              Positioned(
-                top: 8,
-                left: 8,
-                right: 8,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(24),
-                        onTap: () {
-                          Navigator.of(context).pushReplacementNamed('/onboarding3');
-                        },
-                        child: const Padding(
-                          padding: EdgeInsets.all(8.0),
-                          child: Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 22),
-                        ),
-                      ),
-                    ),
-                    Container(
-                      height: 36,
-                      padding: const EdgeInsets.symmetric(horizontal: 14),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(colors: [Color(0xFFFF9800), Color(0xFFFFC107)]),
-                        borderRadius: BorderRadius.circular(18),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFFFF9800).withOpacity(0.35),
-                            blurRadius: 8,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(18),
-                          onTap: () {
-                            Navigator.of(context).pushReplacementNamed('/onboarding5');
-                          },
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text('Passer', style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold)),
-                              const SizedBox(width: 6),
-                              const Icon(Icons.fast_forward_rounded, color: Colors.white, size: 18),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+              
             ],
           ),
         ),
+        ],
       ),
     );
   }

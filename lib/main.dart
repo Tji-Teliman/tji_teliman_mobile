@@ -6,6 +6,9 @@ import 'screens/splash_screen_3.dart';
 import 'screens/splash_screen_4.dart';
 import 'screens/splash_screen_5.dart';
 import 'screens/register_screen.dart';
+import 'screens/login_screen.dart';
+import 'screens/screens_jeunes/missions_screen.dart';
+
 
 void main() {
   runApp(const TjiTelimanApp());
@@ -36,6 +39,8 @@ class TjiTelimanApp extends StatelessWidget {
         '/onboarding4': (context) => const SplashScreen4(),
         '/onboarding5': (context) => const SplashScreen5(),
         '/register': (context) => const RegisterScreen(),
+        '/login': (context) => const LoginScreen(), 
+        '/missions': (context) => const MissionsScreen(),
         '/home': (context) => const HomeScreen(),
       },
     );
