@@ -23,10 +23,9 @@ class MissionsScreen extends StatefulWidget {
 
 class _MissionsScreenState extends State<MissionsScreen> {
   int _selectedIndex = 0; 
-  // Index de la catégorie de filtre actuellement sélectionnée
   int _selectedCategoryIndex = 0; 
   
-  // Liste des catégories de filtres
+  // Liste des catégories de filtres (inchangée)
   final List<String> categories = [
     'Urgent',
     'Livraison',
@@ -37,7 +36,7 @@ class _MissionsScreenState extends State<MissionsScreen> {
     'Déménagement',
   ];
   
-  // Liste des missions Mises en Avant (avec dégradé)
+  // Liste des missions Mises en Avant (avec dégradé) - (inchangée)
   final List<Map<String, String>> featuredMissions = [
     {
       'title': 'LIVRAISON EXPRESS - MARCHE CENTRAL',
@@ -56,34 +55,34 @@ class _MissionsScreenState extends State<MissionsScreen> {
     },
   ];
 
-  // Liste des missions standards
+  // ⚠️ Liste des missions standards uniformisée pour inclure la durée (period)
   final List<Map<String, String>> staticMissions = [
     {
       'title': 'Cours de Maths-Lycée',
       'location': 'A Garantibougou',
       'price': '3.000 CFA',
-      'period': '3 heures / Jours',
+      'period': '3 heures / Jours', // Durée par jour
       'date_start': 'Du 10/10/2025',
       'date_end': 'Au 13/10/2025',
       'time': 'à 14H :00',
     },
     {
-      'title': 'Cours de Maths-Lycée',
-      'location': 'A Garantibougou',
-      'price': '3.000 CFA',
-      'period': 'Du 10/10/2025',
-      'date_start': 'Du 10/10/2025',
-      'date_end': 'Au 13/10/2025',
-      'time': 'à 14H :00',
+      'title': 'Aide Domestique',
+      'location': 'Quartier du Lac',
+      'price': '2.500 CFA',
+      'period': '4 heures / Jours', // Durée par jour
+      'date_start': 'Du 15/10/2025',
+      'date_end': 'Au 20/10/2025',
+      'time': 'à 10H :00',
     },
     {
-      'title': 'Cours de Maths-Lycée',
-      'location': 'A Garantibougou',
-      'price': '3.000 CFA',
-      'period': 'Du 10/10/2025',
-      'date_start': 'Du 10/10/2025',
-      'date_end': 'Au 13/10/2025',
-      'time': 'à 14H :00',
+      'title': 'Bricolage - Étagères',
+      'location': 'Sogoniko',
+      'price': '6.000 CFA',
+      'period': '1 journée', // Durée par jour
+      'date_start': 'Le 25/10/2025',
+      'date_end': 'Le 25/10/2025',
+      'time': 'à 09H :00',
     },
   ];
 
@@ -98,7 +97,7 @@ class _MissionsScreenState extends State<MissionsScreen> {
     return Scaffold(
       backgroundColor: bodyBackgroundColor, 
       
-      // 1. Barre d'Application (AppBar)
+      // 1. Barre d'Application (AppBar) - (inchangée)
       appBar: AppBar(
         automaticallyImplyLeading: false, 
         backgroundColor: primaryBlue,
@@ -111,7 +110,6 @@ class _MissionsScreenState extends State<MissionsScreen> {
           ),
         ),
         
-        // Contenu de la zone supérieure de l'AppBar
         title: Padding(
           padding: const EdgeInsets.only(top: 10.0),
           child: Row(
@@ -125,12 +123,12 @@ class _MissionsScreenState extends State<MissionsScreen> {
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
                 ),
+                
               ),
             ],
           ),
         ),
         
-        // Barre de recherche (bottom)
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(50.0), 
           child: Padding(
@@ -164,7 +162,7 @@ class _MissionsScreenState extends State<MissionsScreen> {
             
             const SizedBox(height: 20), 
             
-            // 2a. Section des Filtres (Tags) - Défilement Horizontal
+            // 2a. Section des Filtres (Tags) - (inchangée)
             Padding(
               padding: const EdgeInsets.only(left: 20.0, bottom: 20.0),
               child: SingleChildScrollView(
@@ -185,7 +183,7 @@ class _MissionsScreenState extends State<MissionsScreen> {
               ),
             ),
             
-            // 2b. SECTION DES MISSIONS MISES EN AVANT (Top Missions) - Défilement Horizontal
+            // 2b. SECTION DES MISSIONS MISES EN AVANT (Top Missions) - (inchangée)
             Padding(
               padding: const EdgeInsets.only(bottom: 20.0),
               child: SingleChildScrollView(
@@ -195,13 +193,11 @@ class _MissionsScreenState extends State<MissionsScreen> {
                     final index = entry.key;
                     final mission = entry.value;
                     
-                    // Padding à gauche pour la première carte
                     final double leftPadding = index == 0 ? 20.0 : 0.0;
                     
                     return Padding(
                       padding: EdgeInsets.only(left: leftPadding, right: 15.0),
                       child: SizedBox(
-                        // La carte occupe 75% de la largeur de l'écran
                         width: MediaQuery.of(context).size.width * 0.75, 
                         child: _TopMissionCard(
                           title: mission['title']!,
@@ -222,23 +218,18 @@ class _MissionsScreenState extends State<MissionsScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   
-                  Text(
-                    'Missions Similaires',
-                    style: GoogleFonts.poppins(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
-                    ),
-                  ),
-                  
-                  const SizedBox(height: 15),
+                  // ❌ Le titre "Missions Similaires" est maintenant supprimé, comme demandé.
                   
                   // Liste des Missions Inférieures (Liste des Cartes)
                   ...staticMissions.map((mission) => Padding(
                     padding: const EdgeInsets.only(bottom: 15.0),
                     child: _DefaultMissionCard(
-                      title: mission['title']!, location: mission['location']!, price: mission['price']!,
-                      period: mission['period']!, dateStart: mission['date_start']!, dateEnd: mission['date_end']!,
+                      title: mission['title']!, 
+                      location: mission['location']!, 
+                      price: mission['price']!,
+                      period: mission['period']!, 
+                      dateStart: mission['date_start']!, 
+                      dateEnd: mission['date_end']!,
                       time: mission['time']!,
                     ),
                   )).toList(),
@@ -251,7 +242,7 @@ class _MissionsScreenState extends State<MissionsScreen> {
         ),
       ),
       
-      // 3. Barre de Navigation Personnalisée (BottomNavBar)
+      // 3. Barre de Navigation Personnalisée (BottomNavBar) - (inchangée)
       bottomNavigationBar: CustomBottomNavBar(
         initialIndex: _selectedIndex,
         onItemSelected: (index) {
@@ -268,7 +259,7 @@ class _MissionsScreenState extends State<MissionsScreen> {
 // --- WIDGETS DES COMPOSANTS ---
 // -----------------------------------------------------------------------------
 
-// Widget pour les Boutons de Filtre (Tags)
+// Widget pour les Boutons de Filtre (Tags) - (inchangé)
 class _TagButton extends StatelessWidget {
   final String label;
   final Color color;
@@ -311,7 +302,7 @@ class _TagButton extends StatelessWidget {
   }
 }
 
-// Widget pour la Carte de Mission Supérieure (Gradients)
+// Widget pour la Carte de Mission Supérieure (Gradients) - (inchangée)
 class _TopMissionCard extends StatelessWidget {
   final String title;
   final String price;
@@ -351,11 +342,9 @@ class _TopMissionCard extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           
-          // LIGNE CORRIGÉE CONTRE LE DÉBORDEMENT
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: <Widget>[
-              // Utilisation d'Expanded pour s'assurer que le prix ne déborde pas
               Expanded(
                 child: Text(
                   price,
@@ -369,7 +358,6 @@ class _TopMissionCard extends StatelessWidget {
                 ),
               ),
               
-              // Badge de Temps Restant (fixe)
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                 decoration: BoxDecoration(
@@ -398,7 +386,7 @@ class _DefaultMissionCard extends StatelessWidget {
   final String title;
   final String location;
   final String price;
-  final String period;
+  final String period; // Durée par jour
   final String dateStart;
   final String dateEnd;
   final String time;
@@ -413,6 +401,7 @@ class _DefaultMissionCard extends StatelessWidget {
     required this.time,
   });
 
+  // Helper pour construire une ligne d'information avec icône et texte
   Widget _buildInfoRow({required IconData icon, required String text, required bool isPrice}) {
     return Row(
       children: [
@@ -448,6 +437,7 @@ class _DefaultMissionCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
+          // Ligne 1 : Titre et Prix (inchangée)
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -471,28 +461,45 @@ class _DefaultMissionCard extends StatelessWidget {
           ),
           const Divider(height: 15, thickness: 0.5, color: lightGrey),
           
+          // ⚠️ NOUVELLE STRUCTURE D'INFORMATIONS :
+          
+          // Ligne 2 : Lieu et Durée par jour
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _buildInfoRow(icon: Icons.person_outline, text: location, isPrice: false),
-              _buildInfoRow(icon: Icons.access_time_filled, text: period, isPrice: false),
+              // Lieu: Icône de localisation
+              Expanded(
+                child: _buildInfoRow(icon: Icons.location_on_outlined, text: location, isPrice: false),
+              ),
+              // Durée par jour: Icône de temps remplie
+              Expanded(
+                child: _buildInfoRow(icon: Icons.access_time_filled, text: period, isPrice: false),
+              ),
             ],
           ),
           const SizedBox(height: 8),
 
+          // Ligne 3 : Date Début et Date Fin
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _buildInfoRow(icon: Icons.location_on_outlined, text: dateStart, isPrice: false),
-              _buildInfoRow(icon: Icons.calendar_today_outlined, text: dateEnd, isPrice: false),
+              // Date Début: Icône Calendrier
+              Expanded(
+                child: _buildInfoRow(icon: Icons.calendar_today_outlined, text: dateStart, isPrice: false),
+              ),
+              // Date Fin: Icône Calendrier
+              Expanded(
+                child: _buildInfoRow(icon: Icons.calendar_today_outlined, text: dateEnd, isPrice: false),
+              ),
             ],
           ),
           const SizedBox(height: 8),
 
+          // Ligne 4 : Heure et Bouton Voir Plus
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // Correction de débordement pour les cartes standards
+              // Heure: Icône Horloge (Expanded pour éviter le débordement)
               Expanded(
                 child: _buildInfoRow(icon: Icons.access_time, text: time, isPrice: false),
               ),

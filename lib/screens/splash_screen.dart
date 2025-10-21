@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'splash_screen_2.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -18,8 +19,9 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   void initState() {
     super.initState();
+    // ⚠️ Durée ajustée à 5 secondes (au lieu de 5 minutes)
     _animationController = AnimationController(
-      duration: const Duration(seconds: 5),
+      duration: const Duration(seconds: 5), 
       vsync: this,
     );
 
@@ -56,15 +58,20 @@ class _SplashScreenState extends State<SplashScreen>
       end: 1.1,
     ).animate(CurvedAnimation(
       parent: _animationController,
-      curve: Curves.easeInOut,
+      curve: const Interval(0.6, 1.0, curve: Curves.easeInOut), // Pulse à la fin
     ));
 
-    _animationController.forward();
+    _animationController.repeat(reverse: true); // Fait pulser en boucle pendant 5s
 
-    // Navigate to onboarding after 5 seconds
+    // Navigation après 5 secondes vers OnboardingScreen
     Future.delayed(const Duration(seconds: 5), () {
       if (mounted) {
-        Navigator.of(context).pushReplacementNamed('/onboarding');
+        // Remplacement de la navigation nommée par la navigation directe
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (context) => const SplashScreen2(),
+          ),
+        );
       }
     });
   }
@@ -89,19 +96,16 @@ class _SplashScreenState extends State<SplashScreen>
                 scale: _scaleAnimation,
                 child: Transform.rotate(
                   angle: _rotationAnimation.value,
-                  child: AnimatedBuilder(
-                    animation: _pulseAnimation,
-                    builder: (context, child) {
-                      return Transform.scale(
-                        scale: _pulseAnimation.value,
-                        child: Image.asset(
-                          'assets/images/LOGO_TJI_TELIMAN.png',
-                          width: 200,
-                          height: 200,
-                          fit: BoxFit.contain,
-                        ),
-                      );
-                    },
+                  child: Transform.scale(
+                    // Utilisation de _pulseAnimation pour le scale final
+                    scale: _pulseAnimation.value,
+                    child: Image.asset(
+                      // ⚠️ Assurez-vous que ce chemin est correct :
+                      'assets/images/LOGO_TJI_TELIMAN.png', 
+                      width: 200,
+                      height: 200,
+                      fit: BoxFit.contain,
+                    ),
                   ),
                 ),
               ),

@@ -1,71 +1,35 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'screens/splash_screen.dart';
-import 'screens/splash_screen_2.dart';
-import 'screens/splash_screen_3.dart';
-import 'screens/splash_screen_4.dart';
-import 'screens/splash_screen_5.dart';
-import 'screens/register_screen.dart';
-import 'screens/login_screen.dart';
 import 'screens/screens_jeunes/missions_screen.dart';
+import 'screens/screens_jeunes/home_jeune.dart';
 
-
-void main() {
-  runApp(const TjiTelimanApp());
+Future<void> main() async {
+  // Assure que les widgets sont initialisés
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialisation du formatage des dates en français
+  await initializeDateFormatting('fr', null); 
+  
+  runApp(const MyApp());
 }
 
-class TjiTelimanApp extends StatelessWidget {
-  const TjiTelimanApp({super.key});
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Tji Teliman',
-      debugShowCheckedModeBanner: false,
       theme: ThemeData(
+        // Un thème simple pour le démarrage
         primarySwatch: Colors.blue,
-        fontFamily: GoogleFonts.inter().fontFamily,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF2196F3),
-          brightness: Brightness.light,
-        ),
+        visualDensity: VisualDensity.adaptivePlatformDensity,
         useMaterial3: true,
       ),
-      initialRoute: '/',
-      routes: {
-        '/': (context) => const SplashScreen(),
-        '/onboarding': (context) => const SplashScreen2(),
-        '/onboarding3': (context) => const SplashScreen3(),
-        '/onboarding4': (context) => const SplashScreen4(),
-        '/onboarding5': (context) => const SplashScreen5(),
-        '/register': (context) => const RegisterScreen(),
-        '/login': (context) => const LoginScreen(), 
-        '/missions': (context) => const MissionsScreen(),
-        '/home': (context) => const HomeScreen(),
-      },
-    );
-  }
-}
-
-// Page d'accueil temporaire
-class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Tji Teliman'),
-        backgroundColor: const Color(0xFF2196F3),
-        foregroundColor: Colors.white,
-      ),
-      body: const Center(
-        child: Text(
-          'Bienvenue dans Tji Teliman!\n\nLes interfaces suivantes seront créées ici.',
-          textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 18),
-        ),
-      ),
+      // L'écran de démarrage est défini ici
+      home: const HomeJeuneScreen(),
+      debugShowCheckedModeBanner: false,
     );
   }
 }

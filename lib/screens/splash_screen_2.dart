@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'splash_screen_3.dart';
+import 'register_screen.dart';
 
 class SplashScreen2 extends StatefulWidget {
   const SplashScreen2({super.key});
@@ -27,7 +29,12 @@ class _SplashScreen2State extends State<SplashScreen2> with SingleTickerProvider
 
     Future.delayed(const Duration(seconds: 3), () {
       if (!mounted || _navigated) return;
-      Navigator.of(context).pushReplacementNamed('/onboarding3');
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          // Utilisation directe du nom de la classe de la page
+          builder: (context) => const SplashScreen3(), 
+        ),
+      );
     });
   }
 
@@ -151,7 +158,12 @@ class _SplashScreen2State extends State<SplashScreen2> with SingleTickerProvider
                                     borderRadius: BorderRadius.circular(25),
                                     onTap: () {
                                       _navigated = true;
-                                      Navigator.of(context).pushReplacementNamed('/register');
+                                      Navigator.of(context).pushReplacement(
+                                        MaterialPageRoute(
+                                          // Utilisation directe du nom de la classe de la page
+                                          builder: (context) => const RegisterScreen(), 
+                                        ),
+                                      );
                                     },
                                     child: Center(
                                       child: Text(
