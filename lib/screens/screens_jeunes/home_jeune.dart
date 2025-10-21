@@ -2,17 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 // ⚠️ Assurez-vous que ce chemin d'importation est correct !
-import '../../../widgets/custom_bottom_nav_bar.dart'; 
+import '../../../widgets/custom_bottom_nav_bar.dart';
+// Import de la page missions
+import 'missions_screen.dart';
+// Import du menu personnalisé
+import '../../../widgets/custom_menu.dart';
 // Assurez-vous d'importer la page de profil cible si vous l'avez :
-// import 'profile_screen.dart'; 
+// import 'profile_screen.dart';
 
 // --- COULEURS UTILISÉES DANS LE DESIGN ---
 const Color primaryGreen = Color(0xFF10B981); // Vert principal du logo/home
-const Color darkGreen = Color(0xFF069566);  // Vert plus foncé pour le dégradé
+const Color darkGreen = Color(0xFF069566);  // Vert plus foncé pour le dégradé (maintenu pour le boxShadow)
 const Color primaryBlue = Color(0xFF2563EB); // Bleu pour les icônes d'action
 const Color badgeOrange = Color(0xFFF59E0B); // Orange pour l'alerte de profil
 const Color cardColor = Color(0xFFF0F4F8); // Couleur de fond des cartes (légèrement bleuté/gris)
-const Color bodyBackgroundColor = Color(0xFFF5F5F5); 
+const Color bodyBackgroundColor = Color(0xFFF5F5F5);
 
 class HomeJeuneScreen extends StatefulWidget {
   const HomeJeuneScreen({super.key});
@@ -23,11 +27,14 @@ class HomeJeuneScreen extends StatefulWidget {
 
 class _HomeJeuneScreenState extends State<HomeJeuneScreen> {
   // Simule l'état d'affichage de l'alerte de profil
-  bool _showProfileAlert = true; 
+  bool _showProfileAlert = true;
   int _selectedIndex = 0; // Index pour la navigation inférieure (Home)
   
+  // Clé globale pour contrôler le drawer
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
   // Données statiques pour le profil
-  final String userName = "Ramatou konaré";
+  final String userName = "Ramatou konaré !";
   final int missionsAccomplies = 12;
   final String note = "4.8/5";
 
@@ -39,11 +46,11 @@ class _HomeJeuneScreenState extends State<HomeJeuneScreen> {
 
     // ⚠️ Logique future : Rediriger vers la page de profil
     // if (mounted) {
-    //   Navigator.of(context).push(
-    //     MaterialPageRoute(builder: (context) => const ProfileScreen()),
-    //   );
+    //    Navigator.of(context).push(
+    //      MaterialPageRoute(builder: (context) => const ProfileScreen()),
+    //    );
     // }
-    
+
     // Pour l'instant, on affiche une simple confirmation
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
@@ -55,65 +62,101 @@ class _HomeJeuneScreenState extends State<HomeJeuneScreen> {
 
   // Fonction pour les actions rapides (missions disponibles, etc.)
   void _handleQuickAction(String action) {
-     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text("Action rapide : $action cliquée."),
-        duration: const Duration(seconds: 1),
-      ),
-    );
+    if (action == 'Missions Disponibles') {
+      // Navigation vers la page missions
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (context) => const MissionsScreen()),
+      );
+    } else {
+      // Pour les autres actions, afficher un message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Action rapide : $action cliquée."),
+          duration: const Duration(seconds: 1),
+        ),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    // Calcule la hauteur pour le header (environ 30% de l'écran)
-    final double headerHeight = MediaQuery.of(context).size.height * 0.3; 
+    // Variables responsives
+    final double screenHeight = MediaQuery.of(context).size.height;
+    final double screenWidth = MediaQuery.of(context).size.width;
+    final double headerHeight = screenHeight * 0.3;
     
+    // Calculs responsives pour les cartes Actions Rapides
+    final double cardSpacing = screenWidth * 0.03; // 3% de la largeur d'écran
+    
+    // Ratio adaptatif selon la taille d'écran
+    double cardAspectRatio;
+    if (screenHeight < 700) {
+      // Petits écrans (iPhone SE, etc.) - cartes plus plates pour éviter débordement
+      cardAspectRatio = 2.0; // Augmenté pour éviter le débordement
+    } else if (screenHeight > 900) {
+      // Grands écrans (iPhone Pro Max, etc.) - cartes plus grandes
+      cardAspectRatio = 1.2;
+    } else {
+      // Écrans moyens
+      cardAspectRatio = 1.5;
+    }
+    
+    // Décalage responsive du body
+    final double bodyOffset = _showProfileAlert 
+      ? -(screenHeight * 0.04) // -4% de la hauteur d'écran
+      : (screenHeight * 0.015); // +1.5% de la hauteur d'écran
+
     // ANCIENNE VARIABLE DE CHEVAUCHEMENT SUPPRIMÉE POUR FORCER LE DÉFILEMENT NORMAL
-    // const double alertOverlap = -20.0; 
-    
+    // const double alertOverlap = -20.0;
+
 
     return Scaffold(
+      key: _scaffoldKey, // Ajout de la clé pour contrôler le drawer
       backgroundColor: bodyBackgroundColor,
       
+      // Ajout du drawer personnalisé
+      drawer: CustomDrawer(
+        userName: userName,
+        userProfile: "Mon Profil",
+      ),
+
       body: SingleChildScrollView(
         child: Column(
           children: <Widget>[
-            
+
             // 1. Le Header Stylisé (défile)
             _buildHeader(context, headerHeight),
-            
-            // 2. L'ALERTE DE PROFIL INCOMPLET EST DANS LE FLUX DE DÉFILEMENT (défile avec le contenu)
+
+            // 2. L'ALERTE DE PROFIL INCOMPLET (ENTRE LE HEADER ET LE BODY)
             if (_showProfileAlert)
-              Padding(
-                // L'alerte se trouve dans un Padding pour la centrer horizontalement
-                padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 20.0),
-                // Nous n'utilisons plus Transform.translate, donc l'alerte doit bouger
-                // de manière naturelle avec le SingleChildScrollView.
-                child: _buildProfileAlert(),
+              Transform.translate(
+                offset: const Offset(0, -55), // Décalage vers le haut pour rentrer dans le header
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 0.0),
+                  child: _buildProfileAlert(),
+                ),
               ),
 
-            // 3. Corps principal 
-            Padding(
-              // Si l'alerte est affichée, le Padding supérieur peut être réduit.
-              // S'il est masqué, nous pourrions avoir besoin d'un peu d'espace.
-              // J'utilise 20.0 pour laisser un peu d'espace entre l'alerte ou le Header
-              // et la section APERÇUS.
-              padding: EdgeInsets.fromLTRB(20.0, _showProfileAlert ? 0.0 : 20.0, 20.0, 0.0), 
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  
-                  // B. SECTION APERÇUS
+            // 3. Corps principal
+            Transform.translate(
+              offset: Offset(0, bodyOffset), // Décalage responsive
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(screenWidth * 0.05, 0.0, screenWidth * 0.05, 0.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+
+                    // B. SECTION APERÇUS
                   Text(
-                    'APERÇUS',
-                    style: GoogleFonts.inter(
+                    'Aperçus',
+                    style: GoogleFonts.poppins(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
-                      color: Colors.black54,
+                      color: Colors.black,
                     ),
                   ),
                   const SizedBox(height: 10),
-                  
+
                   Row(
                     children: <Widget>[
                       // Carte 1: Missions Accomplies
@@ -137,60 +180,61 @@ class _HomeJeuneScreenState extends State<HomeJeuneScreen> {
                       ),
                     ],
                   ),
-                  
-                  const SizedBox(height: 30),
-                  
+
+                  SizedBox(height: screenHeight < 700 ? screenHeight * 0.01 : screenHeight * 0.02),
+
                   // C. SECTION ACTIONS RAPIDES
                   Text(
                     'ACTIONS RAPIDES',
                     style: GoogleFonts.poppins(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
-                      color: Colors.black54,
+                      color: Colors.black,
                     ),
                   ),
-                  const SizedBox(height: 15),
-                  
+                  SizedBox(height: screenHeight < 700 ? screenHeight * 0.005 : screenHeight * 0.01),
+
                   // Grille 2x2 des actions rapides
                   GridView.count(
                     shrinkWrap: true,
                     crossAxisCount: 2,
-                    crossAxisSpacing: 15.0,
-                    mainAxisSpacing: 15.0,
-                    childAspectRatio: 0.95, 
+                    crossAxisSpacing: cardSpacing,
+                    mainAxisSpacing: cardSpacing,
+                    childAspectRatio: cardAspectRatio,
                     physics: const NeverScrollableScrollPhysics(),
                     children: <Widget>[
                       _buildQuickActionCard(
-                        icon: Icons.assignment, 
+                        icon: Icons.assignment_turned_in,
                         label: 'Missions Disponibles',
                         onTap: () => _handleQuickAction('Missions Disponibles'),
                       ),
                       _buildQuickActionCard(
-                        icon: Icons.receipt_long, 
+                        icon: Icons.receipt_long,
                         label: 'Historiques Paiements',
                         onTap: () => _handleQuickAction('Historiques Paiements'),
                       ),
                       _buildQuickActionCard(
-                        icon: Icons.library_books, 
+                        icon: Icons.library_books,
                         label: 'Mes Candidatures',
                         onTap: () => _handleQuickAction('Mes Candidatures'),
                       ),
                       _buildQuickActionCard(
-                        icon: Icons.gavel, 
+                        icon: Icons.gavel,
                         label: 'Litige',
                         onTap: () => _handleQuickAction('Litige'),
                       ),
                     ],
                   ),
-                  
-                  const SizedBox(height: 50),
-                ],
+
+                    SizedBox(height: screenHeight < 700 ? screenHeight * 0.005 : screenHeight * 0.015),
+                  ],
+                ),
               ),
             ),
           ],
         ),
       ),
-      
+
       // 3. BARRE DE NAVIGATION INFÉRIEURE (Footer)
       bottomNavigationBar: CustomBottomNavBar(
         initialIndex: _selectedIndex,
@@ -207,7 +251,7 @@ class _HomeJeuneScreenState extends State<HomeJeuneScreen> {
   // --------------------------------------------------------------------------
   // --- WIDGETS COMPOSANTS ---
   // --------------------------------------------------------------------------
-  
+
   // Widget 1: Le Header Stylisé
   Widget _buildHeader(BuildContext context, double height) {
     // NOTE: Le Header utilise un Stack pour positionner ses éléments internes.
@@ -217,11 +261,13 @@ class _HomeJeuneScreenState extends State<HomeJeuneScreen> {
       width: double.infinity,
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [primaryGreen, darkGreen],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+        // --- DÉBUT MODIFICATION: Remplacement du dégradé par l'image de fond header_2.png ---
+        image: const DecorationImage(
+          image: AssetImage('assets/images/header_home.png'), // Nouvelle image de fond
+          fit: BoxFit.cover, // S'assure que l'image couvre l'espace
         ),
+        // --- FIN MODIFICATION DU FOND ---
+
         borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(40),
           topRight: Radius.circular(40),
@@ -230,7 +276,8 @@ class _HomeJeuneScreenState extends State<HomeJeuneScreen> {
         ),
         boxShadow: [
           BoxShadow(
-            color: darkGreen.withOpacity(0.5),
+            // L'ombre peut être ajustée car la couleur de fond a changé.
+            color: Colors.black.withOpacity(0.3),
             blurRadius: 10,
             offset: const Offset(0, 5),
           ),
@@ -238,67 +285,69 @@ class _HomeJeuneScreenState extends State<HomeJeuneScreen> {
       ),
       child: Stack(
         children: [
-          // Image du prestataire (Arrière-plan)
+          // Image de la dame (Photo du prestataire) - Positionnée en bas
           Positioned(
             right: 0,
-            top: 0,
-            bottom: 0,
+            top: height * 0.3, // Commence plus bas
+            bottom: 0, // Va jusqu'en bas
             child: Opacity(
               opacity: 0.8,
               child: Image.asset(
                 'assets/images/image_home.png',
-                fit: BoxFit.cover,
-                height: height,
+                fit: BoxFit.contain,
+                width: height * 0.6,
               ),
             ),
           ),
-          
-          // 1. Logo et icônes de notification/menu (POSITIONNÉ EN HAUT)
+
+          // 1. Logo (POSITIONNÉ EN HAUT)
           Positioned(
-            top: 40, // Padding top équivalent au Padding de la Column précédente
+            top: 45, // Position du logo maintenue
             left: 20,
-            right: 20,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                // LOGO DANS UN CERCLE - TAILLE AUGMENTÉE
-                Container(
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.white,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 5,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
+            child: Container(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 5,
+                    offset: const Offset(0, 2),
                   ),
-                  padding: const EdgeInsets.all(7), 
+                ],
+              ),
+              padding: const EdgeInsets.all(12),
                   child: ClipOval(
                     child: Image.asset(
-                      'assets/images/LOGO_TJI_TELIMAN.png', 
-                      height: 45, 
-                      fit: BoxFit.cover,
+                      'assets/images/LOGO_TJI_TELIMAN.png',
+                      width: 50, // Utilise la largeur au lieu de la hauteur
+                      fit: BoxFit.fitWidth, // Ajuste selon la largeur
                     ),
                   ),
-                ),
-                
-                const Row(
-                  children: [
-                    Icon(Icons.notifications_none, color: Colors.white, size: 28),
-                    SizedBox(width: 15),
-                    Icon(Icons.menu, color: Colors.white, size: 28),
-                  ],
+            ),
+          ),
+
+          // 2. Icônes de notification et menu (POSITIONNÉES PLUS HAUT)
+          Positioned(
+            top: 45, // Position plus haute pour les icônes
+            right: 20,
+            child: Row(
+              children: [
+                const Icon(Icons.notifications_none, color: Colors.white, size: 28),
+                const SizedBox(width: 15),
+                GestureDetector(
+                  onTap: () {
+                    _scaffoldKey.currentState?.openDrawer(); // Ouvre le drawer avec la clé globale
+                  },
+                  child: const Icon(Icons.menu, color: Colors.white, size: 28),
                 ),
               ],
             ),
           ),
-          
-          // 2. Texte de Bienvenue et Barre de Recherche (POSITIONNÉ EN BAS)
+
+          // 2. Texte de Bienvenue (POSITIONNÉ EN BAS DU HEADER)
           Positioned(
-            // NOTE: On laisse de la place en bas pour que la barre de recherche soit visible.
-            bottom: 5, 
+            top: height * 0.5, // Position encore plus bas dans le header
             left: 20,
             right: 20,
             child: Column(
@@ -325,36 +374,40 @@ class _HomeJeuneScreenState extends State<HomeJeuneScreen> {
                     ),
                   ],
                 ),
-                
-                const SizedBox(height: 10), // Espace avant la barre de recherche
-
-                // Barre de Recherche 
-                Container(
-                  height: 45,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(25),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 5,
-                        offset: const Offset(0, 3),
-                      ),
-                    ],
-                  ),
-                  child: const TextField(
-                    decoration: InputDecoration(
-                      hintText: 'Recherche',
-                      hintStyle: TextStyle(color: Colors.black54),
-                      prefixIcon: Icon(Icons.search, color: primaryGreen),
-                      border: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(vertical: 10.0, horizontal: 10.0),
-                    ),
-                  ),
-                ),
               ],
             ),
           ),
+
+          // 3. Barre de Recherche (POSITIONNÉ EN BAS, LARGEUR RÉDUITE)
+          Positioned(
+            bottom: 5,
+            left: 20,
+            right: MediaQuery.of(context).size.width * 0.05, // Largeur réduite
+            child: Container(
+              height: 45,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(25),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 5,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: const TextField(
+                decoration: InputDecoration(
+                  hintText: 'Recherche',
+                  hintStyle: TextStyle(color: Colors.black54),
+                  prefixIcon: Icon(Icons.search, color: primaryGreen),
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.symmetric(vertical: 10.0, horizontal: 10.0),
+                ),
+              ),
+            ),
+          ),
+
         ],
       ),
     );
@@ -386,7 +439,7 @@ class _HomeJeuneScreenState extends State<HomeJeuneScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'PROFIL INCOMPLET :',
+                  'PROFIL INCOMPLET:',
                   style: GoogleFonts.poppins(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
@@ -394,7 +447,7 @@ class _HomeJeuneScreenState extends State<HomeJeuneScreen> {
                   ),
                 ),
                 Text(
-                  'Finalisez votre profil pour plus d\'opportunités !',
+                  'Veillez remplir vos informations personnelles',
                   style: GoogleFonts.poppins(
                     color: Colors.white70,
                     fontSize: 12,
@@ -420,7 +473,7 @@ class _HomeJeuneScreenState extends State<HomeJeuneScreen> {
                 style: GoogleFonts.poppins(
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
-                  color: badgeOrange,
+                  color: Colors.black,
                 ),
               ),
             ),
@@ -429,44 +482,44 @@ class _HomeJeuneScreenState extends State<HomeJeuneScreen> {
       ),
     );
   }
-  
-  // Widget 3: Carte de Statistique (Missions/Note)
+
+  // Widget 3: Carte de Statistique (Missions/Note) - Taille réduite
   Widget _buildStatCard({required IconData icon, required String value, required String label, required Color color}) {
     return Container(
-      padding: const EdgeInsets.all(15.0),
+      padding: const EdgeInsets.all(10.0), // Réduit de 15.0 à 10.0
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(15),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        color: const Color(0xFFe6f0f9), // Couleur #e6f0f9
+        borderRadius: BorderRadius.circular(15), // Réduit de 15 à 12
+         boxShadow: [
+           BoxShadow(
+             color: Colors.black.withOpacity(0.09),
+             blurRadius: 8, // Réduit de 8 à 6
+             offset: const Offset(0, 4), // Ombre seulement en bas
+           ),
+         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Row(
             children: [
-              Icon(icon, color: color, size: 28),
-              const SizedBox(width: 8),
+              Icon(icon, color: color, size: 22), // Réduit de 28 à 22
+              const SizedBox(width: 6), // Réduit de 8 à 6
               Text(
                 value,
                 style: GoogleFonts.poppins(
-                  fontSize: 24,
+                  fontSize: 20, // Réduit de 24 à 20
                   fontWeight: FontWeight.bold,
                   color: Colors.black87,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 5),
+          const SizedBox(height: 3), // Réduit de 5 à 3
           Text(
             label,
             style: GoogleFonts.poppins(
-              fontSize: 13,
+              fontSize: 11, // Réduit de 13 à 11
               color: Colors.black54,
               fontWeight: FontWeight.w500,
             ),
@@ -475,13 +528,33 @@ class _HomeJeuneScreenState extends State<HomeJeuneScreen> {
       ),
     );
   }
-  
-  // Widget 4: Carte d'Action Rapide
+
+  // Widget 4: Carte d'Action Rapide Responsive
   Widget _buildQuickActionCard({required IconData icon, required String label, required VoidCallback onTap}) {
+    final double screenHeight = MediaQuery.of(context).size.height;
+    final double screenWidth = MediaQuery.of(context).size.width;
+    
+    // Ajustements spécifiques pour iPhone SE
+    double iconSize, fontSize, paddingSize, spacingSize;
+    
+    if (screenHeight < 700) {
+      // iPhone SE - éléments plus petits pour éviter débordement
+      iconSize = screenWidth * 0.05;
+      fontSize = screenWidth * 0.025;
+      paddingSize = screenWidth * 0.01;
+      spacingSize = screenHeight * 0.003;
+    } else {
+      // Autres écrans
+      iconSize = screenWidth * 0.08;
+      fontSize = screenWidth * 0.032;
+      paddingSize = screenWidth * 0.02;
+      spacingSize = screenHeight * 0.008;
+    }
+    
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(15.0),
+        padding: EdgeInsets.all(paddingSize),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(15),
@@ -497,19 +570,19 @@ class _HomeJeuneScreenState extends State<HomeJeuneScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             Container(
-              padding: const EdgeInsets.all(15),
+              padding: EdgeInsets.all(screenWidth * 0.05),
               decoration: BoxDecoration(
                 color: primaryBlue.withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
-              child: Icon(icon, color: primaryBlue, size: 30),
+              child: Icon(icon, color: primaryBlue, size: iconSize),
             ),
-            const SizedBox(height: 10),
+            SizedBox(height: spacingSize),
             Text(
               label,
               textAlign: TextAlign.center,
               style: GoogleFonts.poppins(
-                fontSize: 13,
+                fontSize: fontSize,
                 fontWeight: FontWeight.w600,
                 color: Colors.black87,
               ),

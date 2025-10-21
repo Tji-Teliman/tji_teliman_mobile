@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 // ⚠️ Assurez-vous que ce chemin d'importation est correct.
 import '../../widgets/custom_bottom_nav_bar.dart'; 
+import '../../widgets/custom_bottom_nav_bar.dart'; 
+import 'detail_missions.dart';
 
 // --- COULEURS ET CONSTANTES ---
 const Color primaryGreen = Color(0xFF10B981); 
@@ -92,6 +94,23 @@ class _MissionsScreenState extends State<MissionsScreen> {
     });
   }
 
+  // Fonction pour naviguer vers la page de détail d'une mission
+  void _navigateToDetail(Map<String, String> mission) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => DetailMissionScreen(
+          missionData: {
+            'missionTitle': mission['title'],
+            'description': 'Description détaillée de la mission ${mission['title']}. Cette mission nécessite une personne motivée et disponible pour accomplir les tâches demandées.',
+            'location': mission['location'],
+            'duration': mission['period'],
+            'dateLimit': mission['date_end'],
+          },
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -100,8 +119,8 @@ class _MissionsScreenState extends State<MissionsScreen> {
       // 1. Barre d'Application (AppBar) - (inchangée)
       appBar: AppBar(
         automaticallyImplyLeading: false, 
-        backgroundColor: primaryBlue,
-        toolbarHeight: 70, 
+        backgroundColor: const Color(0xFF2f9bcf),
+        toolbarHeight: 60, 
         
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.only(
@@ -114,7 +133,12 @@ class _MissionsScreenState extends State<MissionsScreen> {
           padding: const EdgeInsets.only(top: 10.0),
           child: Row(
             children: [
-              const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
+              GestureDetector(
+                onTap: () {
+                  Navigator.of(context).pop(); // Retour à la page précédente
+                },
+                child: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
+              ),
               const SizedBox(width: 10),
               Text(
                 'Toutes les Missions',
@@ -130,7 +154,7 @@ class _MissionsScreenState extends State<MissionsScreen> {
         ),
         
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(50.0), 
+          preferredSize: const Size.fromHeight(45.0), 
           child: Padding(
             padding: const EdgeInsets.only(left: 20.0, right: 20.0, bottom: 15.0),
             child: Container(
@@ -199,10 +223,13 @@ class _MissionsScreenState extends State<MissionsScreen> {
                       padding: EdgeInsets.only(left: leftPadding, right: 15.0),
                       child: SizedBox(
                         width: MediaQuery.of(context).size.width * 0.75, 
-                        child: _TopMissionCard(
-                          title: mission['title']!,
-                          price: mission['price']!,
-                          timeRemaining: mission['timeRemaining']!,
+                        child: GestureDetector(
+                          onTap: () => _navigateToDetail(mission),
+                          child: _TopMissionCard(
+                            title: mission['title']!,
+                            price: mission['price']!,
+                            timeRemaining: mission['timeRemaining']!,
+                          ),
                         ),
                       ),
                     );
@@ -223,14 +250,18 @@ class _MissionsScreenState extends State<MissionsScreen> {
                   // Liste des Missions Inférieures (Liste des Cartes)
                   ...staticMissions.map((mission) => Padding(
                     padding: const EdgeInsets.only(bottom: 15.0),
-                    child: _DefaultMissionCard(
-                      title: mission['title']!, 
-                      location: mission['location']!, 
-                      price: mission['price']!,
-                      period: mission['period']!, 
-                      dateStart: mission['date_start']!, 
-                      dateEnd: mission['date_end']!,
-                      time: mission['time']!,
+                    child: GestureDetector(
+                      onTap: () => _navigateToDetail(mission),
+                      child: _DefaultMissionCard(
+                        title: mission['title']!, 
+                        location: mission['location']!, 
+                        price: mission['price']!,
+                        period: mission['period']!, 
+                        dateStart: mission['date_start']!, 
+                        dateEnd: mission['date_end']!,
+                        time: mission['time']!,
+                        onTap: () => _navigateToDetail(mission),
+                      ),
                     ),
                   )).toList(),
                   
@@ -390,6 +421,7 @@ class _DefaultMissionCard extends StatelessWidget {
   final String dateStart;
   final String dateEnd;
   final String time;
+  final VoidCallback? onTap;
 
   const _DefaultMissionCard({
     required this.title,
@@ -399,6 +431,7 @@ class _DefaultMissionCard extends StatelessWidget {
     required this.dateStart,
     required this.dateEnd,
     required this.time,
+    this.onTap,
   });
 
   // Helper pour construire une ligne d'information avec icône et texte
@@ -507,7 +540,7 @@ class _DefaultMissionCard extends StatelessWidget {
               SizedBox(
                 height: 30, 
                 child: ElevatedButton(
-                  onPressed: () {},
+                  onPressed: onTap,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: primaryBlue,
                     shape: RoundedRectangleBorder(
