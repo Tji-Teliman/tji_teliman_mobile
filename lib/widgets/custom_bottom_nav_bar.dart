@@ -149,14 +149,7 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar> {
                 topLeft: Radius.circular(20),
                 topRight: Radius.circular(20),
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  spreadRadius: 1,
-                  blurRadius: 10,
-                  offset: const Offset(0, -3), 
-                ),
-              ],
+        
             ),
             child: CustomPaint(
               // TAILLE DU PAINTER AUGMENTÉE (MODIFIÉ)

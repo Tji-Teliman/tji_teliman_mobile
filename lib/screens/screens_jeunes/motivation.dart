@@ -11,7 +11,7 @@ import 'message_conversation.dart';
 const Color primaryBlue = Color(0xFF2563EB); 
 const Color lightGrey = Color(0xFFE0E0E0);
 const Color darkGrey = Colors.black54;
-const Color bodyBackgroundColor = Color(0xFFF5F5F5); 
+const Color bodyBackgroundColor = Color(0xFFf6fcfc); 
 
 class MotivationScreen extends StatefulWidget {
   // Le titre de la mission est passé en argument pour l'affichage dans le header
@@ -78,16 +78,13 @@ class _MotivationScreenState extends State<MotivationScreen> {
       
       // 1. HEADER personnalisé avec CustomHeader
       appBar: CustomHeader(
-        // Le titre prend le nom de la mission
         title: headerTitle,
-        // OnBack géré par défaut dans CustomHeader (pop)
         onBack: () => Navigator.of(context).pop(), 
       ),
       
       // 2. CORPS de la Page
-      // Rétablissement de l'alignement par défaut (non centré)
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20.0),
+        padding: const EdgeInsets.fromLTRB(20.0, 20.0, 20.0, 20.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           // Retire mainAxisAlignment.center pour un alignement haut par défaut

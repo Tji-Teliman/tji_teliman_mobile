@@ -10,12 +10,14 @@ import '../../widgets/custom_bottom_nav_bar.dart';
 import 'home_jeune.dart';
 // Import de l'écran de chat
 import 'chat_screen.dart';
+// Import de l'écran Mes Candidatures
+import 'mes_candidatures.dart';
 
 // --- COULEURS ET CONSTANTES ---
 const Color primaryBlue = Color(0xFF2563EB); 
 const Color lightGrey = Color(0xFFE0E0E0);
 const Color darkGrey = Colors.black54;
-const Color bodyBackgroundColor = Color(0xFFF5F5F5); 
+const Color bodyBackgroundColor = Color(0xFFf6fcfc); 
 const Color customHeaderColor = Color(0xFF2f9bcf); // Couleur du Header
 
 // Modèle de données factices pour simuler les conversations
@@ -50,9 +52,10 @@ class _MessageConversationScreenState extends State<MessageConversationScreen> {
     Conversation(name: 'Samba Diallo', lastMessageTime: '04/09/25', imageUrl: 'user8.png'),
   ];
   
-  // Widget pour la barre de recherche (à placer dans le CustomHeader)
+  // Widget pour la barre de recherche 
   Widget _buildSearchBar() {
     return Container(
+      // La hauteur de 40 est maintenue pour respecter la taille
       height: 40,
       decoration: BoxDecoration(
         color: Colors.white,
@@ -70,7 +73,8 @@ class _MessageConversationScreenState extends State<MessageConversationScreen> {
           prefixIcon: const Icon(Icons.search, color: darkGrey),
           hintText: 'Recherche',
           hintStyle: GoogleFonts.poppins(color: darkGrey.withOpacity(0.7)),
-          border: InputBorder.none,
+          // Assure que le champ de texte prend toute la hauteur sans bordure
+          border: InputBorder.none, 
           contentPadding: const EdgeInsets.symmetric(vertical: 8),
         ),
         style: GoogleFonts.poppins(fontSize: 14, color: Colors.black87),
@@ -80,20 +84,20 @@ class _MessageConversationScreenState extends State<MessageConversationScreen> {
 
   // Widget pour un élément de conversation
   Widget _buildConversationItem(BuildContext context, Conversation conversation) {
-    return InkWell(
-      onTap: () {
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (context) => ChatScreen(interlocutorName: conversation.name),
-          ),
-        );
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 15.0, horizontal: 10.0),
-        decoration: const BoxDecoration(
-          border: Border(bottom: BorderSide(color: lightGrey, width: 0.5)),
-          color: Colors.white,
-        ),
+    return Column(
+      children: [
+        InkWell(
+          onTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => ChatScreen(interlocutorName: conversation.name),
+              ),
+            );
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 15.0, horizontal: 10.0),
+            // Suppression de la couleur blanche pour laisser apparaître la couleur du Scaffold
+            decoration: const BoxDecoration(),
         child: Row(
           children: <Widget>[
             // Photo de profil ou icône générique
@@ -140,12 +144,17 @@ class _MessageConversationScreenState extends State<MessageConversationScreen> {
             ),
           ],
         ),
-      ),
+          ),
+        ),
+        // Ligne de séparation entre chaque conversation
+        const Divider(height: 1, color: lightGrey),
+      ],
     );
   }
   
-  // NOUVEAU WIDGET : Affichage pour l'état vide (Aucune conversation)
+  // WIDGET : Affichage pour l'état vide (Aucune conversation)
   Widget _buildEmptyState() {
+    // Si la liste des conversations est vide, on pourrait afficher ce widget
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(40.0),
@@ -183,49 +192,41 @@ class _MessageConversationScreenState extends State<MessageConversationScreen> {
       // 1. HEADER personnalisé avec CustomHeader
       appBar: CustomHeader(
         title: 'Discussions',
-        // Icône de droite pour les paramètres de discussion (comme dans la maquette)
-        rightIcon: Icons.settings_outlined, 
-        onBack: () => Navigator.of(context).pop(), 
-        // Barre de recherche dans la partie inférieure du header
-        bottomWidget: _buildSearchBar(),
+        rightIcon: Icons.more_horiz,
+        onBack: () {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (context) => const HomeJeuneScreen()),
+          );
+        },
+        bottomWidget: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0), 
+          child: _buildSearchBar(),
+        ),
       ),
       
       // 2. CORPS de la Page : Liste des Conversations
-      body: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(20),
-            topRight: Radius.circular(20),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 10,
-              offset: const Offset(0, -5),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.only(top: 20.0, left: 20.0, right: 20.0, bottom: 5.0),
-              child: Text(
-                'Conversations',
-                style: GoogleFonts.poppins(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
-                ),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20.0, 20.0, 20.0, 5.0),
+            child: Text(
+              'Conversations',
+              style: GoogleFonts.poppins(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
               ),
             ),
-            
-            // Séparateur
-            const Divider(height: 0, color: lightGrey),
+          ),
+          
+          // Séparateur
+          const Divider(height: 0, color: lightGrey),
 
-            // Liste des conversations
-            Expanded(
+          // Liste des conversations
+          Expanded(
+            child: Container(
+              // Le fond de ce container est maintenant bodyBackgroundColor
               child: ListView.builder(
                 padding: EdgeInsets.zero,
                 itemCount: _conversations.length,
@@ -234,8 +235,8 @@ class _MessageConversationScreenState extends State<MessageConversationScreen> {
                 },
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
       
       // 3. FOOTER : Barre de Navigation Personnalisée
@@ -246,6 +247,13 @@ class _MessageConversationScreenState extends State<MessageConversationScreen> {
             // Aller vers Accueil
             Navigator.of(context).pushReplacement(
               MaterialPageRoute(builder: (context) => const HomeJeuneScreen()),
+            );
+            return;
+          }
+          if (index == 1) {
+            // Aller vers Mes Candidatures
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (context) => const MesCandidaturesScreen()),
             );
             return;
           }

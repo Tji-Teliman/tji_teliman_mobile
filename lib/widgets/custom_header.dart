@@ -13,6 +13,8 @@ class CustomHeader extends StatelessWidget implements PreferredSizeWidget {
   final Widget? customRightWidget; // Peut être un logo ou une autre icône complexe
   final VoidCallback? onBack;
   final Widget? bottomWidget; // Pour la barre de recherche (facultatif)
+  final bool useCompactStyle; // Nouveau: pour utiliser le style compact (comme CompactHeader)
+  final Widget? leftWidget; // Nouveau: widget à gauche (comme avatar de profil)
 
   const CustomHeader({
     super.key,
@@ -21,80 +23,99 @@ class CustomHeader extends StatelessWidget implements PreferredSizeWidget {
     this.customRightWidget,
     this.onBack,
     this.bottomWidget,
+    this.useCompactStyle = false, // Par défaut, style normal
+    this.leftWidget, // Widget à gauche (optionnel)
   });
 
   @override
-  // Ajustement de la hauteur pour garantir que 2 lignes de titre tiennent
-  // 160.0 avec bottomWidget (comme avant)
-  // 120.0 sans bottomWidget (augmentation légère pour 2 lignes + padding)
-  Size get preferredSize => Size.fromHeight(bottomWidget != null ? 160.0 : 120.0);
+  // Hauteur adaptée à la nouvelle structure Stack
+  // 120.0 avec bottomWidget (header + corps)
+  // 80.0 sans bottomWidget (header seulement)
+  Size get preferredSize => Size.fromHeight(bottomWidget != null ? 120.0 : 80.0);
 
   @override
   Widget build(BuildContext context) {
-    return AppBar(
-      automaticallyImplyLeading: false, 
-      backgroundColor: const Color(0xFF2f9bcf), // Couleur d'origine conservée
-      toolbarHeight: 100, // Hauteur de la barre d'outils
-      
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(35), 
-          bottomRight: Radius.circular(35),
-        ),
-      ),
-      
-      title: Padding(
-        padding: const EdgeInsets.only(top: 10.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Première ligne : Flèche de retour et icône de droite
-            Row(
-              children: [
-                GestureDetector(
-                  onTap: onBack ?? () => Navigator.of(context).pop(),
-                  child: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
-                ),
-                const Spacer(),
-                // Icône de droite (ou Widget personnalisé)
-                if (customRightWidget != null)
-                  customRightWidget!
-                else if (rightIcon != null)
-                  Icon(rightIcon, color: Colors.white, size: 24),
-              ],
-            ),
-            const SizedBox(height: 10),
-            // Deuxième ligne : Titre en bas
-            Container(
-              width: double.infinity,
-              child: Text(
-                title,
-                style: GoogleFonts.poppins(
-                  color: Colors.white,
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                ),
-                // ⚠️ MODIFICATION CLÉ : Autorise l'affichage sur deux lignes
-                maxLines: 2, 
-                // Permet au texte de s'étendre au-delà de sa zone si nécessaire, 
-                // mais maxLines: 2 gère le wrapping
-                overflow: TextOverflow.ellipsis, // Coupe avec ... si plus de 2 lignes
-                // Conserve TextAlign.center pour le titre court
-                textAlign: TextAlign.center, 
+    return Stack(
+      children: [
+        // Header bleu fixe
+        Container(
+          height: 120,
+          color: const Color(0xFF2e9dcd), // Couleur du header
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              child: Row(
+                children: [
+                  // Bouton retour
+                  GestureDetector(
+                    onTap: onBack ?? () => Navigator.of(context).pop(),
+                    child: const Icon(
+                      Icons.arrow_back_ios,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 15),
+                  
+                  // Widget à gauche (avatar de profil, etc.)
+                  if (leftWidget != null) ...[
+                    leftWidget!,
+                    const SizedBox(width: 10),
+                  ],
+                  
+                  // Titre
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: GoogleFonts.poppins(
+                        color: Colors.white,
+                        fontSize: useCompactStyle ? 20 : 22,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  
+                  // Icône de droite (ou Widget personnalisé)
+                  if (customRightWidget != null)
+                    customRightWidget!
+                  else if (rightIcon != null)
+                    Icon(rightIcon, color: Colors.white, size: 24),
+                  
+                  const SizedBox(width: 35), // Espace pour équilibrer
+                ],
               ),
             ),
-          ],
+          ),
         ),
-      ),
-      
-      // Widget inférieur (Barre de recherche, si fournie)
-      bottom: bottomWidget != null ? PreferredSize(
-        preferredSize: const Size.fromHeight(50.0), 
-        child: Padding(
-          padding: const EdgeInsets.only(left: 20.0, right: 20.0, bottom: 15.0),
-          child: bottomWidget!,
+        
+        // Corps avec coins arrondis
+        Padding(
+          padding: const EdgeInsets.only(top: 80.0),
+          child: Container(
+            height: double.infinity,
+            decoration: BoxDecoration(
+              color: const Color(0xFFf6fcfc), // Couleur du corps
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(60),
+                topRight: Radius.circular(60),
+              ),
+            ),
+            child: ClipRRect(
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(60),
+                topRight: Radius.circular(60),
+              ),
+              child: bottomWidget != null 
+                ? Padding(
+                    padding: const EdgeInsets.fromLTRB(20.0, 20.0, 20.0, 15.0),
+                    child: bottomWidget!,
+                  )
+                : null,
+            ),
+          ),
         ),
-      ) : null,
+      ],
     );
   }
 }

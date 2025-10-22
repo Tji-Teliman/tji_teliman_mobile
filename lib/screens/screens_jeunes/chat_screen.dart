@@ -3,10 +3,13 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+// Importation du widget CustomHeader
+import '../../widgets/custom_header.dart';
+
 // --- COULEURS ET CONSTANTES ---
 const Color primaryBlue = Color(0xFF2563EB); 
 const Color darkBlueHeader = Color(0xFF2f9bcf); // Couleur du Header
-const Color bodyBackgroundColor = Color(0xFFF5F5F5); 
+const Color bodyBackgroundColor = Color(0xFFf6fcfc); 
 
 // Modèle de Message pour la démonstration
 class ChatMessage {
@@ -132,53 +135,16 @@ class _ChatScreenState extends State<ChatScreen> {
     return Scaffold(
       backgroundColor: bodyBackgroundColor,
       
-      // 1. HEADER (similaire à CustomHeader mais intégré ici pour un style simple)
-      appBar: AppBar(
-        backgroundColor: darkBlueHeader,
-        automaticallyImplyLeading: false,
-        elevation: 0,
-        toolbarHeight: 80,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.only(
-            bottomLeft: Radius.circular(35), 
-            bottomRight: Radius.circular(35),
-          ),
+      // 1. HEADER avec avatar de profil utilisant CustomHeader
+      appBar: CustomHeader(
+        title: widget.interlocutorName,
+        useCompactStyle: true,
+        leftWidget: const CircleAvatar(
+          radius: 18,
+          backgroundColor: Colors.white,
+          child: Icon(Icons.person, color: darkBlueHeader, size: 20),
         ),
-        title: Row(
-          children: <Widget>[
-            // Flèche de retour
-            GestureDetector(
-              onTap: () => Navigator.of(context).pop(),
-              child: const Padding(
-                padding: EdgeInsets.only(right: 15.0),
-                child: Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
-              ),
-            ),
-            
-            // NOUVEAU: Photo de profil de l'interlocuteur
-            const CircleAvatar(
-              radius: 18,
-              backgroundColor: Colors.white,
-              child: Icon(Icons.person, color: darkBlueHeader, size: 20),
-            ),
-
-            const SizedBox(width: 10),
-
-            // Nom de l'interlocuteur
-            Text(
-              widget.interlocutorName,
-              style: GoogleFonts.poppins(
-                color: Colors.white,
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
-        ),
-        actions: const [
-           // Icône de droite non spécifiée, on laisse vide ou on met un placeholder
-        ],
+        onBack: () => Navigator.of(context).pop(),
       ),
       
       // 2. CORPS de la Page : Liste des messages

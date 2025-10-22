@@ -11,6 +11,10 @@ import '../../../widgets/custom_menu.dart';
 // import 'profile_screen.dart';
 // Import de la page Discussions
 import 'message_conversation.dart';
+// Import de la page Notifications
+import 'notifications.dart';
+// Import de la page Mes Candidatures
+import 'mes_candidatures.dart';
 
 // --- COULEURS UTILISÉES DANS LE DESIGN ---
 const Color primaryGreen = Color(0xFF10B981); // Vert principal du logo/home
@@ -18,7 +22,7 @@ const Color darkGreen = Color(0xFF069566);  // Vert plus foncé pour le dégrad�
 const Color primaryBlue = Color(0xFF2563EB); // Bleu pour les icônes d'action
 const Color badgeOrange = Color(0xFFF59E0B); // Orange pour l'alerte de profil
 const Color cardColor = Color(0xFFF0F4F8); // Couleur de fond des cartes (légèrement bleuté/gris)
-const Color bodyBackgroundColor = Color(0xFFF5F5F5);
+const Color bodyBackgroundColor = Color(0xFFf6fcfc);
 
 class HomeJeuneScreen extends StatefulWidget {
   const HomeJeuneScreen({super.key});
@@ -68,6 +72,11 @@ class _HomeJeuneScreenState extends State<HomeJeuneScreen> {
       // Navigation vers la page missions
       Navigator.of(context).push(
         MaterialPageRoute(builder: (context) => const MissionsScreen()),
+      );
+    } else if (action == 'Mes Candidatures') {
+      // Navigation vers la page mes candidatures
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (context) => const MesCandidaturesScreen()),
       );
     } else {
       // Pour les autres actions, afficher un message
@@ -245,6 +254,13 @@ class _HomeJeuneScreenState extends State<HomeJeuneScreen> {
             // Déjà sur Accueil
             return;
           }
+          if (index == 1) {
+            // Aller vers Mes Candidatures
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (context) => const MesCandidaturesScreen()),
+            );
+            return;
+          }
           if (index == 3) {
             // Aller vers Discussions
             Navigator.of(context).pushReplacement(
@@ -345,7 +361,16 @@ class _HomeJeuneScreenState extends State<HomeJeuneScreen> {
             right: 20,
             child: Row(
               children: [
-                const Icon(Icons.notifications_none, color: Colors.white, size: 28),
+                GestureDetector(
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => const NotificationsScreen(),
+                      ),
+                    );
+                  },
+                  child: const Icon(Icons.notifications_none, color: Colors.white, size: 28),
+                ),
                 const SizedBox(width: 15),
                 GestureDetector(
                   onTap: () {

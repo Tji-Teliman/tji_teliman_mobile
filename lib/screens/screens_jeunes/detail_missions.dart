@@ -12,7 +12,7 @@ import 'motivation.dart';
 const Color primaryGreen = Color(0xFF10B981); 
 const Color darkGreen = Color(0xFF00C78C); 
 const Color primaryBlue = Color(0xFF2563EB); 
-const Color bodyBackgroundColor = Color(0xFFF5F5F5); 
+const Color bodyBackgroundColor = Color(0xFFf6fcfc); 
 
 // Widget dédié à l'affichage de la carte
 class MapMissionCard extends StatelessWidget {
@@ -172,7 +172,7 @@ class DetailMissionScreen extends StatelessWidget {
 
       // 2. Corps de la Page
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20.0),
+        padding: const EdgeInsets.fromLTRB(20.0, 20.0, 20.0, 20.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[

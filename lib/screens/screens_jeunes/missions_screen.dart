@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 // ⚠️ Assurez-vous que ce chemin d'importation est correct.
 import '../../widgets/custom_bottom_nav_bar.dart'; 
+import '../../widgets/custom_header.dart';
 import 'detail_missions.dart';
 import 'home_jeune.dart';
 import 'message_conversation.dart';
@@ -13,7 +14,7 @@ const Color primaryBlue = Color(0xFF2563EB);
 const Color badgeOrange = Color(0xFFF59E0B); 
 const Color lightGrey = Color(0xFFE0E0E0);
 const Color darkGrey = Colors.black54;
-const Color bodyBackgroundColor = Color(0xFFF5F5F5); 
+const Color bodyBackgroundColor = Color(0xFFf6fcfc); 
 
 // --- DÉFINITION STATIQUE DE LA PAGE ---
 
@@ -127,48 +128,21 @@ class _MissionsScreenState extends State<MissionsScreen> {
     return Scaffold(
       backgroundColor: bodyBackgroundColor, 
       
-      // 1. Barre d'Application (AppBar) - (inchangée)
-      appBar: AppBar(
-        automaticallyImplyLeading: false, 
-        backgroundColor: const Color(0xFF2f9bcf),
-        toolbarHeight: 60, 
-        
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.only(
-            bottomLeft: Radius.circular(35), 
-            bottomRight: Radius.circular(35),
-          ),
-        ),
-        
-        title: Padding(
-          padding: const EdgeInsets.only(top: 10.0),
-          child: Row(
-            children: [
-              GestureDetector(
-                onTap: () {
-                  Navigator.of(context).pop(); // Retour à la page précédente
-                },
-                child: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
-              ),
-              const SizedBox(width: 10),
-              Text(
-                'Toutes les Missions',
-                style: GoogleFonts.poppins(
-                  color: Colors.white,
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                ),
-                
-              ),
-            ],
-          ),
-        ),
-        
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(45.0), 
-          child: Padding(
-            padding: const EdgeInsets.only(left: 20.0, right: 20.0, bottom: 15.0),
-            child: Container(
+      // 1. Barre d'Application (AppBar) - Utilisation de CustomHeader
+      appBar: CustomHeader(
+        title: 'Toutes les Missions',
+        onBack: () => Navigator.of(context).pop(),
+      ),
+      
+      // 2. Corps de la Page (Scrollable)
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(20.0, 20.0, 20.0, 20.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            
+            // Barre de recherche dans le cadre blanc
+            Container(
               height: 45,
               decoration: BoxDecoration(
                 color: Colors.white.withOpacity(0.9),
@@ -185,50 +159,38 @@ class _MissionsScreenState extends State<MissionsScreen> {
                 ),
               ),
             ),
-          ),
-        ),
-      ),
-      
-      // 2. Corps de la Page (Scrollable)
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
             
             const SizedBox(height: 20), 
             
-            // 2a. Section des Filtres (Tags) - (inchangée)
-            Padding(
-              padding: const EdgeInsets.only(left: 20.0, bottom: 20.0),
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: List.generate(categories.length, (index) {
-                    final bool isSelected = index == _selectedCategoryIndex;
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 8.0),
-                      child: _TagButton(
-                        label: categories[index],
-                        color: isSelected ? primaryGreen : darkGrey,
-                        onTap: () => _selectCategory(index),
-                      ),
-                    );
-                  }),
-                ),
+            // 2a. Section des Filtres (Tags) - Correction du débordement
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: List.generate(categories.length, (index) {
+                  final bool isSelected = index == _selectedCategoryIndex;
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8.0),
+                    child: _TagButton(
+                      label: categories[index],
+                      color: isSelected ? primaryGreen : darkGrey,
+                      onTap: () => _selectCategory(index),
+                    ),
+                  );
+                }),
               ),
             ),
             
+            const SizedBox(height: 20),
+            
             // 2b. SECTION DES MISSIONS MISES EN AVANT (Top Missions) - (inchangée)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 20.0),
-              child: SingleChildScrollView(
+            SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: Row(
                   children: featuredMissions.asMap().entries.map((entry) {
                     final index = entry.key;
                     final mission = entry.value;
                     
-                    final double leftPadding = index == 0 ? 20.0 : 0.0;
+                    final double leftPadding = index == 0 ? 0.0 : 0.0;
                     
                     return Padding(
                       padding: EdgeInsets.only(left: leftPadding, right: 15.0),
@@ -258,33 +220,29 @@ class _MissionsScreenState extends State<MissionsScreen> {
             ),
             
             // 2c. Le reste du contenu (missions standards)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  
-                  // Liste des Missions Inférieures (Liste des Cartes)
-                  ...staticMissions.map((mission) => Padding(
-                    padding: const EdgeInsets.only(bottom: 15.0),
-                    child: GestureDetector(
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Liste des Missions Inférieures (Liste des Cartes)
+                ...staticMissions.map((mission) => Padding(
+                  padding: const EdgeInsets.only(bottom: 15.0),
+                  child: GestureDetector(
+                    onTap: () => _navigateToDetail(mission),
+                    child: _DefaultMissionCard(
+                      title: mission['title']! as String, 
+                      location: mission['location']! as String, 
+                      price: mission['price']! as String,
+                      period: mission['period']! as String, 
+                      dateStart: mission['date_start']! as String, 
+                      dateEnd: mission['date_end']! as String,
+                      time: mission['time']! as String,
                       onTap: () => _navigateToDetail(mission),
-                      child: _DefaultMissionCard(
-                        title: mission['title']! as String, 
-                        location: mission['location']! as String, 
-                        price: mission['price']! as String,
-                        period: mission['period']! as String, 
-                        dateStart: mission['date_start']! as String, 
-                        dateEnd: mission['date_end']! as String,
-                        time: mission['time']! as String,
-                        onTap: () => _navigateToDetail(mission),
-                      ),
                     ),
-                  )).toList(),
-                  
-                  const SizedBox(height: 100), 
-                ],
-              ),
+                  ),
+                )).toList(),
+                
+                const SizedBox(height: 100),
+              ],
             ),
           ],
         ),
