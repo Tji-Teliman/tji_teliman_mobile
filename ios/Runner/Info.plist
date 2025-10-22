@@ -16,6 +16,12 @@
 	<string>tji_teliman_mobile</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
+	<!-- AJOUTEZ CECI -->
+    <key>io.flutter.embedded_views_preview</key>
+    <true/>
+    <key>com.google.ios.maps.APIKey</key>
+    <string>AIzaSyA8VPX49Irs5j-eds_GXY5F1tdZuzlksRI</string>
+    <!-- FIN DE L'AJOUT -->
 	<key>CFBundleShortVersionString</key>
 	<string>$(FLUTTER_BUILD_NAME)</string>
 	<key>CFBundleSignature</key>

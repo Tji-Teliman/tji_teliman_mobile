@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 // ⚠️ Assurez-vous que ce chemin d'importation est correct.
 import '../../widgets/custom_bottom_nav_bar.dart'; 
-import '../../widgets/custom_bottom_nav_bar.dart'; 
 import 'detail_missions.dart';
+import 'home_jeune.dart';
+import 'message_conversation.dart';
 
 // --- COULEURS ET CONSTANTES ---
 const Color primaryGreen = Color(0xFF10B981); 
@@ -57,34 +58,41 @@ class _MissionsScreenState extends State<MissionsScreen> {
     },
   ];
 
-  // ⚠️ Liste des missions standards uniformisée pour inclure la durée (period)
-  final List<Map<String, String>> staticMissions = [
+  // ⚠️ Liste des missions standards avec les coordonnées GPS de DÉMO
+  // Ces coordonnées seront utilisées pour afficher la carte.
+  final List<Map<String, dynamic>> staticMissions = [
     {
       'title': 'Cours de Maths-Lycée',
       'location': 'A Garantibougou',
       'price': '3.000 CFA',
-      'period': '3 heures / Jours', // Durée par jour
+      'period': '3 heures / Jours', 
       'date_start': 'Du 10/10/2025',
       'date_end': 'Au 13/10/2025',
       'time': 'à 14H :00',
+      'latitude': 12.6074, // Coordonnée démo 1
+      'longitude': -7.9940,
     },
     {
       'title': 'Aide Domestique',
       'location': 'Quartier du Lac',
       'price': '2.500 CFA',
-      'period': '4 heures / Jours', // Durée par jour
+      'period': '4 heures / Jours', 
       'date_start': 'Du 15/10/2025',
       'date_end': 'Au 20/10/2025',
       'time': 'à 10H :00',
+      'latitude': 12.6300, // Coordonnée démo 2
+      'longitude': -8.0300,
     },
     {
       'title': 'Bricolage - Étagères',
       'location': 'Sogoniko',
       'price': '6.000 CFA',
-      'period': '1 journée', // Durée par jour
+      'period': '1 journée', 
       'date_start': 'Le 25/10/2025',
       'date_end': 'Le 25/10/2025',
       'time': 'à 09H :00',
+      'latitude': 12.6450, // Coordonnée démo 3
+      'longitude': -8.0050,
     },
   ];
 
@@ -95,7 +103,7 @@ class _MissionsScreenState extends State<MissionsScreen> {
   }
 
   // Fonction pour naviguer vers la page de détail d'une mission
-  void _navigateToDetail(Map<String, String> mission) {
+  void _navigateToDetail(Map<String, dynamic> mission) {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => DetailMissionScreen(
@@ -105,6 +113,9 @@ class _MissionsScreenState extends State<MissionsScreen> {
             'location': mission['location'],
             'duration': mission['period'],
             'dateLimit': mission['date_end'],
+            // 🎯 Ajout des coordonnées pour l'affichage de la carte
+            'latitude': mission['latitude'],
+            'longitude': mission['longitude'],
           },
         ),
       ),
@@ -224,7 +235,15 @@ class _MissionsScreenState extends State<MissionsScreen> {
                       child: SizedBox(
                         width: MediaQuery.of(context).size.width * 0.75, 
                         child: GestureDetector(
-                          onTap: () => _navigateToDetail(mission),
+                          // ⚠️ Note: Les missions mises en avant n'ont pas de coordonnées pour l'instant.
+                          // Utilisation d'un dictionnaire temporaire pour l'appel.
+                          onTap: () => _navigateToDetail({
+                              ...mission,
+                              'latitude': 12.6392, // Coordonnée de repli pour la carte
+                              'longitude': -8.0028, 
+                              'period': 'Durée variable', // Ajout de la durée manquante
+                              'date_end': mission['timeRemaining'], // Utilisation du temps restant comme date limite de démo
+                            }),
                           child: _TopMissionCard(
                             title: mission['title']!,
                             price: mission['price']!,
@@ -245,21 +264,19 @@ class _MissionsScreenState extends State<MissionsScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   
-                  // ❌ Le titre "Missions Similaires" est maintenant supprimé, comme demandé.
-                  
                   // Liste des Missions Inférieures (Liste des Cartes)
                   ...staticMissions.map((mission) => Padding(
                     padding: const EdgeInsets.only(bottom: 15.0),
                     child: GestureDetector(
                       onTap: () => _navigateToDetail(mission),
                       child: _DefaultMissionCard(
-                        title: mission['title']!, 
-                        location: mission['location']!, 
-                        price: mission['price']!,
-                        period: mission['period']!, 
-                        dateStart: mission['date_start']!, 
-                        dateEnd: mission['date_end']!,
-                        time: mission['time']!,
+                        title: mission['title']! as String, 
+                        location: mission['location']! as String, 
+                        price: mission['price']! as String,
+                        period: mission['period']! as String, 
+                        dateStart: mission['date_start']! as String, 
+                        dateEnd: mission['date_end']! as String,
+                        time: mission['time']! as String,
                         onTap: () => _navigateToDetail(mission),
                       ),
                     ),
@@ -273,10 +290,24 @@ class _MissionsScreenState extends State<MissionsScreen> {
         ),
       ),
       
-      // 3. Barre de Navigation Personnalisée (BottomNavBar) - (inchangée)
+      // 3. Barre de Navigation Personnalisée (BottomNavBar)
       bottomNavigationBar: CustomBottomNavBar(
         initialIndex: _selectedIndex,
         onItemSelected: (index) {
+          if (index == 0) {
+            // Aller vers Accueil
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (context) => const HomeJeuneScreen()),
+            );
+            return;
+          }
+          if (index == 3) {
+            // Aller vers Discussions
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (context) => const MessageConversationScreen()),
+            );
+            return;
+          }
           setState(() {
             _selectedIndex = index;
           });

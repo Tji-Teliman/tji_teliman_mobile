@@ -3,6 +3,11 @@
         android:label="tji_teliman_mobile"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
+        <!-- AJOUTEZ CECI -->
+    <meta-data
+        android:name="com.google.android.geo.API_KEY"
+        android:value="AIzaSyA8VPX49Irs5j-eds_GXY5F1tdZuzlksRI" />
+    <!-- FIN DE L'AJOUT -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -30,6 +35,7 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and

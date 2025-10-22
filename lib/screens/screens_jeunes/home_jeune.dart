@@ -9,6 +9,8 @@ import 'missions_screen.dart';
 import '../../../widgets/custom_menu.dart';
 // Assurez-vous d'importer la page de profil cible si vous l'avez :
 // import 'profile_screen.dart';
+// Import de la page Discussions
+import 'message_conversation.dart';
 
 // --- COULEURS UTILISÉES DANS LE DESIGN ---
 const Color primaryGreen = Color(0xFF10B981); // Vert principal du logo/home
@@ -147,84 +149,84 @@ class _HomeJeuneScreenState extends State<HomeJeuneScreen> {
                   children: <Widget>[
 
                     // B. SECTION APERÇUS
-                  Text(
-                    'Aperçus',
-                    style: GoogleFonts.poppins(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
+                    Text(
+                      'Aperçus',
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 10),
+                    const SizedBox(height: 10),
 
-                  Row(
-                    children: <Widget>[
-                      // Carte 1: Missions Accomplies
-                      Expanded(
-                        child: _buildStatCard(
-                          icon: Icons.check_circle_outline,
-                          value: missionsAccomplies.toString(),
-                          label: 'Missions Accomplies',
-                          color: primaryGreen,
+                    Row(
+                      children: <Widget>[
+                        // Carte 1: Missions Accomplies
+                        Expanded(
+                          child: _buildStatCard(
+                            icon: Icons.check_circle_outline,
+                            value: missionsAccomplies.toString(),
+                            label: 'Missions Accomplies',
+                            color: primaryGreen,
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 15),
-                      // Carte 2: Note
-                      Expanded(
-                        child: _buildStatCard(
-                          icon: Icons.star_outline,
-                          value: note,
-                          label: 'Note',
-                          color: badgeOrange,
+                        const SizedBox(width: 15),
+                        // Carte 2: Note
+                        Expanded(
+                          child: _buildStatCard(
+                            icon: Icons.star_outline,
+                            value: note,
+                            label: 'Note',
+                            color: badgeOrange,
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-
-                  SizedBox(height: screenHeight < 700 ? screenHeight * 0.01 : screenHeight * 0.02),
-
-                  // C. SECTION ACTIONS RAPIDES
-                  Text(
-                    'ACTIONS RAPIDES',
-                    style: GoogleFonts.poppins(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
+                      ],
                     ),
-                  ),
-                  SizedBox(height: screenHeight < 700 ? screenHeight * 0.005 : screenHeight * 0.01),
 
-                  // Grille 2x2 des actions rapides
-                  GridView.count(
-                    shrinkWrap: true,
-                    crossAxisCount: 2,
-                    crossAxisSpacing: cardSpacing,
-                    mainAxisSpacing: cardSpacing,
-                    childAspectRatio: cardAspectRatio,
-                    physics: const NeverScrollableScrollPhysics(),
-                    children: <Widget>[
-                      _buildQuickActionCard(
-                        icon: Icons.assignment_turned_in,
-                        label: 'Missions Disponibles',
-                        onTap: () => _handleQuickAction('Missions Disponibles'),
+                    SizedBox(height: screenHeight < 700 ? screenHeight * 0.01 : screenHeight * 0.02),
+
+                    // C. SECTION ACTIONS RAPIDES
+                    Text(
+                      'ACTIONS RAPIDES',
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
                       ),
-                      _buildQuickActionCard(
-                        icon: Icons.receipt_long,
-                        label: 'Historiques Paiements',
-                        onTap: () => _handleQuickAction('Historiques Paiements'),
-                      ),
-                      _buildQuickActionCard(
-                        icon: Icons.library_books,
-                        label: 'Mes Candidatures',
-                        onTap: () => _handleQuickAction('Mes Candidatures'),
-                      ),
-                      _buildQuickActionCard(
-                        icon: Icons.gavel,
-                        label: 'Litige',
-                        onTap: () => _handleQuickAction('Litige'),
-                      ),
-                    ],
-                  ),
+                    ),
+                    SizedBox(height: screenHeight < 700 ? screenHeight * 0.005 : screenHeight * 0.01),
+
+                    // Grille 2x2 des actions rapides
+                    GridView.count(
+                      shrinkWrap: true,
+                      crossAxisCount: 2,
+                      crossAxisSpacing: cardSpacing,
+                      mainAxisSpacing: cardSpacing,
+                      childAspectRatio: cardAspectRatio,
+                      physics: const NeverScrollableScrollPhysics(),
+                      children: <Widget>[
+                        _buildQuickActionCard(
+                          icon: Icons.assignment_turned_in,
+                          label: 'Missions Disponibles',
+                          onTap: () => _handleQuickAction('Missions Disponibles'),
+                        ),
+                        _buildQuickActionCard(
+                          icon: Icons.receipt_long,
+                          label: 'Historiques Paiements',
+                          onTap: () => _handleQuickAction('Historiques Paiements'),
+                        ),
+                        _buildQuickActionCard(
+                          icon: Icons.library_books,
+                          label: 'Mes Candidatures',
+                          onTap: () => _handleQuickAction('Mes Candidatures'),
+                        ),
+                        _buildQuickActionCard(
+                          icon: Icons.gavel,
+                          label: 'Litige',
+                          onTap: () => _handleQuickAction('Litige'),
+                        ),
+                      ],
+                    ),
 
                     SizedBox(height: screenHeight < 700 ? screenHeight * 0.005 : screenHeight * 0.015),
                   ],
@@ -239,9 +241,19 @@ class _HomeJeuneScreenState extends State<HomeJeuneScreen> {
       bottomNavigationBar: CustomBottomNavBar(
         initialIndex: _selectedIndex,
         onItemSelected: (index) {
+          if (index == 0) {
+            // Déjà sur Accueil
+            return;
+          }
+          if (index == 3) {
+            // Aller vers Discussions
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (context) => const MessageConversationScreen()),
+            );
+            return;
+          }
           setState(() {
             _selectedIndex = index;
-            // ⚠️ Logique future de navigation entre les pages
           });
         },
       ),

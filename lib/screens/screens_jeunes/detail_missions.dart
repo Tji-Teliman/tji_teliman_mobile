@@ -1,11 +1,12 @@
-// Fichier : lib/screens/detail_missions.dart
-
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+// Importation nécessaire pour Google Maps
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 // ⚠️ Assurez-vous d'importer le bon chemin pour le CustomHeader
 import '../../widgets/custom_header.dart'; 
 import '../../widgets/custom_bottom_nav_bar.dart'; // Si vous avez une barre de navigation en bas
+import 'motivation.dart';
 
 // --- COULEURS ET CONSTANTES (réutilisées depuis missions_screens.dart) ---
 const Color primaryGreen = Color(0xFF10B981); 
@@ -13,11 +14,69 @@ const Color darkGreen = Color(0xFF00C78C);
 const Color primaryBlue = Color(0xFF2563EB); 
 const Color bodyBackgroundColor = Color(0xFFF5F5F5); 
 
+// Widget dédié à l'affichage de la carte
+class MapMissionCard extends StatelessWidget {
+  final LatLng location;
+
+  const MapMissionCard({super.key, required this.location});
+
+  @override
+  Widget build(BuildContext context) {
+    // Hauteur fixe pour la carte (ajustez selon votre design)
+    const double mapHeight = 200.0;
+    
+    // Marqueur représentant la mission
+    final Set<Marker> markers = {
+      Marker(
+        markerId: const MarkerId('missionLocation'),
+        position: location,
+        infoWindow: const InfoWindow(title: 'Lieu de la Mission'),
+        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
+      ),
+    };
+
+    return Container(
+      height: mapHeight,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(15),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(15),
+        child: GoogleMap(
+          initialCameraPosition: CameraPosition(
+            target: location,
+            zoom: 15, // Niveau de zoom proche
+          ),
+          markers: markers,
+          zoomControlsEnabled: false,
+          mapType: MapType.normal,
+          // La gestion du contrôleur (MapController) n'est pas nécessaire pour une carte statique
+          onMapCreated: (GoogleMapController controller) {
+            // Optionnel: vous pouvez stocker le contrôleur ici si vous voulez le manipuler plus tard
+          },
+        ),
+      ),
+    );
+  }
+}
+
 class DetailMissionScreen extends StatelessWidget {
   // Vous pouvez passer l'ID ou les données de la mission ici
   final Map<String, dynamic> missionData;
 
   const DetailMissionScreen({super.key, required this.missionData});
+
+  // Coordonnées de repli (si les données réelles sont manquantes)
+  // J'utilise ici un exemple de localisation à Bamako.
+  static const LatLng _fallbackLocation = LatLng(12.639232, -8.002888); 
 
   // Helper pour afficher les étoiles
   Widget _buildRatingStars(double rating) {
@@ -37,19 +96,27 @@ class DetailMissionScreen extends StatelessWidget {
   }
 
   // Helper pour les informations sous la description (Localisation, Durée, Date Limite)
+  // NOTE: Icône en noir (Colors.black)
   Widget _buildDetailIcon({required IconData icon, required String label}) {
     return Column(
+      mainAxisSize: MainAxisSize.min, // S'assure que la colonne prend le moins d'espace vertical
       children: [
-        Icon(icon, color: primaryBlue, size: 28),
+        // Icône en NOIR, comme demandé
+        Icon(icon, color: Colors.black, size: 28), 
         const SizedBox(height: 4),
-        Text(
-          label,
-          style: GoogleFonts.poppins(
-            fontSize: 11,
-            fontWeight: FontWeight.w500,
-            color: Colors.black54,
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4.0),
+          child: Text(
+            label,
+            style: GoogleFonts.poppins(
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+              color: Colors.black54,
+            ),
+            textAlign: TextAlign.center,
+            maxLines: 2, // Limite le texte pour qu'il ne dépasse pas le trait de séparation
+            overflow: TextOverflow.ellipsis,
           ),
-          textAlign: TextAlign.center,
         ),
       ],
     );
@@ -80,11 +147,19 @@ class DetailMissionScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 1. Logique pour extraire les coordonnées réelles
+    // ⚠️ COORDONNÉES DE DÉMONSTRATION: Si missionData ne contient pas lat/lng, 
+    // les valeurs par défaut sont utilisées pour afficher la carte.
+    final double? lat = missionData['latitude'] as double? ?? _fallbackLocation.latitude;
+    final double? lng = missionData['longitude'] as double? ?? _fallbackLocation.longitude;
+    
+    // Le point de localisation de la mission
+    final LatLng missionLocation = LatLng(lat!, lng!);
+      
     return Scaffold(
       backgroundColor: bodyBackgroundColor,
       
       // 1. Header Personnalisé
-      // Note: Le CustomHeader implémente PreferredSizeWidget, il est donc parfait pour 'appBar'
       appBar: CustomHeader(
         title: missionData['missionTitle'] ?? 'Aide Déménagement',
         customRightWidget: const Icon(
@@ -208,16 +283,15 @@ class DetailMissionScreen extends StatelessWidget {
                   const SizedBox(height: 10),
                   _buildRequirement('Force physique à sécurité'),
                   _buildRequirement('Disponibilité le matin'),
-                  // Vous pouvez ajouter d'autres exigences ici
                 ],
               ),
             ),
             
             const SizedBox(height: 20),
 
-            // --- SECTION 3 : INFOS HORAIRES / LOCALISATION ---
+            // --- SECTION 3 : INFOS HORAIRES / LOCALISATION (Modifiée avec séparateurs) ---
             Container(
-              padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 20),
+              padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 10),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(15),
@@ -229,24 +303,68 @@ class DetailMissionScreen extends StatelessWidget {
                   ),
                 ],
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  _buildDetailIcon(
-                    icon: Icons.location_on_outlined, 
-                    label: missionData['location'] ?? 'Kalaban Coura',
-                  ),
-                  _buildDetailIcon(
-                    icon: Icons.access_time, 
-                    label: missionData['duration'] ?? 'Estimé: 3heures',
-                  ),
-                  _buildDetailIcon(
-                    icon: Icons.calendar_today_outlined, 
-                    label: missionData['dateLimit'] ?? 'Date Limite: 25/10/23',
-                  ),
-                ],
+              child: IntrinsicHeight( // Permet aux VerticalDivider de prendre la hauteur maximale
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    // 1. Localisation
+                    Expanded(
+                      child: _buildDetailIcon(
+                        // Afficher les coordonnées de démo si l'adresse textuelle n'est pas fournie
+                        icon: Icons.location_on_outlined, 
+                        label: missionData['location'] ?? 'Kalaban Coura (Lat: ${missionLocation.latitude.toStringAsFixed(3)})',
+                      ),
+                    ),
+                    
+                    // Trait de séparation
+                    const VerticalDivider(
+                      width: 24, // Espace autour du trait
+                      thickness: 1, 
+                      color: Color(0xFFE5E7EB), // Une couleur de trait légère
+                    ),
+
+                    // 2. Durée
+                    Expanded(
+                      child: _buildDetailIcon(
+                        icon: Icons.access_time, 
+                        label: missionData['duration'] ?? 'Estimé: 3heures',
+                      ),
+                    ),
+
+                    // Trait de séparation
+                    const VerticalDivider(
+                      width: 24, // Espace autour du trait
+                      thickness: 1, 
+                      color: Color(0xFFE5E7EB),
+                    ),
+                    
+                    // 3. Date Limite
+                    Expanded(
+                      child: _buildDetailIcon(
+                        icon: Icons.calendar_today_outlined, 
+                        label: missionData['dateLimit'] ?? 'Date Limite: 25/10/23',
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
+            
+            const SizedBox(height: 20),
+
+            // --- SECTION 4 : AFFICHAGE DE LA CARTE GOOGLE MAPS ---
+            Text(
+              'Localisation sur la Carte',
+              style: GoogleFonts.poppins(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
+            ),
+            const SizedBox(height: 10),
+            
+            // Inclusion du nouveau widget de carte, utilisant les coordonnées réelles ou de repli
+            MapMissionCard(location: missionLocation),
             
             const SizedBox(height: 20),
             
@@ -275,7 +393,12 @@ class DetailMissionScreen extends StatelessWidget {
             height: 50,
             child: ElevatedButton(
               onPressed: () {
-                // Logique de postulation
+                final String title = (missionData['missionTitle'] as String?) ?? 'Aide Déménagement';
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => MotivationScreen(missionTitle: title),
+                  ),
+                );
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: primaryGreen, 
