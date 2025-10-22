@@ -3,6 +3,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'screens/splash_screen.dart';
 import 'screens/screens_jeunes/missions_screen.dart';
 import 'screens/screens_jeunes/home_jeune.dart';
+import 'package:tji_teliman_mobile/screens/screens_jeunes/profil_completion_screen.dart';
 
 Future<void> main() async {
   // Assure que les widgets sont initialisés
@@ -28,7 +29,7 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
       // L'écran de démarrage est défini ici
-      home: const HomeJeuneScreen(),
+      home: const ProfilCompletionScreen(),
       debugShowCheckedModeBanner: false,
     );
   }
