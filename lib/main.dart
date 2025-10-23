@@ -4,6 +4,7 @@ import 'package:tji_teliman_mobile/screens/screens_jeunes/centre_aide.dart';
 import 'package:tji_teliman_mobile/screens/screens_jeunes/contacter_nous.dart';
 import 'package:tji_teliman_mobile/screens/screens_jeunes/faq_compte_profil.dart';
 import 'package:tji_teliman_mobile/screens/screens_jeunes/faq_paiement.dart';
+import 'package:tji_teliman_mobile/screens/screens_jeunes/faq_probleme_technique.dart';
 import 'package:tji_teliman_mobile/screens/screens_jeunes/faq_security.dart';
 import 'package:tji_teliman_mobile/screens/screens_jeunes/historique_litige.dart';
 import 'package:tji_teliman_mobile/screens/screens_jeunes/historique_paiement.dart';
@@ -42,7 +43,7 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
       // L'écran de démarrage est défini ici
-      home: const PostulerEtCandidature(),
+      home: const FaqProblemeTechnique(),
       debugShowCheckedModeBanner: false,
     );
   }
