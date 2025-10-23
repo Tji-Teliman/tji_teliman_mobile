@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:tji_teliman_mobile/screens/screens_jeunes/centre_aide.dart';
+import 'package:tji_teliman_mobile/screens/screens_jeunes/contacter_nous.dart';
 import 'package:tji_teliman_mobile/screens/screens_jeunes/historique_litige.dart';
 import 'package:tji_teliman_mobile/screens/screens_jeunes/historique_paiement.dart';
 import 'package:tji_teliman_mobile/screens/screens_jeunes/liste_litige.dart';
@@ -37,7 +38,7 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
       // L'écran de démarrage est défini ici
-      home: const CentreAide(),
+      home: const ContacterNous(),
       debugShowCheckedModeBanner: false,
     );
   }
