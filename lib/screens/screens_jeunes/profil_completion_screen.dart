@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:tji_teliman_mobile/widgets/profil/customAppBar.dart';
 import 'package:tji_teliman_mobile/widgets/profil/idCardUploadSection.dart';
 import 'package:tji_teliman_mobile/widgets/profil/profilePictureSection.dart';
-// Imports des widgets manquants dans la version initiale
+import 'package:tji_teliman_mobile/widgets/custom_header.dart'; 
 
 
 
@@ -51,7 +51,27 @@ class _ProfilCompletionScreenState extends State<ProfilCompletionScreen> {
       backgroundColor: backgroundLight,
       body: CustomScrollView(
         slivers: [
-          const CustomAppBar(), 
+          const CustomAppBar(),
+          // 1. UTILISATION DU NOUVEAU WIDGET CustomHeader ENVELOPPÉ DANS SliverAppBar
+          SliverAppBar(
+            // La propriété 'pinned: true' permet au header de rester visible lors du défilement
+            pinned: true, 
+            // La propriété 'toolbarHeight' doit correspondre à la taille préférée du CustomHeader
+            toolbarHeight: 0, 
+            automaticallyImplyLeading: false,
+            // FlexibleSpace est utilisé pour insérer un widget qui prend de la place dans le Sliver
+            flexibleSpace: CustomHeader(
+              title: 'Finaliser Mon Profil',
+              // Définit la fonction de retour (qui pop la page)
+              onBack: () => Navigator.of(context).pop(), 
+              // Vous pouvez ajouter une icône à droite si besoin
+              // rightIcon: Icons.notifications_none,
+            ),
+            // Définir la hauteur maximale/minimale pour SliverAppBar. 
+            // Nous utilisons PreferredSize du CustomHeader
+            expandedHeight: const CustomHeader(title: '').preferredSize.height,
+          ), 
+           
           
           SliverToBoxAdapter(
             child: Padding(
