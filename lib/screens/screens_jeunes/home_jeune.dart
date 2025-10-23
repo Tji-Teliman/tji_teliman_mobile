@@ -18,7 +18,7 @@ import 'mes_candidatures.dart';
 
 // --- COULEURS UTILISÉES DANS LE DESIGN ---
 const Color primaryGreen = Color(0xFF10B981); // Vert principal du logo/home
-const Color darkGreen = Color(0xFF069566);  // Vert plus foncé pour le dégradé (maintenu pour le boxShadow)
+const Color darkGreen = Color(0xFF069566); // Vert plus foncé pour le dégradé (maintenu pour le boxShadow)
 const Color primaryBlue = Color(0xFF2563EB); // Bleu pour les icônes d'action
 const Color badgeOrange = Color(0xFFF59E0B); // Orange pour l'alerte de profil
 const Color cardColor = Color(0xFFF0F4F8); // Couleur de fond des cartes (légèrement bleuté/gris)
@@ -94,7 +94,7 @@ class _HomeJeuneScreenState extends State<HomeJeuneScreen> {
     // Variables responsives
     final double screenHeight = MediaQuery.of(context).size.height;
     final double screenWidth = MediaQuery.of(context).size.width;
-    final double headerHeight = screenHeight * 0.3;
+    final double headerHeight = screenHeight * 0.3; // Hauteur initiale maintenue
     
     // Calculs responsives pour les cartes Actions Rapides
     final double cardSpacing = screenWidth * 0.03; // 3% de la largeur d'écran
@@ -112,15 +112,44 @@ class _HomeJeuneScreenState extends State<HomeJeuneScreen> {
       cardAspectRatio = 1.5;
     }
     
-    // Décalage responsive du body
-    final double bodyOffset = _showProfileAlert 
-      ? -(screenHeight * 0.04) // -4% de la hauteur d'écran
-      : (screenHeight * 0.015); // +1.5% de la hauteur d'écran
-
-    // ANCIENNE VARIABLE DE CHEVAUCHEMENT SUPPRIMÉE POUR FORCER LE DÉFILEMENT NORMAL
-    // const double alertOverlap = -20.0;
-
-
+    // Décalage responsive du body - AJUSTÉ pour coller au header et inclure l'arrondi
+    // Le body commence dans la zone du header pour créer l'effet de chevauchement arrondi.
+    // La valeur choisie doit faire monter le body (cadre blanc) juste au-dessus
+    // de la zone de la barre de recherche (pour l'effet d'arrondi) + gérer l'alerte.
+    
+    // Nous allons utiliser un 'Sliver' ou une approche similaire pour éviter la répétition
+    // du 'Transform.translate' et encapsuler tout le body dans un seul cadre blanc.
+    // MAIS comme la structure actuelle utilise 'SingleChildScrollView' et 'Transform.translate',
+    // nous allons encapsuler le body dans un 'Container' arrondi.
+    
+    // Calcul pour positionner le bas du header (qui contient la barre de recherche) :
+    // La barre de recherche est à 'bottom: 5' dans le header, donc la zone à arrondir
+    // est juste au-dessus de 'bottom: 5'. On cible le bas du header.
+    
+    // Pour coller sans espace et faire l'arrondi, nous allons utiliser une hauteur fixe 
+    // comme dans CustomHeader (80.0 pour l'arrondi de 60) et repositionner le body
+    // en conséquence.
+    
+    // La méthode 'build' doit être modifiée pour utiliser la nouvelle structure.
+    
+    // Hauteur de l'arrondi (inspiré de CustomHeader): 80px 
+    const double roundedBodyOverlap = 80.0;
+    final double bodyInitialOffset = headerHeight - roundedBodyOverlap;
+    
+    // L'alerte de profil chevauche le header
+    final double alertOffset = _showProfileAlert ? 55.0 : 0.0;
+    // Le décalage total doit être ajusté pour l'alerte (si elle est affichée)
+    // Nous allons gérer l'alerte DANS le header.
+    
+    // On simplifie l'approche: le header s'occupe de tout ce qui est bleu,
+    // et le body s'occupe du cadre blanc arrondi.
+    
+    // --- NOUVELLE LOGIQUE DE MISE EN PAGE ---
+    
+    // Décalage nécessaire pour que le cadre blanc arrondi remonte sur le header
+    // comme dans l'image. 
+    // On va fixer la hauteur du header à 'headerHeight' et faire remonter le body.
+    
     return Scaffold(
       key: _scaffoldKey, // Ajout de la clé pour contrôler le drawer
       backgroundColor: bodyBackgroundColor,
@@ -135,111 +164,128 @@ class _HomeJeuneScreenState extends State<HomeJeuneScreen> {
         child: Column(
           children: <Widget>[
 
-            // 1. Le Header Stylisé (défile)
+            // 1. Le Header Stylisé (non arrondi, avec image, défile)
             _buildHeader(context, headerHeight),
-
-            // 2. L'ALERTE DE PROFIL INCOMPLET (ENTRE LE HEADER ET LE BODY)
-            if (_showProfileAlert)
-              Transform.translate(
-                offset: const Offset(0, -55), // Décalage vers le haut pour rentrer dans le header
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 0.0),
-                  child: _buildProfileAlert(),
-                ),
-
-              ),
-
-            // 3. Corps principal
+            
+            // 2. Le Cadre Blanc Arrondi (qui contient tout le body)
+            // Le décalage est ajusté pour que l'arrondi de 60px remonte sur le header
             Transform.translate(
-              offset: Offset(0, bodyOffset), // Décalage responsive
-              child: Padding(
-                padding: EdgeInsets.fromLTRB(screenWidth * 0.05, 0.0, screenWidth * 0.05, 0.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-
-                    // B. SECTION APERÇUS
-                    Text(
-                      'Aperçus',
-                      style: GoogleFonts.poppins(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black,
+              // Décalage de -60.0 (basé sur le CustomHeader Radius.circular(60))
+              offset: const Offset(0, -50.0), 
+              child: Container(
+                decoration: const BoxDecoration(
+                  color: Colors.white, // Le cadre blanc 
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(60), // Rayon de 60px (comme CustomHeader)
+                    topRight: Radius.circular(60), // Rayon de 60px (comme CustomHeader)
+                  ),
+                ),
+                width: screenWidth, // Prend toute la largeur
+                child: Padding(
+                  // On retire le padding vertical supérieur et on ajoute un léger padding pour le contenu
+                  // On ajoute un padding Top pour le contenu (au lieu de l'ancienne translation)
+                  padding: EdgeInsets.fromLTRB(
+                    screenWidth * 0.05, 
+                    20.0, // Espace pour l'esthétique sous l'arrondi
+                    screenWidth * 0.05, 
+                    0.0
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                    
+                      // 2. L'ALERTE DE PROFIL INCOMPLET (Déplacée et réajustée)
+                      if (_showProfileAlert)
+                        // On supprime le Transform.translate et on utilise un Padding pour l'espacement visuel
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 20.0),
+                          child: _buildProfileAlert(),
+                        ),
+                      // Le reste du body
+                      
+                      // B. SECTION APERÇUS
+                      Text(
+                        'Aperçus',
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 10),
+                      const SizedBox(height: 10),
 
-                    Row(
-                      children: <Widget>[
-                        // Carte 1: Missions Accomplies
-                        Expanded(
-                          child: _buildStatCard(
-                            icon: Icons.check_circle_outline,
-                            value: missionsAccomplies.toString(),
-                            label: 'Missions Accomplies',
-                            color: primaryGreen,
+                      Row(
+                        children: <Widget>[
+                          // Carte 1: Missions Accomplies
+                          Expanded(
+                            child: _buildStatCard(
+                              icon: Icons.check_circle_outline,
+                              value: missionsAccomplies.toString(),
+                              label: 'Missions Accomplies',
+                              color: primaryGreen,
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 15),
-                        // Carte 2: Note
-                        Expanded(
-                          child: _buildStatCard(
-                            icon: Icons.star_outline,
-                            value: note,
-                            label: 'Note',
-                            color: badgeOrange,
+                          const SizedBox(width: 15),
+                          // Carte 2: Note
+                          Expanded(
+                            child: _buildStatCard(
+                              icon: Icons.star_outline,
+                              value: note,
+                              label: 'Note',
+                              color: badgeOrange,
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-
-                    SizedBox(height: screenHeight < 700 ? screenHeight * 0.01 : screenHeight * 0.02),
-
-                    // C. SECTION ACTIONS RAPIDES
-                    Text(
-                      'ACTIONS RAPIDES',
-                      style: GoogleFonts.poppins(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black,
+                        ],
                       ),
-                    ),
-                    SizedBox(height: screenHeight < 700 ? screenHeight * 0.005 : screenHeight * 0.01),
 
-                    // Grille 2x2 des actions rapides
-                    GridView.count(
-                      shrinkWrap: true,
-                      crossAxisCount: 2,
-                      crossAxisSpacing: cardSpacing,
-                      mainAxisSpacing: cardSpacing,
-                      childAspectRatio: cardAspectRatio,
-                      physics: const NeverScrollableScrollPhysics(),
-                      children: <Widget>[
-                        _buildQuickActionCard(
-                          icon: Icons.assignment_turned_in,
-                          label: 'Missions Disponibles',
-                          onTap: () => _handleQuickAction('Missions Disponibles'),
-                        ),
-                        _buildQuickActionCard(
-                          icon: Icons.receipt_long,
-                          label: 'Historiques Paiements',
-                          onTap: () => _handleQuickAction('Historiques Paiements'),
-                        ),
-                        _buildQuickActionCard(
-                          icon: Icons.library_books,
-                          label: 'Mes Candidatures',
-                          onTap: () => _handleQuickAction('Mes Candidatures'),
-                        ),
-                        _buildQuickActionCard(
-                          icon: Icons.gavel,
-                          label: 'Litige',
-                          onTap: () => _handleQuickAction('Litige'),
-                        ),
-                      ],
-                    ),
+                      SizedBox(height: screenHeight < 700 ? screenHeight * 0.01 : screenHeight * 0.02),
 
-                    SizedBox(height: screenHeight < 700 ? screenHeight * 0.005 : screenHeight * 0.015),
-                  ],
+                      // C. SECTION ACTIONS RAPIDES
+                      Text(
+                        'ACTIONS RAPIDES',
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                        ),
+                      ),
+                      SizedBox(height: screenHeight < 700 ? screenHeight * 0.005 : screenHeight * 0.01),
+
+                      // Grille 2x2 des actions rapides
+                      GridView.count(
+                        shrinkWrap: true,
+                        crossAxisCount: 2,
+                        crossAxisSpacing: cardSpacing,
+                        mainAxisSpacing: cardSpacing,
+                        childAspectRatio: cardAspectRatio,
+                        physics: const NeverScrollableScrollPhysics(),
+                        children: <Widget>[
+                          _buildQuickActionCard(
+                            icon: Icons.assignment_turned_in,
+                            label: 'Missions Disponibles',
+                            onTap: () => _handleQuickAction('Missions Disponibles'),
+                          ),
+                          _buildQuickActionCard(
+                            icon: Icons.receipt_long,
+                            label: 'Historiques Paiements',
+                            onTap: () => _handleQuickAction('Historiques Paiements'),
+                          ),
+                          _buildQuickActionCard(
+                            icon: Icons.library_books,
+                            label: 'Mes Candidatures',
+                            onTap: () => _handleQuickAction('Mes Candidatures'),
+                          ),
+                          _buildQuickActionCard(
+                            icon: Icons.gavel,
+                            label: 'Litige',
+                            onTap: () => _handleQuickAction('Litige'),
+                          ),
+                        ],
+                      ),
+
+                      SizedBox(height: screenHeight < 700 ? screenHeight * 0.005 : screenHeight * 0.015),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -277,35 +323,40 @@ class _HomeJeuneScreenState extends State<HomeJeuneScreen> {
     );
   }
 
-  // --------------------------------------------------------------------------
-  // --- WIDGETS COMPOSANTS ---
-  // --------------------------------------------------------------------------
+// --------------------------------------------------------------------------
+// --- WIDGETS COMPOSANTS ---
+// --------------------------------------------------------------------------
 
-  // Widget 1: Le Header Stylisé
+// Widget 1: Le Header Stylisé (MODIFIÉ)
+// Le header n'a plus de coins arrondis en bas, il est plein.
+// L'arrondi est maintenant géré par le corps principal qui remonte.
   Widget _buildHeader(BuildContext context, double height) {
     // NOTE: Le Header utilise un Stack pour positionner ses éléments internes.
     // Il est lui-même dans le SingleChildScrollView.
     return Container(
-      height: height,
+      // La hauteur est conservée pour maintenir la taille du header.
+      height: height, 
       width: double.infinity,
-      clipBehavior: Clip.antiAlias,
+      // On retire le 'clipBehavior: Clip.antiAlias' pour éviter de couper l'ombre
+      // sur les côtés s'il y en avait, mais il est préférable de le laisser si le 
+      // design final l'exige. Retiré pour l'instant car l'image n'a pas besoin d'arrondi.
+      
       decoration: BoxDecoration(
-        // --- DÉBUT MODIFICATION: Remplacement du dégradé par l'image de fond header_2.png ---
+        // --- MODIFICATION: Remplacement du dégradé par l'image de fond header_home.png ---
         image: const DecorationImage(
           image: AssetImage('assets/images/header_home.png'), // Nouvelle image de fond
           fit: BoxFit.cover, // S'assure que l'image couvre l'espace
         ),
-        // --- FIN MODIFICATION DU FOND ---
-
+        // --- MODIFICATION: SUPPRESSION de l'arrondi en BAS ---
         borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(40),
-          topRight: Radius.circular(40),
-          bottomLeft: Radius.circular(40),
-          bottomRight: Radius.circular(40),
+          topLeft: Radius.circular(0), // Retiré
+          topRight: Radius.circular(0), // Retiré
+          bottomLeft: Radius.circular(0), // Retiré
+          bottomRight: Radius.circular(0), // Retiré
         ),
+        // On laisse le BoxShadow pour l'esthétique générale
         boxShadow: [
           BoxShadow(
-            // L'ombre peut être ajustée car la couleur de fond a changé.
             color: Colors.black.withOpacity(0.3),
             blurRadius: 10,
             offset: const Offset(0, 5),
@@ -330,6 +381,7 @@ class _HomeJeuneScreenState extends State<HomeJeuneScreen> {
           ),
 
           // 1. Logo (POSITIONNÉ EN HAUT)
+          // ... (Pas de modification ici) ...
           Positioned(
             top: 45, // Position du logo maintenue
             left: 20,
@@ -357,6 +409,7 @@ class _HomeJeuneScreenState extends State<HomeJeuneScreen> {
           ),
 
           // 2. Icônes de notification et menu (POSITIONNÉES PLUS HAUT)
+          // ... (Pas de modification ici) ...
           Positioned(
             top: 45, // Position plus haute pour les icônes
             right: 20,
@@ -384,6 +437,7 @@ class _HomeJeuneScreenState extends State<HomeJeuneScreen> {
           ),
 
           // 2. Texte de Bienvenue (POSITIONNÉ EN BAS DU HEADER)
+          // ... (Pas de modification ici) ...
           Positioned(
             top: height * 0.5, // Position encore plus bas dans le header
             left: 20,
@@ -417,6 +471,7 @@ class _HomeJeuneScreenState extends State<HomeJeuneScreen> {
           ),
 
           // 3. Barre de Recherche (POSITIONNÉ EN BAS, LARGEUR RÉDUITE)
+          // ... (Pas de modification ici) ...
           Positioned(
             bottom: 5,
             left: 20,
@@ -450,8 +505,9 @@ class _HomeJeuneScreenState extends State<HomeJeuneScreen> {
       ),
     );
   }
-
+  
   // Widget 2: Alerte de Profil Incomplet
+  // ... (PAS DE MODIFICATION) ...
   Widget _buildProfileAlert() {
     return Container(
       // Pas de marges horizontales car elles sont gérées par Padding
@@ -522,19 +578,20 @@ class _HomeJeuneScreenState extends State<HomeJeuneScreen> {
   }
 
   // Widget 3: Carte de Statistique (Missions/Note) - Taille réduite
+  // ... (PAS DE MODIFICATION) ...
   Widget _buildStatCard({required IconData icon, required String value, required String label, required Color color}) {
     return Container(
       padding: const EdgeInsets.all(10.0), // Réduit de 15.0 à 10.0
       decoration: BoxDecoration(
         color: const Color(0xFFe6f0f9), // Couleur #e6f0f9
         borderRadius: BorderRadius.circular(15), // Réduit de 15 à 12
-         boxShadow: [
-           BoxShadow(
-             color: Colors.black.withOpacity(0.09),
-             blurRadius: 8, // Réduit de 8 à 6
-             offset: const Offset(0, 4), // Ombre seulement en bas
-           ),
-         ],
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.09),
+              blurRadius: 8, // Réduit de 8 à 6
+              offset: const Offset(0, 4), // Ombre seulement en bas
+            ),
+          ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -568,6 +625,7 @@ class _HomeJeuneScreenState extends State<HomeJeuneScreen> {
   }
 
   // Widget 4: Carte d'Action Rapide Responsive
+  // ... (PAS DE MODIFICATION) ...
   Widget _buildQuickActionCard({required IconData icon, required String label, required VoidCallback onTap}) {
     final double screenHeight = MediaQuery.of(context).size.height;
     final double screenWidth = MediaQuery.of(context).size.width;
@@ -631,4 +689,3 @@ class _HomeJeuneScreenState extends State<HomeJeuneScreen> {
     );
   }
 }
-
