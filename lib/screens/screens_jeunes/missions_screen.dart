@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-// ⚠️ Assurez-vous que ce chemin d'importation est correct.
 import '../../widgets/custom_bottom_nav_bar.dart'; 
 import '../../widgets/custom_header.dart';
 import 'detail_missions.dart';
