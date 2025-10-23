@@ -15,6 +15,10 @@ import 'message_conversation.dart';
 import 'notifications.dart';
 // Import de la page Mes Candidatures
 import 'mes_candidatures.dart';
+// Import des pages pour la navigation
+import 'liste_litige.dart';
+import 'historique_paiement.dart';
+import 'finaliser_profil.dart';
 
 // --- COULEURS UTILISÉES DANS LE DESIGN ---
 const Color primaryGreen = Color(0xFF10B981); // Vert principal du logo/home
@@ -50,19 +54,9 @@ class _HomeJeuneScreenState extends State<HomeJeuneScreen> {
       _showProfileAlert = false; // Le pop-up disparaît automatiquement
     });
 
-    // ⚠️ Logique future : Rediriger vers la page de profil
-    // if (mounted) {
-    //    Navigator.of(context).push(
-    //      MaterialPageRoute(builder: (context) => const ProfileScreen()),
-    //    );
-    // }
-
-    // Pour l'instant, on affiche une simple confirmation
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text("Alerte de profil masquée. Redirection vers le profil future."),
-        duration: Duration(seconds: 2),
-      ),
+    // Navigation vers la page de finalisation du profil
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (context) => const FinaliserProfilScreen()),
     );
   }
 
@@ -77,6 +71,16 @@ class _HomeJeuneScreenState extends State<HomeJeuneScreen> {
       // Navigation vers la page mes candidatures
       Navigator.of(context).push(
         MaterialPageRoute(builder: (context) => const MesCandidaturesScreen()),
+      );
+    } else if (action == 'Historiques Paiements') {
+      // Navigation vers la page historique paiements
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (context) => const HistoriquePaiement()),
+      );
+    } else if (action == 'Litige') {
+      // Navigation vers la page liste litiges
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (context) => const ListeLitige()),
       );
     } else {
       // Pour les autres actions, afficher un message
@@ -167,14 +171,14 @@ class _HomeJeuneScreenState extends State<HomeJeuneScreen> {
             // 1. Le Header Stylisé (non arrondi, avec image, défile)
             _buildHeader(context, headerHeight),
             
-            // 2. Le Cadre Blanc Arrondi (qui contient tout le body)
+            // 2. Le Corps Arrondi avec bodyBackgroundColor
             // Le décalage est ajusté pour que l'arrondi de 60px remonte sur le header
             Transform.translate(
               // Décalage de -60.0 (basé sur le CustomHeader Radius.circular(60))
               offset: const Offset(0, -50.0), 
               child: Container(
                 decoration: const BoxDecoration(
-                  color: Colors.white, // Le cadre blanc 
+                  color: bodyBackgroundColor, // Couleur du corps de la page
                   borderRadius: BorderRadius.only(
                     topLeft: Radius.circular(60), // Rayon de 60px (comme CustomHeader)
                     topRight: Radius.circular(60), // Rayon de 60px (comme CustomHeader)

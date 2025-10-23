@@ -10,6 +10,7 @@ import 'package:tji_teliman_mobile/screens/screens_jeunes/signaler_screen.dart';
 import 'screens/splash_screen.dart';
 import 'screens/screens_jeunes/missions_screen.dart';
 import 'screens/screens_jeunes/home_jeune.dart';
+import 'screens/screens_jeunes/finaliser_profil.dart';
 import 'package:tji_teliman_mobile/screens/screens_jeunes/profil_completion_screen.dart';
 import 'package:tji_teliman_mobile/screens/screens_jeunes/signaler_screen.dart';
 
@@ -37,7 +38,7 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
       // L'écran de démarrage est défini ici
-      home: const CentreAide(),
+      home: const HomeJeuneScreen(),
       debugShowCheckedModeBanner: false,
     );
   }

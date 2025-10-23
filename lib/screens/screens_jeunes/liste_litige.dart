@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import '../../widgets/custom_header.dart';
+import 'signaler_screen.dart';
+import 'historique_litige.dart';
 
 
 
@@ -7,15 +10,7 @@ class ListeLitige extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Liste des Litiges',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        useMaterial3: true,
-      ),
-      home: const DisputeListScreen(),
-      debugShowCheckedModeBanner: false,
-    );
+    return const DisputeListScreen();
   }
 }
 
@@ -58,90 +53,55 @@ class DisputeListScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // La couleur primaire utilisée dans le design (bleu/cyan dégradé)
-    const Color primaryBlue = Color(0xFF007BFF); 
-    const Color accentBlue = Color(0xFF4DD0E1); // Couleur plus claire pour le dégradé
-
     return Scaffold(
-      backgroundColor: primaryBlue,
-      appBar: AppBar(
-        // Utilisation d'un dégradé pour l'AppBar pour correspondre au style
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [primaryBlue, accentBlue],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
-        ),
-        elevation: 0, 
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () {
-            // Logique de retour
-          },
-        ),
-        title: const Text(
-          'Litiges',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
-        ),
-        centerTitle: true,
+      backgroundColor: const Color(0xFFf6fcfc), // Couleur de fond du CustomHeader
+      appBar: CustomHeader(
+        title: 'Litiges',
+        onBack: () => Navigator.of(context).pop(),
       ),
       
       // Bouton Flottant (Floating Action Button)
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          // Logique pour aller à la page de création de litige
+          // Navigation vers la page signaler un litige
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (context) => const SignalerScreen()),
+          );
         },
-        backgroundColor: primaryBlue,
+        backgroundColor: const Color(0xFF2f9bcf), // Couleur du CustomHeader
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.all(Radius.circular(15.0)),
         ),
         child: const Icon(Icons.add, color: Colors.white, size: 30),
       ),
 
-      body: Column(
-        children: <Widget>[
-          // La carte blanche principale avec les coins supérieurs arrondis
-          Expanded(
-            child: Container(
-              width: double.infinity,
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(30.0)),
-              ),
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(20.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    // --- Titre de la section ---
-                    const Text(
-                      'Types de litiges',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
-                        color: Colors.black,
-                      ),
-                    ),
-                    const SizedBox(height: 15),
-
-                    // --- Liste des types de litiges ---
-                    ...typesDeLitiges.map((dispute) {
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 12.0),
-                        child: DisputeItemCard(dispute: dispute),
-                      );
-                    }).toList(),
-
-                    const SizedBox(height: 80), // Espace pour le FAB
-                  ],
-                ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(20.0, 20.0, 20.0, 20.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            // --- Titre de la section ---
+            const Text(
+              'Types de litiges',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+                color: Colors.black,
               ),
             ),
-          ),
-        ],
+            const SizedBox(height: 15),
+
+            // --- Liste des types de litiges ---
+            ...typesDeLitiges.map((dispute) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 12.0),
+                child: DisputeItemCard(dispute: dispute),
+              );
+            }).toList(),
+
+            const SizedBox(height: 80), // Espace pour le FAB
+          ],
+        ),
       ),
     );
   }
@@ -162,9 +122,9 @@ class DisputeItemCard extends StatelessWidget {
 
     return InkWell(
       onTap: () {
-        // Logique pour sélectionner ce type de litige (probablement naviguer)
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Type sélectionné: ${dispute.title}')),
+        // Navigation vers la page historique des litiges
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (context) => const HistoriqueLitige()),
         );
       },
       child: Container(

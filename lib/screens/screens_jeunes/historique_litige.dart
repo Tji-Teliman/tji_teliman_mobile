@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../widgets/custom_header.dart';
 
 
 
@@ -7,15 +8,7 @@ class HistoriqueLitige extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Historique des Litiges',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        useMaterial3: true,
-      ),
-      home: const DisputeHistoryScreen(),
-      debugShowCheckedModeBanner: false,
-    );
+    return const DisputeHistoryScreen();
   }
 }
 
@@ -51,65 +44,31 @@ class DisputeHistoryScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: customBlue, // Utilisation du bleu personnalisé comme couleur principale
-      appBar: AppBar(
-        // Dégradé pour l'AppBar
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [customBlue, accentColor],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
-        ),
-        elevation: 0, 
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () {
-            // Logique de retour
-          },
-        ),
-        title: const Text(
-          'Historique des Litiges',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
-        ),
-        centerTitle: true,
+      backgroundColor: const Color(0xFFf6fcfc), // Couleur de fond du CustomHeader
+      appBar: CustomHeader(
+        title: 'Historique des Litiges',
+        onBack: () => Navigator.of(context).pop(),
       ),
       
-      body: Column(
-        children: <Widget>[
-          // La carte blanche principale avec les coins supérieurs arrondis
-          Expanded(
-            child: Container(
-              width: double.infinity,
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(30.0)),
-              ),
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(20.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    // --- Section Filtres ---
-                    const FilterSection(),
-                    const SizedBox(height: 25),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(20.0, 20.0, 20.0, 20.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            // --- Section Filtres ---
+            const FilterSection(),
+            const SizedBox(height: 25),
 
-                    // --- Section Actifs ---
-                    const SectionTitle(title: 'Actifs'),
-                    ...activeDisputes.map((record) => DisputeCard(record: record)).toList(),
-                    const SizedBox(height: 30),
+            // --- Section Actifs ---
+            const SectionTitle(title: 'Actifs'),
+            ...activeDisputes.map((record) => DisputeCard(record: record)).toList(),
+            const SizedBox(height: 30),
 
-                    // --- Section Résolus & Fermés ---
-                    const SectionTitle(title: 'Résolus & Fermés'),
-                    ...resolvedDisputes.map((record) => DisputeCard(record: record)).toList(),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ],
+            // --- Section Résolus & Fermés ---
+            const SectionTitle(title: 'Résolus & Fermés'),
+            ...resolvedDisputes.map((record) => DisputeCard(record: record)).toList(),
+          ],
+        ),
       ),
     );
   }

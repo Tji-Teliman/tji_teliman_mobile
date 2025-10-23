@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../widgets/custom_header.dart';
 
 
 
@@ -7,15 +8,7 @@ class NoterRecruteur extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Évaluation du Recruteur',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        useMaterial3: true,
-      ),
-      home: const RecruiterEvaluationScreen(),
-      debugShowCheckedModeBanner: false,
-    );
+    return const RecruiterEvaluationScreen();
   }
 }
 
@@ -30,47 +23,15 @@ class RecruiterEvaluationScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: customBlue,
-      appBar: AppBar(
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [customBlue, accentColor],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
-        ),
-        elevation: 0, 
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () {
-            // Logique de retour
-          },
-        ),
-        title: const Text(
-          'Évaluer le Recruteur',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
-        ),
-        centerTitle: true,
+      backgroundColor: const Color(0xFFf6fcfc), // Couleur de fond du CustomHeader
+      appBar: CustomHeader(
+        title: 'Évaluer le Recruteur',
+        onBack: () => Navigator.of(context).pop(),
       ),
       
-      body: Column(
-        children: <Widget>[
-          Expanded(
-            child: Container(
-              width: double.infinity,
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(30.0)),
-              ),
-              child: const SingleChildScrollView(
-                padding: EdgeInsets.all(20.0),
-                child: EvaluationContent(),
-              ),
-            ),
-          ),
-        ],
+      body: const SingleChildScrollView(
+        padding: EdgeInsets.fromLTRB(20.0, 20.0, 20.0, 20.0),
+        child: EvaluationContent(),
       ),
     );
   }

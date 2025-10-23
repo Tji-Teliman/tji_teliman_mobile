@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../widgets/custom_header.dart';
 
 
 class HistoriquePaiement extends StatelessWidget {
@@ -6,15 +7,7 @@ class HistoriquePaiement extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Mes Paiements',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        useMaterial3: true,
-      ),
-      home: const MyPaymentsScreen(),
-      debugShowCheckedModeBanner: false,
-    );
+    return const MyPaymentsScreen();
   }
 }
 
@@ -82,85 +75,53 @@ class _MyPaymentsScreenState extends State<MyPaymentsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: customBlue,
-      appBar: AppBar(
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [customBlue, accentColor],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
-        ),
-        elevation: 0, 
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () {
-            // Logique de retour
-          },
-        ),
-        title: const Text(
-          'Mes Paiements',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
-        ),
-        centerTitle: true,
+      backgroundColor: const Color(0xFFf6fcfc), // Couleur de fond du CustomHeader
+      appBar: CustomHeader(
+        title: 'Mes Paiements',
+        onBack: () => Navigator.of(context).pop(),
       ),
       
-      body: Column(
-        children: <Widget>[
-          Expanded(
-            child: Container(
-              width: double.infinity,
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(30.0)),
-              ),
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.only(top: 20.0, left: 20.0, right: 20.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    // --- Résumé Financier ---
-                    const FinancialSummaryCard(
-                      totalGains: '150.000 CFA',
-                      monthlyGains: '+ 45 000 CFA',
-                    ),
-                    const SizedBox(height: 20),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(20.0, 20.0, 20.0, 20.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            // --- Résumé Financier ---
+            const FinancialSummaryCard(
+              totalGains: '150.000 CFA',
+              monthlyGains: '+ 45 000 CFA',
+            ),
+            const SizedBox(height: 20),
 
-                    // --- Filtre Mois ---
-                    const MonthFilter(),
-                    const SizedBox(height: 20),
+            // --- Filtre Mois ---
+            const MonthFilter(),
+            const SizedBox(height: 20),
 
-                    // --- Historique Title ---
-                    const Text(
-                      'Historique',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 20,
-                        color: Colors.black87,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-
-                    // --- Liste des Transactions ---
-                    ListView.separated(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: transactions.length,
-                      separatorBuilder: (context, index) => const Divider(height: 1, color: Colors.grey),
-                      itemBuilder: (context, index) {
-                        return TransactionItem(transaction: transactions[index]);
-                      },
-                    ),
-                    // Espace final ajusté maintenant qu'il n'y a plus de barre de navigation
-                    const SizedBox(height: 20), 
-                  ],
-                ),
+            // --- Historique Title ---
+            const Text(
+              'Historique',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 20,
+                color: Colors.black87,
               ),
             ),
-          ),
-        ],
+            const SizedBox(height: 10),
+
+            // --- Liste des Transactions ---
+            ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: transactions.length,
+              separatorBuilder: (context, index) => const Divider(height: 1, color: Colors.grey),
+              itemBuilder: (context, index) {
+                return TransactionItem(transaction: transactions[index]);
+              },
+            ),
+            // Espace final ajusté maintenant qu'il n'y a plus de barre de navigation
+            const SizedBox(height: 20), 
+          ],
+        ),
       ),
       
       // --- bottomNavigationBar ENLEVÉ ---
@@ -291,30 +252,60 @@ class TransactionItem extends StatelessWidget {
   Color _getStatusColor(String status) {
     switch (status) {
       case 'Payé':
-        return Colors.lightGreen.shade400; // Vert
+        return Colors.green.shade600; // Vert foncé pour le texte
       case 'Réussi':
-        return customBlue; // Bleu
+        return Colors.blue.shade600; // Bleu foncé pour le texte
       case 'En attente':
-        return customOrange; // Orange
+        return Colors.orange.shade600; // Orange foncé pour le texte
       case 'Annulé':
-        return Colors.red.shade400; // Rouge
+        return Colors.red.shade600; // Rouge foncé pour le texte
       default:
-        return Colors.grey.shade400;
+        return Colors.grey.shade600;
+    }
+  }
+
+  // Fonction pour déterminer la couleur de fond du badge
+  Color _getStatusBackgroundColor(String status) {
+    switch (status) {
+      case 'Payé':
+        return Colors.green.shade100; // Vert clair pour le fond
+      case 'Réussi':
+        return Colors.blue.shade100; // Bleu clair pour le fond
+      case 'En attente':
+        return Colors.orange.shade100; // Orange clair pour le fond
+      case 'Annulé':
+        return Colors.red.shade100; // Rouge clair pour le fond
+      default:
+        return Colors.grey.shade100;
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final statusColor = _getStatusColor(transaction.status);
+    final statusBackgroundColor = _getStatusBackgroundColor(transaction.status);
     final isCredit = transaction.amount.startsWith('+');
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10.0),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8.0),
+      padding: const EdgeInsets.all(16.0),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8.0),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 3,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
       child: Column(
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
               // --- Titre et Date ---
               Expanded(
@@ -326,7 +317,7 @@ class TransactionItem extends StatelessWidget {
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
-                        color: Colors.black87,
+                        color: Colors.black,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -351,16 +342,16 @@ class TransactionItem extends StatelessWidget {
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
-                      color: isCredit ? Colors.green.shade600 : Colors.red.shade600,
+                      color: isCredit ? Colors.green.shade600 : Colors.black,
                     ),
                   ),
                   const SizedBox(height: 4),
                   // Badge de Statut
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: statusColor.withOpacity(0.15), 
-                      borderRadius: BorderRadius.circular(5),
+                      color: statusBackgroundColor,
+                      borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
                       transaction.status,
@@ -379,14 +370,13 @@ class TransactionItem extends StatelessWidget {
           // --- Bouton "Évaluer le recruteur" (si disponible) ---
           if (transaction.canEvaluate)
             Padding(
-              padding: const EdgeInsets.only(top: 10.0),
+              padding: const EdgeInsets.only(top: 12.0),
               child: Container(
                 width: double.infinity,
-                height: 40,
+                height: 36,
                 decoration: BoxDecoration(
-                  color: lightBlueButton,
+                  color: Colors.blue.shade600,
                   borderRadius: BorderRadius.circular(8.0),
-                  border: Border.all(color: Colors.blue.shade100),
                 ),
                 child: TextButton.icon(
                   onPressed: () {
@@ -395,11 +385,11 @@ class TransactionItem extends StatelessWidget {
                       const SnackBar(content: Text("Évaluer le recruteur..."))
                     );
                   },
-                  icon: const Icon(Icons.star, color: customBlue, size: 20),
+                  icon: const Icon(Icons.star, color: Colors.white, size: 18),
                   label: const Text(
                     'Évaluer le recruteur',
                     style: TextStyle(
-                      color: customBlue,
+                      color: Colors.white,
                       fontWeight: FontWeight.bold,
                       fontSize: 14,
                     ),

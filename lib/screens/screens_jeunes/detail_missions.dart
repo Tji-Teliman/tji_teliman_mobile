@@ -7,6 +7,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../widgets/custom_header.dart'; 
 import '../../widgets/custom_bottom_nav_bar.dart'; // Si vous avez une barre de navigation en bas
 import 'motivation.dart';
+import 'signaler_mission.dart';
 
 // --- COULEURS ET CONSTANTES (réutilisées depuis missions_screens.dart) ---
 const Color primaryGreen = Color(0xFF10B981); 
@@ -168,10 +169,18 @@ class DetailMissionScreen extends StatelessWidget {
         title: missionTitle,
         // Réduit légèrement la taille pour les titres sur 2 lignes uniquement
         useCompactStyle: isLongTitle,
-        customRightWidget: const Icon(
-          Icons.warning_amber_outlined,
-          color: Colors.white,
-          size: 24,
+        customRightWidget: GestureDetector(
+          onTap: () {
+            // Navigation vers la page signaler mission
+            Navigator.of(context).push(
+              MaterialPageRoute(builder: (context) => const SignalerMission()),
+            );
+          },
+          child: const Icon(
+            Icons.warning_amber_outlined,
+            color: Colors.white,
+            size: 24,
+          ),
         ),
         onBack: () => Navigator.of(context).pop(),
       ),

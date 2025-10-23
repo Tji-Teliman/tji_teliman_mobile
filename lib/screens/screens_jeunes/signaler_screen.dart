@@ -78,6 +78,8 @@ class DisputeFormContent extends StatelessWidget {
             focusedBorder: borderStyle.copyWith(
               borderSide: const BorderSide(color: Colors.blue, width: 2.0),
             ),
+            fillColor: Colors.white,
+            filled: true,
           ),
           items: const [
             DropdownMenuItem(value: 'paiement', child: Text('Litige de paiement')),
@@ -102,6 +104,8 @@ class DisputeFormContent extends StatelessWidget {
             focusedBorder: borderStyle.copyWith(
               borderSide: const BorderSide(color: Colors.blue, width: 2.0),
             ),
+            fillColor: Colors.white,
+            filled: true,
           ),
         ),
         const SizedBox(height: 25),
@@ -117,6 +121,7 @@ class DisputeFormContent extends StatelessWidget {
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 30),
             decoration: BoxDecoration(
+              color: Colors.white,
               border: Border.all(color: Colors.grey.shade300, width: 1.5),
               borderRadius: const BorderRadius.all(Radius.circular(10.0)),
             ),
@@ -151,6 +156,8 @@ class DisputeFormContent extends StatelessWidget {
             focusedBorder: borderStyle.copyWith(
               borderSide: const BorderSide(color: Colors.blue, width: 2.0),
             ),
+            fillColor: Colors.white,
+            filled: true,
           ),
           items: const [
             DropdownMenuItem(value: 'mission_1', child: Text('Mission #456 - Cuisine')),
