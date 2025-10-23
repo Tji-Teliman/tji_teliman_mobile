@@ -31,7 +31,7 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
       // L'écran de démarrage est défini ici
-      home: const SignalerScreen(),
+      home: const HomeJeuneScreen(),
       debugShowCheckedModeBanner: false,
     );
   }

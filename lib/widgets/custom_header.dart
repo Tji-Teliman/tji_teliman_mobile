@@ -114,28 +114,7 @@ const Color darkGrey = Colors.black54;
               child: Stack(
                 children: [
                   // Inner shadow en haut du cadre arrondi
-                  Positioned(
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    height: 28,
-                    child: IgnorePointer(
-                      child: Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [
-                              Colors.black.withOpacity(0.12),
-                              Colors.black.withOpacity(0.05),
-                              Colors.black.withOpacity(0.0),
-                            ],
-                            stops: const [0.0, 0.5, 1.0],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
+                 
                 ],
               ),
             ),

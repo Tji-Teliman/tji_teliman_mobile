@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../widgets/custom_header.dart';
 
 
 class SignalerScreen extends StatelessWidget {
@@ -6,16 +7,7 @@ class SignalerScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Formulaire de Litige',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        // Définit la couleur d'accent pour les éléments du formulaire comme le bouton
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.orange),
-        useMaterial3: true,
-      ),
-      home: const DisputeFormScreen(),
-    );
+    return const DisputeFormScreen();
   }
 }
 
@@ -24,53 +16,15 @@ class DisputeFormScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // La couleur de fond du Scaffold doit correspondre à la couleur de l'AppBar
-    // pour créer l'effet visuel de la carte blanche qui sort.
-    const Color primaryBlue = Color(0xFF007BFF); // Un bleu typique
-
     return Scaffold(
-      backgroundColor: primaryBlue,
-      appBar: AppBar(
-        backgroundColor: primaryBlue,
-        elevation: 0, // Enlève l'ombre sous l'AppBar
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () {
-            // Logique de retour
-          },
-        ),
-        title: const Text(
-          'Signaler un litige',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
-        ),
-        centerTitle: true,
+      backgroundColor: const Color(0xFFf6fcfc), // Couleur de fond du CustomHeader
+      appBar: CustomHeader(
+        title: 'Signaler un litige',
+        onBack: () => Navigator.of(context).pop(),
       ),
-      body: Column(
-        children: <Widget>[
-          // L'entête blanche avec les coins supérieurs arrondis
-          Expanded(
-            child: Container(
-              width: double.infinity,
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(30.0)),
-                // Ombre optionnelle pour détacher le conteneur du fond
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black12,
-                    blurRadius: 10.0,
-                    spreadRadius: 2.0,
-                  ),
-                ],
-              ),
-              // Le formulaire entier est défilable
-              child: const SingleChildScrollView(
-                padding: EdgeInsets.all(20.0),
-                child: DisputeFormContent(),
-              ),
-            ),
-          ),
-        ],
+      body: const SingleChildScrollView(
+        padding: EdgeInsets.fromLTRB(20.0, 20.0, 20.0, 20.0),
+        child: DisputeFormContent(),
       ),
     );
   }

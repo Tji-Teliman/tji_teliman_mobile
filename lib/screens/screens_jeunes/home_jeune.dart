@@ -146,6 +146,7 @@ class _HomeJeuneScreenState extends State<HomeJeuneScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 0.0),
                   child: _buildProfileAlert(),
                 ),
+
               ),
 
             // 3. Corps principal
@@ -630,3 +631,4 @@ class _HomeJeuneScreenState extends State<HomeJeuneScreen> {
     );
   }
 }
+
