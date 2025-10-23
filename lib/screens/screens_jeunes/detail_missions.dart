@@ -156,12 +156,18 @@ class DetailMissionScreen extends StatelessWidget {
     // Le point de localisation de la mission
     final LatLng missionLocation = LatLng(lat!, lng!);
       
+    // Titre de mission et détection d'un titre long (affiché sur 2 lignes)
+    final String missionTitle = missionData['missionTitle'] ?? 'Aide Déménagement';
+    final bool isLongTitle = missionTitle.length > 24; // seuil simple pour réduire la taille
+
     return Scaffold(
       backgroundColor: bodyBackgroundColor,
       
       // 1. Header Personnalisé
       appBar: CustomHeader(
-        title: missionData['missionTitle'] ?? 'Aide Déménagement',
+        title: missionTitle,
+        // Réduit légèrement la taille pour les titres sur 2 lignes uniquement
+        useCompactStyle: isLongTitle,
         customRightWidget: const Icon(
           Icons.warning_amber_outlined,
           color: Colors.white,

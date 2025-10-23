@@ -55,8 +55,7 @@ class _MessageConversationScreenState extends State<MessageConversationScreen> {
   // Widget pour la barre de recherche 
   Widget _buildSearchBar() {
     return Container(
-      // La hauteur de 40 est maintenue pour respecter la taille
-      height: 40,
+      height: 44,
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(25),
@@ -75,7 +74,7 @@ class _MessageConversationScreenState extends State<MessageConversationScreen> {
           hintStyle: GoogleFonts.poppins(color: darkGrey.withOpacity(0.7)),
           // Assure que le champ de texte prend toute la hauteur sans bordure
           border: InputBorder.none, 
-          contentPadding: const EdgeInsets.symmetric(vertical: 8),
+          contentPadding: const EdgeInsets.symmetric(vertical: 10),
         ),
         style: GoogleFonts.poppins(fontSize: 14, color: Colors.black87),
       ),
@@ -192,16 +191,16 @@ class _MessageConversationScreenState extends State<MessageConversationScreen> {
       // 1. HEADER personnalisé avec CustomHeader
       appBar: CustomHeader(
         title: 'Discussions',
-        rightIcon: Icons.more_horiz,
+        customRightWidget: const Padding(
+          padding: EdgeInsets.only(left: 14.0),
+          child: Icon(Icons.more_horiz, color: Colors.white, size: 24),
+        ),
         onBack: () {
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(builder: (context) => const HomeJeuneScreen()),
           );
         },
-        bottomWidget: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0), 
-          child: _buildSearchBar(),
-        ),
+        bottomWidget: _buildSearchBar(),
       ),
       
       // 2. CORPS de la Page : Liste des Conversations

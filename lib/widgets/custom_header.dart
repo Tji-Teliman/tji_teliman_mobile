@@ -7,7 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 const Color primaryBlue = Color(0xFF2563EB); 
 const Color darkGrey = Colors.black54;
 
-class CustomHeader extends StatelessWidget implements PreferredSizeWidget {
+ class CustomHeader extends StatelessWidget implements PreferredSizeWidget {
   final String title;
   final IconData? rightIcon; // Icône à droite (par exemple, la cloche pour notifications ou logo)
   final Widget? customRightWidget; // Peut être un logo ou une autre icône complexe
@@ -15,8 +15,9 @@ class CustomHeader extends StatelessWidget implements PreferredSizeWidget {
   final Widget? bottomWidget; // Pour la barre de recherche (facultatif)
   final bool useCompactStyle; // Nouveau: pour utiliser le style compact (comme CompactHeader)
   final Widget? leftWidget; // Nouveau: widget à gauche (comme avatar de profil)
+  final bool centerTitle; // Nouveau: permet d'aligner le titre à gauche au besoin
 
-  const CustomHeader({
+   const CustomHeader({
     super.key,
     required this.title,
     this.rightIcon,
@@ -25,13 +26,13 @@ class CustomHeader extends StatelessWidget implements PreferredSizeWidget {
     this.bottomWidget,
     this.useCompactStyle = false, // Par défaut, style normal
     this.leftWidget, // Widget à gauche (optionnel)
+     this.centerTitle = true, // Par défaut: titre centré
   });
 
   @override
-  // Hauteur adaptée à la nouvelle structure Stack
-  // 120.0 avec bottomWidget (header + corps)
-  // 80.0 sans bottomWidget (header seulement)
-  Size get preferredSize => Size.fromHeight(bottomWidget != null ? 120.0 : 80.0);
+  // Hauteur FIXE pour garantir l'espace du cadre arrondi sur toutes les pages
+  // Même sans bottomWidget, on réserve 120px afin d'éviter que le body ne recouvre le cadre arrondi
+  Size get preferredSize => const Size.fromHeight(120.0);
 
   @override
   Widget build(BuildContext context) {
@@ -40,11 +41,13 @@ class CustomHeader extends StatelessWidget implements PreferredSizeWidget {
         // Header bleu fixe
         Container(
           height: 120,
-          color: const Color(0xFF2e9dcd), // Couleur du header
+          color: const Color(0xFF2f9bcf), // Couleur du header
           child: SafeArea(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20.0),
-              child: Row(
+              padding: const EdgeInsets.fromLTRB(20.0, 0.0, 20.0, 0.0),
+              child: Transform.translate(
+                offset: const Offset(0, -16),
+                child: Row(
                 children: [
                   // Bouton retour
                   GestureDetector(
@@ -64,15 +67,15 @@ class CustomHeader extends StatelessWidget implements PreferredSizeWidget {
                   ],
                   
                   // Titre
-                  Expanded(
-                    child: Text(
+                   Expanded(
+                     child: Text(
                       title,
                       style: GoogleFonts.poppins(
                         color: Colors.white,
                         fontSize: useCompactStyle ? 20 : 22,
                         fontWeight: FontWeight.bold,
                       ),
-                      textAlign: TextAlign.center,
+                       textAlign: centerTitle ? TextAlign.center : TextAlign.left,
                     ),
                   ),
                   
@@ -82,8 +85,10 @@ class CustomHeader extends StatelessWidget implements PreferredSizeWidget {
                   else if (rightIcon != null)
                     Icon(rightIcon, color: Colors.white, size: 24),
                   
-                  const SizedBox(width: 35), // Espace pour équilibrer
+                  // Espace à droite: 0 si une icône est fournie, sinon 35 pour équilibrer
+                  SizedBox(width: (customRightWidget != null || rightIcon != null) ? 0 : 35),
                 ],
+              ),
               ),
             ),
           ),
@@ -94,9 +99,9 @@ class CustomHeader extends StatelessWidget implements PreferredSizeWidget {
           padding: const EdgeInsets.only(top: 80.0),
           child: Container(
             height: double.infinity,
-            decoration: BoxDecoration(
-              color: const Color(0xFFf6fcfc), // Couleur du corps
-              borderRadius: const BorderRadius.only(
+            decoration: const BoxDecoration(
+              color: Color(0xFFf6fcfc), // Couleur du corps
+              borderRadius: BorderRadius.only(
                 topLeft: Radius.circular(60),
                 topRight: Radius.circular(60),
               ),
@@ -106,15 +111,51 @@ class CustomHeader extends StatelessWidget implements PreferredSizeWidget {
                 topLeft: Radius.circular(60),
                 topRight: Radius.circular(60),
               ),
-              child: bottomWidget != null 
-                ? Padding(
-                    padding: const EdgeInsets.fromLTRB(20.0, 20.0, 20.0, 15.0),
-                    child: bottomWidget!,
-                  )
-                : null,
+              child: Stack(
+                children: [
+                  // Inner shadow en haut du cadre arrondi
+                  Positioned(
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: 28,
+                    child: IgnorePointer(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Colors.black.withOpacity(0.12),
+                              Colors.black.withOpacity(0.05),
+                              Colors.black.withOpacity(0.0),
+                            ],
+                            stops: const [0.0, 0.5, 1.0],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
+
+        // bottomWidget flottant entre le header bleu et le cadre arrondi
+        if (bottomWidget != null)
+          Positioned(
+            left: 50,
+            right: 50,
+            top: 70,
+            child: Material(
+              color: Colors.transparent,
+              elevation: 6,
+              shadowColor: Colors.black54,
+              borderRadius: BorderRadius.circular(25),
+              child: bottomWidget!,
+            ),
+          ),
       ],
     );
   }

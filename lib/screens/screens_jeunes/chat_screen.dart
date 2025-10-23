@@ -139,6 +139,7 @@ class _ChatScreenState extends State<ChatScreen> {
       appBar: CustomHeader(
         title: widget.interlocutorName,
         useCompactStyle: true,
+        centerTitle: false,
         leftWidget: const CircleAvatar(
           radius: 18,
           backgroundColor: Colors.white,

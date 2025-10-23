@@ -132,6 +132,30 @@ class _MissionsScreenState extends State<MissionsScreen> {
       appBar: CustomHeader(
         title: 'Toutes les Missions',
         onBack: () => Navigator.of(context).pop(),
+        bottomWidget: Container(
+          height: 44,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(25),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 5,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: TextField(
+            decoration: InputDecoration(
+              prefixIcon: const Icon(Icons.search, color: darkGrey),
+              hintText: 'Recherche',
+              hintStyle: GoogleFonts.poppins(color: darkGrey.withOpacity(0.7)),
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(vertical: 10),
+            ),
+            style: GoogleFonts.poppins(fontSize: 14, color: Colors.black87),
+          ),
+        ),
       ),
       
       // 2. Corps de la Page (Scrollable)
@@ -141,26 +165,8 @@ class _MissionsScreenState extends State<MissionsScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             
-            // Barre de recherche dans le cadre blanc
-            Container(
-              height: 45,
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.9),
-                borderRadius: BorderRadius.circular(25),
-                border: Border.all(color: lightGrey),
-              ),
-              child: const TextField(
-                decoration: InputDecoration(
-                  hintText: 'Recherche',
-                  hintStyle: TextStyle(color: Colors.black54),
-                  prefixIcon: Icon(Icons.search, color: darkGrey),
-                  border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(vertical: 10.0, horizontal: 10.0),
-                ),
-              ),
-            ),
-            
-            const SizedBox(height: 20), 
+            // La barre de recherche est désormais gérée par CustomHeader.bottomWidget
+            const SizedBox(height: 10), 
             
             // 2a. Section des Filtres (Tags) - Correction du débordement
             SingleChildScrollView(
@@ -217,7 +223,6 @@ class _MissionsScreenState extends State<MissionsScreen> {
                   }).toList(),
                 ),
               ),
-            ),
             
             // 2c. Le reste du contenu (missions standards)
             Column(
