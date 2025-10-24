@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:tji_teliman_mobile/screens/screens_jeunes/centre_aide.dart';
+import 'package:tji_teliman_mobile/screens/screens_jeunes/competences_parametre.dart';
 import 'package:tji_teliman_mobile/screens/screens_jeunes/conditions_generales.dart';
 import 'package:tji_teliman_mobile/screens/screens_jeunes/contacter_nous.dart';
 import 'package:tji_teliman_mobile/screens/screens_jeunes/faq_compte_profil.dart';
@@ -12,6 +13,7 @@ import 'package:tji_teliman_mobile/screens/screens_jeunes/historique_paiement.da
 import 'package:tji_teliman_mobile/screens/screens_jeunes/liste_litige.dart';
 import 'package:tji_teliman_mobile/screens/screens_jeunes/noter_recruteur.dart';
 import 'package:tji_teliman_mobile/screens/screens_jeunes/parametre.dart';
+import 'package:tji_teliman_mobile/screens/screens_jeunes/parametre_change_mdp.dart';
 import 'package:tji_teliman_mobile/screens/screens_jeunes/politique_et_confidenlite.dart';
 import 'package:tji_teliman_mobile/screens/screens_jeunes/postuler_et_candidature.dart';
 import 'package:tji_teliman_mobile/screens/screens_jeunes/signaler_mission.dart';
@@ -46,7 +48,7 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
       // L'écran de démarrage est défini ici
-      home: const Parametre(),
+      home: const CompetencesParametre(),
       debugShowCheckedModeBanner: false,
     );
   }
