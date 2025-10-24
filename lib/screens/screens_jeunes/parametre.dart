@@ -12,6 +12,18 @@ class ThemeManager with ChangeNotifier {
   }
 }
 
+// --- NOUVEAU: Gestionnaire d'état pour les notifications ---
+class NotificationManager with ChangeNotifier {
+  bool _notificationsEnabled = true; // Par défaut : activé
+
+  bool get notificationsEnabled => _notificationsEnabled;
+
+  void toggleNotifications(bool newValue) {
+    _notificationsEnabled = newValue;
+    notifyListeners();
+  }
+}
+
 
 class Parametre extends StatefulWidget {
   const Parametre({super.key});
@@ -22,17 +34,21 @@ class Parametre extends StatefulWidget {
 
 class _MyAppState extends State<Parametre> {
   final ThemeManager _themeManager = ThemeManager();
+  final NotificationManager _notificationManager = NotificationManager(); // NOUVEAU MANAGER
 
   @override
   void initState() {
     super.initState();
     // Écouter les changements du thème
     _themeManager.addListener(_onThemeChanged);
+    // Écouter les changements des notifications
+    _notificationManager.addListener(_onNotificationsChanged);
   }
 
   @override
   void dispose() {
     _themeManager.removeListener(_onThemeChanged);
+    _notificationManager.removeListener(_onNotificationsChanged);
     super.dispose();
   }
 
@@ -40,6 +56,12 @@ class _MyAppState extends State<Parametre> {
     // Rebuild l'application lorsque le thème change
     setState(() {});
   }
+  
+  void _onNotificationsChanged() {
+    // Rebuild l'application lorsque les notifications changent
+    setState(() {});
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -59,8 +81,11 @@ class _MyAppState extends State<Parametre> {
         scaffoldBackgroundColor: const Color(0xFF121212), // Fond sombre
       ),
       themeMode: _themeManager.themeMode,
-      // Passer le gestionnaire de thème à SettingsScreen
-      home: SettingsScreen(themeManager: _themeManager),
+      // Passer les gestionnaires à SettingsScreen
+      home: SettingsScreen(
+        themeManager: _themeManager,
+        notificationManager: _notificationManager, // PASSAGE DU NOUVEAU MANAGER
+      ),
       debugShowCheckedModeBanner: false,
     );
   }
@@ -94,7 +119,13 @@ class SettingItem {
 
 class SettingsScreen extends StatelessWidget {
   final ThemeManager themeManager;
-  const SettingsScreen({super.key, required this.themeManager});
+  final NotificationManager notificationManager; // NOUVELLE PROPRIÉTÉ
+  
+  const SettingsScreen({
+    super.key, 
+    required this.themeManager, 
+    required this.notificationManager,
+  });
 
   // Fonction pour afficher un message à la place d'une navigation réelle
   void _handleTap(BuildContext context, String title) {
@@ -109,6 +140,7 @@ class SettingsScreen extends StatelessWidget {
   // Liste des sections de paramètres
   List<Map<String, dynamic>> getSettingSections(BuildContext context) {
     final bool isDarkMode = themeManager.themeMode == ThemeMode.dark;
+    final bool areNotificationsEnabled = notificationManager.notificationsEnabled; // NOUVEL ÉTAT
     
     // La couleur de l'icône du mode sombre dépend de l'état du mode sombre
     final Color modeSombreIconColor = isDarkMode ? Colors.yellow.shade700 : Colors.grey;
@@ -140,15 +172,17 @@ class SettingsScreen extends StatelessWidget {
       {
         'header': 'Préférences de l\'Application',
         'items': [
-          const SettingItem(
+          // --- MISE À JOUR de l'élément Notifications ---
+          SettingItem(
             icon: Icons.notifications, 
             title: 'Notifications',
             iconColor: customGreen,
             isNavigation: false,
             key: 'notifications',
             trailingWidget: SwitchWidget(
-              initialValue: true, 
+              initialValue: areNotificationsEnabled, 
               activeColor: customGreen,
+              onChanged: (value) => notificationManager.toggleNotifications(value),
             ),
           ),
           const SettingItem(
@@ -227,10 +261,7 @@ class SettingsScreen extends StatelessWidget {
               color: isDarkMode ? Colors.white70 : Colors.black87,
             ),
           ),
-          const SwitchWidget(
-            initialValue: true, // Le switch général est activé dans le design
-            activeColor: customGreen,
-          ),
+          // Suppression du SwitchWidget ici, comme demandé.
         ],
       ),
     );
@@ -289,7 +320,7 @@ class SettingsScreen extends StatelessWidget {
                     const SizedBox(height: 20),
 
                     // --- Section Paiement et Finance spécifique avec le Switch en entête ---
-                    _buildPaymentToggle(context), // Le switch général est ici
+                    _buildPaymentToggle(context), // Le titre est ici
                     SettingSection(
                       header: '', // Pas de titre car le titre est dans le toggle
                       items: settingSections.firstWhere((s) => s['header'] == 'Paiement et Finance')['items'],
@@ -507,7 +538,7 @@ class _SwitchWidgetState extends State<SwitchWidget> {
     _value = widget.initialValue;
   }
 
-  // Mettre à jour l'état si l'initialValue change (nécessaire pour le mode sombre)
+  // Mettre à jour l'état si l'initialValue change (nécessaire pour le mode sombre et les notifications)
   @override
   void didUpdateWidget(covariant SwitchWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -527,7 +558,7 @@ class _SwitchWidgetState extends State<SwitchWidget> {
         if (widget.onChanged != null) {
           widget.onChanged!(newValue);
         } else {
-           // Logique de changement par défaut (pour les notifications, etc.)
+           // Logique de changement par défaut (pour les autres switches)
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text("Changement de l'état : ${newValue ? 'Activé' : 'Désactivé'}"),
