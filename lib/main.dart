@@ -11,6 +11,7 @@ import 'package:tji_teliman_mobile/screens/screens_jeunes/faq_security.dart';
 import 'package:tji_teliman_mobile/screens/screens_jeunes/historique_litige.dart';
 import 'package:tji_teliman_mobile/screens/screens_jeunes/historique_paiement.dart';
 import 'package:tji_teliman_mobile/screens/screens_jeunes/liste_litige.dart';
+import 'package:tji_teliman_mobile/screens/screens_jeunes/mission_parametre.dart';
 import 'package:tji_teliman_mobile/screens/screens_jeunes/noter_recruteur.dart';
 import 'package:tji_teliman_mobile/screens/screens_jeunes/parametre.dart';
 import 'package:tji_teliman_mobile/screens/screens_jeunes/parametre_change_mdp.dart';
@@ -48,7 +49,7 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
       // L'écran de démarrage est défini ici
-      home: const CompetencesParametre(),
+      home: const MissionParametre(),
       debugShowCheckedModeBanner: false,
     );
   }
