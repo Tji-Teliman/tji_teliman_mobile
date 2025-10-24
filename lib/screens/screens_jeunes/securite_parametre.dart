@@ -140,35 +140,8 @@ class _SecuritySettingsContentState extends State<SecuritySettingsContent> {
         const SizedBox(height: 30),
 
 
-        // --- Titre du Groupe : Connexion Biométrique ---
-        const SectionHeader(title: 'Connexion Biométrique', icon: Icons.fingerprint_rounded),
-        const SizedBox(height: 10),
-
-        // 3. Face ID / Touch ID
-        SwitchTile(
-          title: 'Activer Face ID / Empreinte',
-          subtitle: 'Connectez-vous rapidement avec la reconnaissance faciale/digitale.',
-          icon: _isFaceIdEnabled ? Icons.face_unlock_outlined : Icons.touch_app_outlined,
-          value: _isFaceIdEnabled,
-          onChanged: (bool newValue) {
-            setState(() {
-              _isFaceIdEnabled = newValue;
-            });
-          },
-        ),
-        const Divider(height: 1),
-
-        // 4. Gérer les Appareils Connectés
-        SettingsTile(
-          title: 'Gérer les appareils connectés',
-          subtitle: 'Voir et déconnecter les sessions actives.',
-          icon: Icons.devices_other_outlined,
-          onTap: () {
-            // Logique pour naviguer vers l'écran de gestion des appareils
-          },
-        ),
-        
-        const SizedBox(height: 50),
+       
+  
 
         // --- Bouton de Déconnexion ---
         PrimaryButton(
