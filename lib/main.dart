@@ -19,6 +19,7 @@ import 'package:tji_teliman_mobile/screens/screens_jeunes/parametre.dart';
 import 'package:tji_teliman_mobile/screens/screens_jeunes/parametre_change_mdp.dart';
 import 'package:tji_teliman_mobile/screens/screens_jeunes/politique_et_confidenlite.dart';
 import 'package:tji_teliman_mobile/screens/screens_jeunes/postuler_et_candidature.dart';
+import 'package:tji_teliman_mobile/screens/screens_jeunes/securite_parametre.dart';
 import 'package:tji_teliman_mobile/screens/screens_jeunes/signaler_mission.dart';
 import 'package:tji_teliman_mobile/screens/screens_jeunes/signaler_screen.dart';
 import 'screens/splash_screen.dart';
@@ -52,7 +53,7 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
       // L'écran de démarrage est défini ici
-      home: const DetailsPayementEspeces(),
+      home: const SecuriteParametre(),
       debugShowCheckedModeBanner: false,
     );
   }
