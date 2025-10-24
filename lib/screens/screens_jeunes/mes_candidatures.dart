@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 // Importation des widgets existants (selon la demande de l'utilisateur)
 import '../../widgets/custom_bottom_nav_bar.dart';
+import '../../widgets/custom_header.dart';
 // Import de la page d'accueil pour la navigation
 import 'home_jeune.dart';
 // Import de la page Discussions pour la navigation
@@ -310,99 +311,40 @@ class _MesCandidaturesScreenState extends State<MesCandidaturesScreen> {
     return Scaffold(
       backgroundColor: bodyBackgroundColor,
       
-      // Suppression du header CustomHeader
-      appBar: null,
+      // Utilisation du CustomHeader
+      appBar: CustomHeader(
+        title: 'Suivi des Missions',
+        onBack: () => Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => const HomeJeuneScreen()),
+        ),
+      ),
       
-      body: Stack(
-        children: [
-          // Header bleu fixe
-          Container(
-            height: 120,
-            color: const Color(0xFF2f9bcf), // Couleur du header
-            child: SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                child: Row(
-                  children: [
-                    // Bouton retour
-                    GestureDetector(
-                      onTap: () => Navigator.of(context).pushReplacement(
-                        MaterialPageRoute(builder: (context) => const HomeJeuneScreen()),
-                      ),
-                      child: const Icon(
-                        Icons.arrow_back_ios,
-                        color: Colors.white,
-                        size: 20,
-                      ),
-                    ),
-                    const SizedBox(width: 15),
-                    // Titre
-                    Expanded(
-                      child: Text(
-                        'Suivi des Missions',
-                        style: GoogleFonts.poppins(
-                          color: Colors.white,
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                    const SizedBox(width: 35), // Espace pour équilibrer
-                  ],
-                ),
+      body: Column(
+        children: <Widget>[
+          // Barres de Filtres
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20.0, 20.0, 20.0, 16.0),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  _buildFilterButton(CandidatureStatus.toutes, 'Toutes'),
+                  _buildFilterButton(CandidatureStatus.enAttente, 'En attente'),
+                  _buildFilterButton(CandidatureStatus.acceptee, 'Acceptée'),
+                  _buildFilterButton(CandidatureStatus.refusee, 'Refusée'),
+                ],
               ),
             ),
           ),
-          
-          // Corps avec coins arrondis
-          Padding(
-            padding: const EdgeInsets.only(top: 80.0),
-            child: Container(
-              height: double.infinity,
-              decoration: BoxDecoration(
-                color: bodyBackgroundColor,
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(60),
-                  topRight: Radius.circular(60),
-                ),
-              ),
-              child: ClipRRect(
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(60),
-                  topRight: Radius.circular(60),
-                ),
-                child: Column(
-                  children: <Widget>[
-                    // Barres de Filtres
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(20.0, 20.0, 20.0, 16.0),
-                      child: SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: Row(
-                          children: [
-                            _buildFilterButton(CandidatureStatus.toutes, 'Toutes'),
-                            _buildFilterButton(CandidatureStatus.enAttente, 'En attente'),
-                            _buildFilterButton(CandidatureStatus.acceptee, 'Acceptée'),
-                            _buildFilterButton(CandidatureStatus.refusee, 'Refusée'),
-                          ],
-                        ),
-                      ),
-                    ),
 
-                    // Liste des Candidatures
-                    Expanded(
-                      child: ListView.builder(
-                        padding: const EdgeInsets.only(bottom: 10.0), 
-                        itemCount: _filteredCandidatures.length,
-                        itemBuilder: (context, index) {
-                          return _buildCandidatureCard(_filteredCandidatures[index]);
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+          // Liste des Candidatures
+          Expanded(
+            child: ListView.builder(
+              padding: const EdgeInsets.only(bottom: 10.0), 
+              itemCount: _filteredCandidatures.length,
+              itemBuilder: (context, index) {
+                return _buildCandidatureCard(_filteredCandidatures[index]);
+              },
             ),
           ),
         ],

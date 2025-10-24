@@ -164,18 +164,23 @@ class _HomeJeuneScreenState extends State<HomeJeuneScreen> {
         userProfile: "Mon Profil",
       ),
 
-      body: SingleChildScrollView(
-        child: Column(
-          children: <Widget>[
-
-            // 1. Le Header Stylisé (non arrondi, avec image, défile)
-            _buildHeader(context, headerHeight),
-            
-            // 2. Le Corps Arrondi avec bodyBackgroundColor
-            // Le décalage est ajusté pour que l'arrondi de 60px remonte sur le header
-            Transform.translate(
-              // Décalage réduit pour faire descendre le cadre arrondi
-              offset: const Offset(0, -60.0), // Changé de -50.0 à -30.0 pour descendre le cadre 
+      body: Stack(
+        children: [
+          // 1. Le Header Stylisé (FIXE EN HAUT)
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: _buildHeader(context, headerHeight),
+          ),
+          
+          // 2. Le Corps Scrollable (EN DESSOUS DU HEADER)
+          Positioned(
+            top: headerHeight - 60, // Positionné pour que l'arrondi remonte sur le header
+            left: 0,
+            right: 0,
+            bottom: 80, // Laisser de l'espace pour la barre de navigation (environ 80px)
+            child: SingleChildScrollView(
               child: Container(
                 decoration: const BoxDecoration(
                   color: bodyBackgroundColor, // Couleur du corps de la page
@@ -190,7 +195,7 @@ class _HomeJeuneScreenState extends State<HomeJeuneScreen> {
                   // On ajoute un padding Top pour le contenu (au lieu de l'ancienne translation)
                   padding: EdgeInsets.fromLTRB(
                     screenWidth * 0.05, 
-                    20.0, // Réduit pour optimiser l'espace
+                    40.0, // Augmenté pour compenser le nouveau positionnement
                     screenWidth * 0.05, 
                     20.0 // Réduit pour optimiser l'espace
                   ),
@@ -300,36 +305,41 @@ class _HomeJeuneScreenState extends State<HomeJeuneScreen> {
                 ),
               ),
             ),
-          ],
-        ),
-      ),
-
-      // 3. BARRE DE NAVIGATION INFÉRIEURE (Footer)
-      bottomNavigationBar: CustomBottomNavBar(
-        initialIndex: _selectedIndex,
-        onItemSelected: (index) {
-          if (index == 0) {
-            // Déjà sur Accueil
-            return;
-          }
-          if (index == 1) {
-            // Aller vers Mes Candidatures
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (context) => const MesCandidaturesScreen()),
-            );
-            return;
-          }
-          if (index == 3) {
-            // Aller vers Discussions
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (context) => const MessageConversationScreen()),
-            );
-            return;
-          }
-          setState(() {
-            _selectedIndex = index;
-          });
-        },
+          ),
+          
+          // 3. Barre de Navigation (FIXE EN BAS)
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: CustomBottomNavBar(
+              initialIndex: _selectedIndex,
+              onItemSelected: (index) {
+                if (index == 0) {
+                  // Déjà sur Accueil
+                  return;
+                }
+                if (index == 1) {
+                  // Aller vers Mes Candidatures
+                  Navigator.of(context).pushReplacement(
+                    MaterialPageRoute(builder: (context) => const MesCandidaturesScreen()),
+                  );
+                  return;
+                }
+                if (index == 3) {
+                  // Aller vers Discussions
+                  Navigator.of(context).pushReplacement(
+                    MaterialPageRoute(builder: (context) => const MessageConversationScreen()),
+                  );
+                  return;
+                }
+                setState(() {
+                  _selectedIndex = index;
+                });
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -402,7 +412,9 @@ class _HomeJeuneScreenState extends State<HomeJeuneScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   // Logo à gauche (position maintenue)
-                  Container(
+                  Transform.translate(
+                    offset: const Offset(0, 10), // Descendre le logo de 10px
+                    child: Container(
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: Colors.white,
@@ -422,6 +434,7 @@ class _HomeJeuneScreenState extends State<HomeJeuneScreen> {
                         fit: BoxFit.fitWidth,
                       ),
                     ),
+                  ),
                   ),
                   
                   // Icônes à droite (montées un peu plus haut)
