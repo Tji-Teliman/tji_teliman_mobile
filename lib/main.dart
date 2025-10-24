@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:tji_teliman_mobile/screens/screens_jeunes/centre_aide.dart';
+import 'package:tji_teliman_mobile/screens/screens_jeunes/competences_parametre.dart';
 import 'package:tji_teliman_mobile/screens/screens_jeunes/conditions_generales.dart';
 import 'package:tji_teliman_mobile/screens/screens_jeunes/contacter_nous.dart';
 import 'package:tji_teliman_mobile/screens/screens_jeunes/faq_compte_profil.dart';
@@ -47,7 +48,7 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
       // L'écran de démarrage est défini ici
-      home: const ParametreChangeMdp(),
+      home: const CompetencesParametre(),
       debugShowCheckedModeBanner: false,
     );
   }
