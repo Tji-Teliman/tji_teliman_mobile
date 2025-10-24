@@ -98,7 +98,7 @@ class _HomeJeuneScreenState extends State<HomeJeuneScreen> {
     // Variables responsives
     final double screenHeight = MediaQuery.of(context).size.height;
     final double screenWidth = MediaQuery.of(context).size.width;
-    final double headerHeight = screenHeight * 0.3; // Hauteur initiale maintenue
+    final double headerHeight = screenHeight * 0.33; // Augmenté de 0.3 à 0.35 pour faire monter le header
     
     // Calculs responsives pour les cartes Actions Rapides
     final double cardSpacing = screenWidth * 0.03; // 3% de la largeur d'écran
@@ -174,8 +174,8 @@ class _HomeJeuneScreenState extends State<HomeJeuneScreen> {
             // 2. Le Corps Arrondi avec bodyBackgroundColor
             // Le décalage est ajusté pour que l'arrondi de 60px remonte sur le header
             Transform.translate(
-              // Décalage de -60.0 (basé sur le CustomHeader Radius.circular(60))
-              offset: const Offset(0, -50.0), 
+              // Décalage réduit pour faire descendre le cadre arrondi
+              offset: const Offset(0, -60.0), // Changé de -50.0 à -30.0 pour descendre le cadre 
               child: Container(
                 decoration: const BoxDecoration(
                   color: bodyBackgroundColor, // Couleur du corps de la page
@@ -190,9 +190,9 @@ class _HomeJeuneScreenState extends State<HomeJeuneScreen> {
                   // On ajoute un padding Top pour le contenu (au lieu de l'ancienne translation)
                   padding: EdgeInsets.fromLTRB(
                     screenWidth * 0.05, 
-                    20.0, // Espace pour l'esthétique sous l'arrondi
+                    20.0, // Réduit pour optimiser l'espace
                     screenWidth * 0.05, 
-                    0.0
+                    20.0 // Réduit pour optimiser l'espace
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -211,49 +211,56 @@ class _HomeJeuneScreenState extends State<HomeJeuneScreen> {
                       Text(
                         'Aperçus',
                         style: GoogleFonts.poppins(
-                          fontSize: 14,
+                          fontSize: 18, // Augmenté de 14 à 18
                           fontWeight: FontWeight.bold,
                           color: Colors.black,
                         ),
                       ),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 15), // Réduit de 25 à 15
 
                       Row(
                         children: <Widget>[
-                          // Carte 1: Missions Accomplies
-                          Expanded(
-                            child: _buildStatCard(
-                              icon: Icons.check_circle_outline,
-                              value: missionsAccomplies.toString(),
-                              label: 'Missions Accomplies',
-                              color: primaryGreen,
+                          // Carte 1: Missions Accomplies (même taille)
+                          Flexible(
+                            flex: 1, // Changé de 3 à 1 pour égaliser les tailles
+                            child: IntrinsicHeight(
+                              child: _buildStatCard(
+                                icon: Icons.check_circle_outline,
+                                value: missionsAccomplies.toString(),
+                                label: 'Missions Accomplies',
+                                color: primaryGreen,
+                              ),
                             ),
                           ),
                           const SizedBox(width: 15),
-                          // Carte 2: Note
-                          Expanded(
-                            child: _buildStatCard(
-                              icon: Icons.star_outline,
-                              value: note,
-                              label: 'Note',
-                              color: badgeOrange,
+                          // Carte 2: Note (même taille)
+                          Flexible(
+                            flex: 1, // Changé de 2 à 1 pour égaliser les tailles
+                            child: IntrinsicHeight(
+                              child: _buildStatCard(
+                                icon: Icons.star_outline,
+                                value: note,
+                                label: 'Note',
+                                color: badgeOrange,
+                                isNoteCard: true, // Indicateur pour le style spécial
+                              ),
                             ),
                           ),
                         ],
                       ),
 
-                      SizedBox(height: screenHeight < 700 ? screenHeight * 0.01 : screenHeight * 0.02),
+                       SizedBox(height: screenHeight < 700 ? screenHeight * 0.02 : screenHeight * 0.025), // Réduit significativement
 
                       // C. SECTION ACTIONS RAPIDES
                       Text(
                         'ACTIONS RAPIDES',
                         style: GoogleFonts.poppins(
-                          fontSize: 14,
+                          fontSize: 18, // Augmenté de 14 à 18
                           fontWeight: FontWeight.bold,
                           color: Colors.black,
                         ),
                       ),
-                      SizedBox(height: screenHeight < 700 ? screenHeight * 0.005 : screenHeight * 0.01),
+                       SizedBox(height: screenHeight < 700 ? screenHeight * 0.01 : screenHeight * 0.015), // Réduit significativement
 
                       // Grille 2x2 des actions rapides
                       GridView.count(
@@ -287,7 +294,7 @@ class _HomeJeuneScreenState extends State<HomeJeuneScreen> {
                         ],
                       ),
 
-                      SizedBox(height: screenHeight < 700 ? screenHeight * 0.005 : screenHeight * 0.015),
+                      SizedBox(height: screenHeight < 700 ? screenHeight * 0.02 : screenHeight * 0.03), // Espacement final réduit
                     ],
                   ),
                 ),
@@ -369,10 +376,10 @@ class _HomeJeuneScreenState extends State<HomeJeuneScreen> {
       ),
       child: Stack(
         children: [
-          // Image de la dame (Photo du prestataire) - Positionnée en bas
+          // Image de la dame (Photo du prestataire) - Positionnée plus haut
           Positioned(
             right: 0,
-            top: height * 0.3, // Commence plus bas
+            top: height * 0.05, // Monté de height * 0.3 à height * 0.2 pour être plus haut
             bottom: 0, // Va jusqu'en bas
             child: Opacity(
               opacity: 0.8,
@@ -384,66 +391,72 @@ class _HomeJeuneScreenState extends State<HomeJeuneScreen> {
             ),
           ),
 
-          // 1. Logo (POSITIONNÉ EN HAUT)
-          // ... (Pas de modification ici) ...
+          // 1. Logo et Icônes (POSITIONNÉS EN HAUT SUR LA MÊME LIGNE)
           Positioned(
-            top: 45, // Position du logo maintenue
-            left: 20,
-            child: Container(
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 5,
-                    offset: const Offset(0, 2),
+            top: 20, // Descendu de 10 à 20 pour le logo
+            left: 0,
+            right: 0,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // Logo à gauche (position maintenue)
+                  Container(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 5,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    padding: const EdgeInsets.all(12),
+                    child: ClipOval(
+                      child: Image.asset(
+                        'assets/images/LOGO_TJI_TELIMAN.png',
+                        width: 50,
+                        fit: BoxFit.fitWidth,
+                      ),
+                    ),
+                  ),
+                  
+                  // Icônes à droite (montées un peu plus haut)
+                  Transform.translate(
+                    offset: const Offset(0, -5), // Monté de 5px vers le haut
+                    child: Row(
+                      children: [
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (context) => const NotificationsScreen(),
+                              ),
+                            );
+                          },
+                          child: const Icon(Icons.notifications_none, color: Colors.white, size: 28),
+                        ),
+                        const SizedBox(width: 15),
+                        GestureDetector(
+                          onTap: () {
+                            _scaffoldKey.currentState?.openDrawer();
+                          },
+                          child: const Icon(Icons.menu, color: Colors.white, size: 28),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
-              padding: const EdgeInsets.all(12),
-                  child: ClipOval(
-                    child: Image.asset(
-                      'assets/images/LOGO_TJI_TELIMAN.png',
-                      width: 50, // Utilise la largeur au lieu de la hauteur
-                      fit: BoxFit.fitWidth, // Ajuste selon la largeur
-                    ),
-                  ),
             ),
           ),
 
-          // 2. Icônes de notification et menu (POSITIONNÉES PLUS HAUT)
-          // ... (Pas de modification ici) ...
+          // 2. Texte de Bienvenue (POSITIONNÉ POUR ÉQUILIBRER L'ESPACE)
           Positioned(
-            top: 45, // Position plus haute pour les icônes
-            right: 20,
-            child: Row(
-              children: [
-                GestureDetector(
-                  onTap: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) => const NotificationsScreen(),
-                      ),
-                    );
-                  },
-                  child: const Icon(Icons.notifications_none, color: Colors.white, size: 28),
-                ),
-                const SizedBox(width: 15),
-                GestureDetector(
-                  onTap: () {
-                    _scaffoldKey.currentState?.openDrawer(); // Ouvre le drawer avec la clé globale
-                  },
-                  child: const Icon(Icons.menu, color: Colors.white, size: 28),
-                ),
-              ],
-            ),
-          ),
-
-          // 2. Texte de Bienvenue (POSITIONNÉ EN BAS DU HEADER)
-          // ... (Pas de modification ici) ...
-          Positioned(
-            top: height * 0.5, // Position encore plus bas dans le header
+            top: height * 0.42, // Ajusté de height * 0.35 à height * 0.42 pour équilibrer
             left: 20,
             right: 20,
             child: Column(
@@ -471,37 +484,6 @@ class _HomeJeuneScreenState extends State<HomeJeuneScreen> {
                   ],
                 ),
               ],
-            ),
-          ),
-
-          // 3. Barre de Recherche (POSITIONNÉ EN BAS, LARGEUR RÉDUITE)
-          // ... (Pas de modification ici) ...
-          Positioned(
-            bottom: 5,
-            left: 20,
-            right: MediaQuery.of(context).size.width * 0.05, // Largeur réduite
-            child: Container(
-              height: 45,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(25),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 5,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
-              ),
-              child: const TextField(
-                decoration: InputDecoration(
-                  hintText: 'Recherche',
-                  hintStyle: TextStyle(color: Colors.black54),
-                  prefixIcon: Icon(Icons.search, color: primaryGreen),
-                  border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(vertical: 10.0, horizontal: 10.0),
-                ),
-              ),
             ),
           ),
 
@@ -583,16 +565,16 @@ class _HomeJeuneScreenState extends State<HomeJeuneScreen> {
 
   // Widget 3: Carte de Statistique (Missions/Note) - Taille réduite
   // ... (PAS DE MODIFICATION) ...
-  Widget _buildStatCard({required IconData icon, required String value, required String label, required Color color}) {
+  Widget _buildStatCard({required IconData icon, required String value, required String label, required Color color, bool isNoteCard = false}) {
     return Container(
-      padding: const EdgeInsets.all(10.0), // Réduit de 15.0 à 10.0
+      padding: const EdgeInsets.all(15.0), // Diminué de 18.0 à 15.0
       decoration: BoxDecoration(
         color: const Color(0xFFe6f0f9), // Couleur #e6f0f9
-        borderRadius: BorderRadius.circular(15), // Réduit de 15 à 12
+        borderRadius: BorderRadius.circular(18), // Diminué de 20 à 18
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.09),
-              blurRadius: 8, // Réduit de 8 à 6
+              blurRadius: 10, // Diminué de 12 à 10
               offset: const Offset(0, 4), // Ombre seulement en bas
             ),
           ],
@@ -602,25 +584,32 @@ class _HomeJeuneScreenState extends State<HomeJeuneScreen> {
         children: <Widget>[
           Row(
             children: [
-              Icon(icon, color: color, size: 22), // Réduit de 28 à 22
+              Icon(icon, color: color, size: 26), // Diminué de 28 à 26
               const SizedBox(width: 6), // Réduit de 8 à 6
-              Text(
-                value,
-                style: GoogleFonts.poppins(
-                  fontSize: 20, // Réduit de 24 à 20
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
+              Flexible(
+                child: Text(
+                  value,
+                  style: GoogleFonts.poppins(
+                    fontSize: isNoteCard ? 26 : 24, // Plus grand pour la carte Note
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 3), // Réduit de 5 à 3
-          Text(
-            label,
-            style: GoogleFonts.poppins(
-              fontSize: 11, // Réduit de 13 à 11
-              color: Colors.black54,
-              fontWeight: FontWeight.w500,
+          const SizedBox(height: 6), // Diminué de 8 à 6
+          Center( // Wrapper Center pour centrer uniquement le texte du label
+            child: Text(
+              label,
+              style: GoogleFonts.poppins(
+                fontSize: isNoteCard ? 13 : 11, // Tailles différentes
+                color: Colors.black, // Noir pour les deux cartes
+                fontWeight: FontWeight.bold, // Même gras pour les deux cartes
+              ),
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1, // Limité à une seule ligne
             ),
           ),
         ],
