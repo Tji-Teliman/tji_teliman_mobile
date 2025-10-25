@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../widgets/custom_header.dart';
+import 'contacter_nous.dart';
 
 class FaqProblemeTechnique extends StatelessWidget {
   const FaqProblemeTechnique({super.key});
@@ -58,147 +59,67 @@ class FaqTechnicalScreen extends StatelessWidget {
         onBack: () => Navigator.of(context).pop(),
       ),
       
-      body: Column(
-        children: <Widget>[
-          Expanded(
-            child: Container(
-              width: double.infinity,
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(30.0)),
-              ),
-              child: Stack(
-                children: [
-                  SingleChildScrollView(
-                    padding: const EdgeInsets.fromLTRB(20.0, 80.0, 20.0, 20.0), // Padding pour laisser l'espace à la barre de recherche
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        const Text(
-                          'Catégories',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 20,
-                            color: Colors.black87,
-                          ),
-                        ),
-                        const SizedBox(height: 15),
-
-                        // --- Liste des questions/réponses FAQ ---
-                        // Enveloppé dans un Theme pour supprimer les séparateurs de l'ExpansionTile
-                        Theme(
-                          data: Theme.of(context).copyWith(
-                            dividerColor: Colors.transparent, // Méthode pour enlever la ligne de séparation
-                          ),
-                          child: Column(
-                            children: faqItems.map((item) {
-                              return FaqExpansionTile(faqItem: item);
-                            }).toList(),
-                          ),
-                        ),
-                        
-                        const SizedBox(height: 100), // Espace pour le bouton en bas
-                      ],
-                    ),
-                  ),
-
-                  // --- Barre de Recherche (positionnée en haut) ---
-                  Positioned(
-                    top: 20,
-                    left: 20,
-                    right: 20,
-                    child: Container(
-                      height: 50,
-                      decoration: BoxDecoration(
-                        color: Colors.white, // Fond blanc
-                        borderRadius: BorderRadius.circular(10.0), // Coins arrondis
-                        border: Border.all(color: Colors.grey.shade300, width: 1.5), // Bordure légère
-                        boxShadow: [ // Ombre pour l'effet "joli"
-                          BoxShadow(
-                            color: Colors.grey.withOpacity(0.1),
-                            spreadRadius: 1,
-                            blurRadius: 5,
-                            offset: const Offset(0, 3),
-                          ),
-                        ],
-                      ),
-                      child: const TextField(
-                        decoration: InputDecoration(
-                          hintText: 'Recherche',
-                          hintStyle: TextStyle(color: Colors.grey),
-                          prefixIcon: Icon(Icons.search, color: Colors.grey),
-                          // Suppression du trait/bordure lors du focus
-                          border: InputBorder.none, 
-                          focusedBorder: InputBorder.none,
-                          enabledBorder: InputBorder.none,
-                          errorBorder: InputBorder.none,
-                          disabledBorder: InputBorder.none,
-                          contentPadding: EdgeInsets.only(top: 15),
-                        ),
-                        style: TextStyle(fontSize: 16),
-                      ),
-                    ),
-                  ),
-                ],
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(20.0, 20.0, 20.0, 20.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            const Text(
+              'Catégories',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 20,
+                color: Colors.black87,
               ),
             ),
-          ),
-          
-          // --- Bouton en bas de l'écran (Sticky Footer) ---
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 15.0),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.grey.withOpacity(0.2),
-                  spreadRadius: 1,
-                  blurRadius: 5,
-                  offset: const Offset(0, -3),
-                ),
-              ],
+            const SizedBox(height: 15),
+            Theme(
+              data: Theme.of(context).copyWith(
+                dividerColor: Colors.transparent,
+              ),
+              child: Column(
+                children: faqItems.map((item) {
+                  return FaqExpansionTile(faqItem: item);
+                }).toList(),
+              ),
             ),
-            child: Column(
+            const SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.help_outline, color: customBlue, size: 20),
-                    const SizedBox(width: 8),
-                    const Text(
-                      "Vous n'avez pas trouvé de réponse ?",
-                      style: TextStyle(fontSize: 14, color: Colors.black87),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                // Centrage et réduction de la largeur du bouton
-                Center(
-                  child: SizedBox(
-                    width: MediaQuery.of(context).size.width * 0.75, // Réduit à 75% de la largeur de l'écran
-                    child: ElevatedButton(
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text("Ouverture du formulaire pour Envoyer l'avis"))
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: customBlue,
-                        minimumSize: const Size(double.infinity, 50),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                        elevation: 2,
-                      ),
-                      child: const Text(
-                        "Envoyer l'avis",
-                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
-                      ),
-                    ),
-                  ),
+                Icon(Icons.help_outline, color: customBlue, size: 20),
+                const SizedBox(width: 8),
+                const Text(
+                  "Vous n'avez pas trouvé de réponse ?",
+                  style: TextStyle(fontSize: 14, color: Colors.black87),
                 ),
               ],
             ),
-          ),
-        ],
+            const SizedBox(height: 10),
+            Center(
+              child: SizedBox(
+                width: MediaQuery.of(context).size.width * 0.75,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (context) => const ContacterNous()),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: customBlue,
+                    minimumSize: const Size(double.infinity, 50),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    elevation: 2,
+                  ),
+                  child: const Text(
+                    "Envoyer l'avis",
+                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

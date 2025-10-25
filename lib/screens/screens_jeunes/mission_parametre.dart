@@ -153,104 +153,72 @@ class _MissionPreferencesScreenState extends State<MissionPreferencesScreen> {
       appBar: const CustomHeader(
         title: 'Préférences de Missions',
       ),
-      body: Column(
-        children: <Widget>[
-          // Le conteneur blanc principal avec les coins supérieurs arrondis
-          Expanded(
-            child: Container(
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Catégories de Missions Préférées',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black87),
+            ),
+            const SizedBox(height: 10),
+            ..._missionCategories.keys.map((key) {
+              return PreferenceTile(
+                title: key,
+                isChecked: _missionCategories[key]!,
+                isCircular: false,
+                onChanged: (bool? newValue) {
+                  setState(() {
+                    _missionCategories[key] = newValue!;
+                  });
+                },
+              );
+            }).toList(),
+            const SizedBox(height: 30),
+            const Text(
+              'Disponibilité',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black87),
+            ),
+            const SizedBox(height: 10),
+            ..._availability.keys.map((key) {
+              return PreferenceTile(
+                title: key,
+                isChecked: _availability[key]!,
+                isCircular: false,
+                onChanged: (bool? newValue) {
+                  setState(() {
+                    _availability[key] = newValue!;
+                  });
+                },
+              );
+            }).toList(),
+            const SizedBox(height: 20),
+            SizedBox(
               width: double.infinity,
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(30.0)),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black12,
-                    blurRadius: 10.0,
-                    spreadRadius: 2.0,
+              height: 55,
+              child: ElevatedButton(
+                onPressed: _savePreferences,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _primaryBlue,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10.0),
                   ),
-                ],
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(20.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    
-                    // --- 1. Catégories de Missions Préférées ---
-                    const Text(
-                      'Catégories de Missions Préférées',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black87),
-                    ),
-                    const SizedBox(height: 10),
-                    // Liste des catégories
-                    ..._missionCategories.keys.map((key) {
-                      return PreferenceTile(
-                        title: key,
-                        isChecked: _missionCategories[key]!,
-                        isCircular: false, // Cases carrées pour les catégories (choix multiples)
-                        onChanged: (bool? newValue) {
-                          setState(() {
-                            _missionCategories[key] = newValue!;
-                          });
-                        },
-                      );
-                    }).toList(),
-
-                    const SizedBox(height: 30),
-
-                    // --- 2. Disponibilité ---
-                    const Text(
-                      'Disponibilité',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black87),
-                    ),
-                    const SizedBox(height: 10),
-                    // Liste des disponibilités
-                    ..._availability.keys.map((key) {
-                      return PreferenceTile(
-                        title: key,
-                        isChecked: _availability[key]!,
-                        isCircular: false, // Cases carrées pour la disponibilité (choix multiples)
-                        onChanged: (bool? newValue) {
-                          setState(() {
-                            _availability[key] = newValue!;
-                          });
-                        },
-                      );
-                    }).toList(),
-
-                    const Spacer(), // Pousse le bouton en bas
-
-                    // --- Bouton Enregistrer les Préférences ---
-                    SizedBox(
-                      width: double.infinity,
-                      height: 55,
-                      child: ElevatedButton(
-                        onPressed: _savePreferences,
-                        style: ElevatedButton.styleFrom(
-                          // Couleur de fond du bouton en bleu foncé
-                          backgroundColor: _primaryBlue, 
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10.0),
-                          ),
-                          elevation: 4,
-                        ),
-                        child: const Text(
-                          'Enregistrer les Préférences',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                  ],
+                  elevation: 4,
+                ),
+                child: const Text(
+                  'Enregistrer les Préférences',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ),
-          ),
-        ],
+            const SizedBox(height: 10),
+          ],
+        ),
       ),
     );
   }

@@ -65,76 +65,19 @@ class CguScreen extends StatelessWidget {
         onBack: () => Navigator.of(context).pop(),
       ),
       
-      body: Column(
-        children: <Widget>[
-          Expanded(
-            child: Container(
-              width: double.infinity,
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(30.0)),
-              ),
-              child: Stack(
-                children: [
-                  SingleChildScrollView(
-                    padding: const EdgeInsets.fromLTRB(20.0, 80.0, 20.0, 20.0), // Padding pour laisser l'espace à la barre de recherche
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        // --- Liste des sections CGU ---
-                        Column(
-                          children: cguItems.map((item) {
-                            return CguCard(cguSection: item);
-                          }).toList(),
-                        ),
-                        
-                        const SizedBox(height: 30), // Espace en bas de la page
-                      ],
-                    ),
-                  ),
-
-                  // --- Barre de Recherche (positionnée en haut) ---
-                  Positioned(
-                    top: 20,
-                    left: 20,
-                    right: 20,
-                    child: Container(
-                      height: 50,
-                      decoration: BoxDecoration(
-                        color: Colors.white, // Fond blanc
-                        borderRadius: BorderRadius.circular(10.0), // Coins arrondis
-                        border: Border.all(color: Colors.grey.shade300, width: 1.5), // Bordure légère
-                        boxShadow: [ // Ombre pour l'effet "joli"
-                          BoxShadow(
-                            color: Colors.grey.withOpacity(0.1),
-                            spreadRadius: 1,
-                            blurRadius: 5,
-                            offset: const Offset(0, 3),
-                          ),
-                        ],
-                      ),
-                      child: const TextField(
-                        decoration: InputDecoration(
-                          hintText: 'Recherche',
-                          hintStyle: TextStyle(color: Colors.grey),
-                          prefixIcon: Icon(Icons.search, color: Colors.grey),
-                          // Suppression du trait/bordure lors du focus
-                          border: InputBorder.none, 
-                          focusedBorder: InputBorder.none,
-                          enabledBorder: InputBorder.none,
-                          errorBorder: InputBorder.none,
-                          disabledBorder: InputBorder.none,
-                          contentPadding: EdgeInsets.only(top: 15),
-                        ),
-                        style: TextStyle(fontSize: 16),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(20.0, 20.0, 20.0, 20.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Column(
+              children: cguItems.map((item) {
+                return CguCard(cguSection: item);
+              }).toList(),
             ),
-          ),
-        ],
+            const SizedBox(height: 30),
+          ],
+        ),
       ),
     );
   }

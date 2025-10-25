@@ -1,5 +1,13 @@
 import 'package:flutter/material.dart';
 import '../../widgets/custom_header.dart';
+import 'faq_compte_profil.dart';
+import 'faq_paiement.dart';
+import 'postuler_et_candidature.dart';
+import 'faq_probleme_technique.dart';
+import 'faq_security.dart';
+import 'contacter_nous.dart';
+import 'conditions_generales.dart';
+import 'home_jeune.dart';
 
 
 class CentreAide extends StatelessWidget {
@@ -41,126 +49,95 @@ class SupportCenterScreen extends StatelessWidget {
       backgroundColor: const Color(0xFFf6fcfc),
       appBar: CustomHeader(
         title: 'Centre d\'Aide / Support',
-        onBack: () => Navigator.of(context).pop(),
+        onBack: () {
+          final navigator = Navigator.of(context);
+          if (navigator.canPop()) {
+            navigator.pop();
+          } else {
+            navigator.pushReplacement(
+              MaterialPageRoute(builder: (ctx) => const HomeJeuneScreen()),
+            );
+          }
+        },
       ),
       
-      body: Column(
-        children: <Widget>[
-          Expanded(
-            child: Container(
-              width: double.infinity,
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(30.0)),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            // --- Titre Catégories ---
+            const Text(
+              'Catégories',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 20,
+                color: Colors.black87,
               ),
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(20.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    // --- Barre de Recherche ---
-                    Container(
-                      height: 50,
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade100,
-                        borderRadius: BorderRadius.circular(30.0),
-                        border: Border.all(color: Colors.grey.shade200),
-                      ),
-                      child: const TextField(
-                        decoration: InputDecoration(
-                          hintText: 'Recherche',
-                          hintStyle: TextStyle(color: Colors.grey),
-                          prefixIcon: Icon(Icons.search, color: Colors.grey),
-                          border: InputBorder.none,
-                          contentPadding: EdgeInsets.only(top: 15), // Ajustement du padding
-                        ),
-                        style: TextStyle(fontSize: 16),
-                      ),
-                    ),
-                    const SizedBox(height: 25),
-
-                    // --- Titre Catégories ---
-                    const Text(
-                      'Catégories',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 20,
-                        color: Colors.black87,
-                      ),
-                    ),
-                    const SizedBox(height: 15),
-
-                    // --- Grille de Catégories ---
-                    GridView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        childAspectRatio: 1.2, // Hauteur des cartes
-                        crossAxisSpacing: 15,
-                        mainAxisSpacing: 15,
-                      ),
-                      itemCount: categories.length,
-                      itemBuilder: (context, index) {
-                        return AnimatedCategoryCard(category: categories[index]);
-                      },
-                    ),
-                    
-                    const SizedBox(height: 40),
-
-                    // --- Section Contact ---
-                    const Text(
-                      'Vous n\'avez pas trouvé de réponse ?',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 16,
-                        color: Colors.black87,
-                      ),
-                    ),
-                    const SizedBox(height: 15),
-
-                    // Bouton Nous Contacter
-                    ElevatedButton(
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text("Ouverture du formulaire de contact"))
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: customBlue,
-                        minimumSize: const Size(double.infinity, 50),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                        elevation: 2,
-                      ),
-                      child: const Text(
-                        'Nous Contacter',
-                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
-                      ),
-                    ),
-                    
-                    const SizedBox(height: 10),
-                    
-                    // Lien Conditions Générales
-                    Center(
-                      child: TextButton(
-                        onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text("Affichage des conditions générales"))
-                          );
-                        },
-                        child: Text(
-                          'Voir les conditions Générales',
-                          style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                  ],
+            ),
+            const SizedBox(height: 15),
+            // --- Grille de Catégories ---
+            GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                childAspectRatio: 1.2,
+                crossAxisSpacing: 15,
+                mainAxisSpacing: 15,
+              ),
+              itemCount: categories.length,
+              itemBuilder: (context, index) {
+                return AnimatedCategoryCard(category: categories[index]);
+              },
+            ),
+            const SizedBox(height: 40),
+            // --- Section Contact ---
+            const Text(
+              'Vous n\'avez pas trouvé de réponse ?',
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 16,
+                color: Colors.black87,
+              ),
+            ),
+            const SizedBox(height: 15),
+            // Bouton Nous Contacter
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (context) => const ContacterNous()),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: customBlue,
+                minimumSize: const Size(double.infinity, 50),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                elevation: 2,
+              ),
+              child: const Text(
+                'Nous Contacter',
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+            ),
+            const SizedBox(height: 10),
+            // Lien Conditions Générales
+            Center(
+              child: TextButton(
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (context) => const ConditionsGenerales()),
+                  );
+                },
+                child: Text(
+                  'Voir les conditions Générales',
+                  style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
                 ),
               ),
             ),
-          ),
-        ],
+            const SizedBox(height: 20),
+          ],
+        ),
       ),
     );
   }
@@ -208,10 +185,38 @@ class _AnimatedCategoryCardState extends State<AnimatedCategoryCard> with Single
 
   void _onTapUp(_) {
     _controller.reverse();
-    // Exécute la logique après l'animation
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Ouverture de la section: ${widget.category.title}'))
-    );
+    // Navigation selon la catégorie
+    final title = widget.category.title.toLowerCase();
+    if (title.contains('compte')) {
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (context) => const FaqCompteProfil()),
+      );
+      return;
+    }
+    if (title.contains('paiement')) {
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (context) => const FaqPaiement()),
+      );
+      return;
+    }
+    if (title.contains('postuler') || title.contains('candidature')) {
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (context) => const PostulerEtCandidature()),
+      );
+      return;
+    }
+    if (title.contains('technique')) {
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (context) => const FaqProblemeTechnique()),
+      );
+      return;
+    }
+    if (title.contains('sécurité') || title.contains('securite')) {
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (context) => const FaqSecurity()),
+      );
+      return;
+    }
   }
 
   void _onTapCancel() {

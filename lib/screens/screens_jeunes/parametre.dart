@@ -5,6 +5,10 @@ import 'securite_parametre.dart';
 import 'competences_parametre.dart';
 import 'mission_parametre.dart';
 import 'moyen_paiement_parametre.dart';
+import 'home_jeune.dart';
+import 'centre_aide.dart';
+import 'conditions_generales.dart';
+import 'politique_et_confidenlite.dart';
 
 // --- 1. Gestionnaire d'état pour le thème ---
 class ThemeManager with ChangeNotifier {
@@ -115,42 +119,54 @@ class SettingsScreen extends StatelessWidget {
     required this.notificationManager,
   });
 
-  // Fonction pour afficher un message à la place d'une navigation réelle
-  void _handleTap(BuildContext context, String title) {
-    final t = title.toLowerCase();
-    if (t.contains('information') || t.contains('général') || t.contains('general')) {
-      Navigator.of(context).push(
-        MaterialPageRoute(builder: (context) => const ProfilJeuneScreen()),
-      );
-      return;
+  // Navigation fiable basée sur la clé (item.key) et non le titre affiché
+  void _handleTap(BuildContext context, String key) {
+    switch (key) {
+      case 'infoPerso':
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (context) => const ProfilJeuneScreen()),
+        );
+        return;
+      case 'securite':
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (context) => const SecuriteParametre()),
+        );
+        return;
+      case 'competences':
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (context) => const CompetencesParametre()),
+        );
+        return;
+      case 'prefMissions':
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (context) => const MissionParametre()),
+        );
+        return;
+      case 'moyenPaiement':
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (context) => const MoyenPaiementParametre()),
+        );
+        return;
+      case 'aide':
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (context) => const CentreAide()),
+        );
+        return;
+      case 'cgu':
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (context) => const ConditionsGenerales()),
+        );
+        return;
+      case 'confidentialite':
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (context) => const PolitiqueEtConfidenlite()),
+        );
+        return;
+      default:
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Navigation: $key"), duration: const Duration(milliseconds: 800)),
+        );
     }
-    if (t.contains('sécurité') || t.contains('securite') || t.contains('connexion')) {
-      Navigator.of(context).push(
-        MaterialPageRoute(builder: (context) => const SecuriteParametre()),
-      );
-      return;
-    }
-    if (t.contains('compétence') || t.contains('competence')) {
-      Navigator.of(context).push(
-        MaterialPageRoute(builder: (context) => const CompetencesParametre()),
-      );
-      return;
-    }
-    if (t.contains('préférences') || t.contains('preferences') || t.contains('missions')) {
-      Navigator.of(context).push(
-        MaterialPageRoute(builder: (context) => const MissionParametre()),
-      );
-      return;
-    }
-    if (t.contains('paiement') || t.contains('payment')) {
-      Navigator.of(context).push(
-        MaterialPageRoute(builder: (context) => const MoyenPaiementParametre()),
-      );
-      return;
-    }
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("Navigation vers '$title'"), duration: const Duration(milliseconds: 800)),
-    );
   }
 
   // Liste des sections de paramètres
@@ -291,8 +307,18 @@ class SettingsScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: const Color(0xFFf6fcfc),
-      appBar: const CustomHeader(
+      appBar: CustomHeader(
         title: 'Paramètres du Compte',
+        onBack: () {
+          final navigator = Navigator.of(context);
+          if (navigator.canPop()) {
+            navigator.pop();
+          } else {
+            navigator.pushReplacement(
+              MaterialPageRoute(builder: (ctx) => const HomeJeuneScreen()),
+            );
+          }
+        },
       ),
       
       body: Column(
@@ -301,7 +327,7 @@ class SettingsScreen extends StatelessWidget {
             child: Container(
               width: double.infinity,
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: const Color(0xFFf6fcfc), // This is the color of your background
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(30.0)),
               ),
               child: SingleChildScrollView(
@@ -432,7 +458,7 @@ class SettingSection extends StatelessWidget {
               children: items.map((item) {
                 return SettingRow(
                   item: item,
-                  onTap: () => onTap(item.title),
+                  onTap: () => onTap(item.key),
                   isDarkMode: isDarkMode,
                 );
               }).toList(),

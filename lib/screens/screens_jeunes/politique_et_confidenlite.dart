@@ -60,46 +60,29 @@ class PrivacyPolicyScreen extends StatelessWidget {
         title: 'Politique de Confidentialité',
       ),
       
-      body: Column(
-        children: <Widget>[
-          Expanded(
-            child: Container(
-              width: double.infinity,
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(30.0)),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Text(
+              'Dernière mise à jour : $lastUpdated. Bienvenue sur notre application. Nous nous engageons à protéger votre vie privée. Cette politique explique quelles informations nous collectons, comment nous les utilisons, et vos droits concernant vos données.',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey.shade700,
+                height: 1.5,
               ),
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(20.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    // --- Date de dernière mise à jour ---
-                    Text(
-                      'Dernière mise à jour : $lastUpdated. Bienvenue sur notre application. Nous nous engageons à protéger votre vie privée. Cette politique explique quelles informations nous collectons, comment nous les utilisons, et vos droits concernant vos données.',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey.shade700,
-                        height: 1.5,
-                      ),
-                      textAlign: TextAlign.justify,
-                    ),
-                    const SizedBox(height: 25),
-
-                    // --- Liste des sections de la Politique ---
-                    Column(
-                      children: policyItems.map((item) {
-                        return PolicyCard(policySection: item);
-                      }).toList(),
-                    ),
-                    
-                    const SizedBox(height: 30), // Espace en bas de la page
-                  ],
-                ),
-              ),
+              textAlign: TextAlign.justify,
             ),
-          ),
-        ],
+            const SizedBox(height: 25),
+            Column(
+              children: policyItems.map((item) {
+                return PolicyCard(policySection: item);
+              }).toList(),
+            ),
+            const SizedBox(height: 30),
+          ],
+        ),
       ),
     );
   }

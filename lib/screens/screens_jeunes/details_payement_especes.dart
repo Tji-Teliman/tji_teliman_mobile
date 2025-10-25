@@ -31,31 +31,9 @@ class CashPaymentRulesScreen extends StatelessWidget {
         title: 'Règles du Paiement en Espèces',
       ),
       
-      body: Column(
-        children: <Widget>[
-          // Conteneur blanc principal avec ombre et arrondi
-          Expanded(
-            child: Container(
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(30.0)),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 10.0,
-                    spreadRadius: 2.0,
-                    offset: const Offset(0, -5),
-                  ),
-                ],
-              ),
-              child: const SingleChildScrollView(
-                padding: EdgeInsets.all(20.0),
-                child: CashPaymentRulesContent(),
-              ),
-            ),
-          ),
-        ],
+      body: const SingleChildScrollView(
+        padding: EdgeInsets.all(20.0),
+        child: CashPaymentRulesContent(),
       ),
     );
   }

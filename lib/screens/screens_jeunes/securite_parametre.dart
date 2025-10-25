@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../widgets/custom_header.dart';
 import 'home_jeune.dart';
+import 'parametre_change_mdp.dart';
 
 // Définition des couleurs personnalisées Tji Teliman
 const Color _primaryBlue = Color(0xFF2563EB); // Bleu principal
@@ -41,31 +42,9 @@ class SecuritySettingsScreen extends StatelessWidget {
         },
       ),
       
-      body: Column(
-        children: <Widget>[
-          // Conteneur blanc principal avec ombre et arrondi
-          Expanded(
-            child: Container(
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(30.0)),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 10.0,
-                    spreadRadius: 2.0,
-                    offset: const Offset(0, -5),
-                  ),
-                ],
-              ),
-              child: const SingleChildScrollView(
-                padding: EdgeInsets.all(20.0),
-                child: SecuritySettingsContent(),
-              ),
-            ),
-          ),
-        ],
+      body: const SingleChildScrollView(
+        padding: EdgeInsets.all(20.0),
+        child: SecuritySettingsContent(),
       ),
     );
   }
@@ -99,7 +78,9 @@ class _SecuritySettingsContentState extends State<SecuritySettingsContent> {
           subtitle: 'Changez votre mot de passe pour garantir la sécurité de votre compte.',
           icon: Icons.lock_outline,
           onTap: () {
-            // Logique pour naviguer vers l'écran de modification de mot de passe
+            Navigator.of(context).push(
+              MaterialPageRoute(builder: (context) => const ParametreChangeMdp()),
+            );
           },
         ),
         const Divider(height: 1),

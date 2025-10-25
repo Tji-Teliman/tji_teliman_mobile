@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../widgets/custom_header.dart';
+import 'details_payement_especes.dart';
 
 class MoyenPaiementParametre extends StatelessWidget {
   const MoyenPaiementParametre({super.key});
@@ -43,7 +44,7 @@ class PaymentMethodsScreen extends StatefulWidget {
 class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
   final Color _primaryBlue = const Color(0xFF2563EB);
   final Color _appBarColor = const Color(0xFF46B3C8); 
-  final Color _backgroundColor = const Color(0xFFE0F7FA);
+  final Color _backgroundColor = const Color(0xFFf6fcfc);
 
   // Liste des méthodes de paiement disponibles (sans Carte Bancaire)
   final List<PaymentMethod> availableMethods = const [
@@ -69,74 +70,44 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
         title: 'Moyens de Paiement',
       ),
       
-      body: Column(
-        children: <Widget>[
-          // Conteneur blanc principal avec ombre et arrondi
-          Expanded(
-            child: Container(
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: _backgroundColor, 
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(30.0)),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.15),
-                    blurRadius: 10.0,
-                    spreadRadius: 2.0,
-                    offset: const Offset(0, -5),
-                  ),
-                ],
-              ),
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(20.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    
-                    // --- Section Moyens de Paiement Existants ---
-                    const SectionTitle(title: 'Moyen de paiement par défaut'),
-                    const SizedBox(height: 10),
-                    // Carte du mode de paiement principal (Mobile Money)
-                    PaymentMethodCard(
-                      method: availableMethods[0], // Le premier de la liste est le défaut
-                      isDefault: true,
-                      onTap: () {},
-                    ),
-                    
-                    const SizedBox(height: 30),
-
-                    // --- Section Autres Moyens ---
-                    const SectionTitle(title: 'Autres moyens de paiement'),
-                    const SizedBox(height: 10),
-                    
-                    // Liste des autres moyens (commence après le défaut)
-                    ...availableMethods.skip(1).map((method) {
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 12.0),
-                        child: PaymentMethodCard(
-                          method: method,
-                          isDefault: false,
-                          onTap: () {
-                            // Simuler la sélection pour le mettre en défaut
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('${method.title} sélectionné comme défaut (Simulation)')),
-                            );
-                          },
-                        ),
-                      );
-                    }).toList(),
-
-                    const SizedBox(height: 30),
-
-                    // Le bouton Ajouter une Carte / Un Compte a été retiré.
-
-                    const SizedBox(height: 20),
-                  ],
-                ),
-              ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SectionTitle(title: 'Moyen de paiement par défaut'),
+            const SizedBox(height: 10),
+            PaymentMethodCard(
+              method: availableMethods[0],
+              isDefault: true,
+              onTap: () {},
             ),
-          ),
-        ],
+            const SizedBox(height: 30),
+            const SectionTitle(title: 'Autres moyens de paiement'),
+            const SizedBox(height: 10),
+            ...availableMethods.skip(1).map((method) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 12.0),
+                child: PaymentMethodCard(
+                  method: method,
+                  isDefault: false,
+                  onTap: () {
+                    if (method.title.toLowerCase().contains('espèces') || method.title.toLowerCase().contains('especes')) {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (context) => const DetailsPayementEspeces()),
+                      );
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('${method.title} sélectionné (Simulation)')),
+                      );
+                    }
+                  },
+                ),
+              );
+            }).toList(),
+            const SizedBox(height: 20),
+          ],
+        ),
       ),
     );
   }
