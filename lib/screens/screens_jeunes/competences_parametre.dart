@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../widgets/custom_header.dart';
 
 
 class CompetencesParametre extends StatelessWidget {
@@ -6,17 +7,7 @@ class CompetencesParametre extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Tji Teliman - Compétences',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        visualDensity: VisualDensity.adaptivePlatformDensity,
-        useMaterial3: true,
-      ),
-      // L'écran de gestion des compétences est défini ici
-      home: const MySkillsScreen(),
-      debugShowCheckedModeBanner: false,
-    );
+    return const MySkillsScreen();
   }
 }
 // --- END MAIN APP STRUCTURE ---
@@ -86,21 +77,9 @@ class _MySkillsScreenState extends State<MySkillsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _primaryTeal,
-      appBar: AppBar(
-        backgroundColor: _primaryTeal,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () {
-            // Logique de retour
-          },
-        ),
-        title: const Text(
-          'Mes Compétencess', // "Compétencess" est l'orthographe de l'image
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
-        ),
-        centerTitle: true,
+      backgroundColor: const Color(0xFFf6fcfc),
+      appBar: const CustomHeader(
+        title: 'Mes Compétencess',
       ),
       body: Column(
         children: <Widget>[

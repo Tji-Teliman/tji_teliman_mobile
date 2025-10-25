@@ -1,19 +1,12 @@
 import 'package:flutter/material.dart';
+import '../../widgets/custom_header.dart';
 
 class FaqProblemeTechnique extends StatelessWidget {
   const FaqProblemeTechnique({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'FAQ Problèmes Techniques',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        useMaterial3: true,
-      ),
-      home: const FaqTechnicalScreen(),
-      debugShowCheckedModeBanner: false,
-    );
+    return const FaqTechnicalScreen();
   }
 }
 
@@ -59,21 +52,10 @@ class FaqTechnicalScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: customBlue,
-      appBar: AppBar(
-        backgroundColor: customBlue,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
-          onPressed: () {
-            // Logique de retour
-          },
-        ),
-        title: const Text(
-          'Problèmes Techniques',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
-        ),
-        centerTitle: true,
+      backgroundColor: const Color(0xFFf6fcfc),
+      appBar: CustomHeader(
+        title: 'Problèmes Techniques',
+        onBack: () => Navigator.of(context).pop(),
       ),
       
       body: Column(

@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../screens/screens_jeunes/mes_candidatures.dart';
+import '../screens/screens_jeunes/historique_paiement.dart';
+import '../screens/screens_jeunes/message_conversation.dart';
+import '../screens/screens_jeunes/parametre.dart';
+import '../screens/screens_jeunes/centre_aide.dart';
 
 // --- COULEURS UTILISÉES DANS LE DESIGN (réutilisées depuis votre code) ---
 const Color primaryGreen = Color(0xFF10B981); // Couleur principale du thème
@@ -16,7 +21,7 @@ class DrawerItem {
 // Données statiques pour le menu
 final List<DrawerItem> drawerItems = [
   // Icônes ajustées pour correspondre au style de l'image (légèrement plus épaisses)
-  DrawerItem(title: 'Mes Missions', icon: Icons.assignment_outlined), 
+  DrawerItem(title: 'Mes Candidatures', icon: Icons.assignment_outlined), 
   DrawerItem(title: 'Historique', icon: Icons.bar_chart_outlined),
   DrawerItem(title: 'Messages', icon: Icons.chat_bubble_outline),
   DrawerItem(title: 'Paramètres', icon: Icons.settings_outlined),
@@ -67,6 +72,42 @@ class CustomDrawer extends StatelessWidget {
       ),
       onTap: onTap,
     );
+  }
+
+  void _handleNavigation(BuildContext context, String title) {
+    final String key = title.toLowerCase();
+    Navigator.of(context).pop();
+    if (key.contains('candidature')) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => const MesCandidaturesScreen()),
+      );
+      return;
+    }
+    if (key.contains('histor')) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => const HistoriquePaiement()),
+      );
+      return;
+    }
+    if (key.contains('message')) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => const MessageConversationScreen()),
+      );
+      return;
+    }
+    if (key.contains('param')) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => const Parametre()),
+      );
+      return;
+    }
+    if (key.contains('aide')) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => const CentreAide()),
+      );
+      return;
+    }
+    // Fallback: rester et fermer simplement le drawer
   }
 
   @override
@@ -221,7 +262,7 @@ class CustomDrawer extends StatelessWidget {
                   return _buildDrawerTile(
                     icon: item.icon,
                     title: item.title,
-                    onTap: () => _logout(context), // Utilisation temporaire de _logout
+                    onTap: () => _handleNavigation(context, item.title),
                   );
                 },
               ),

@@ -19,6 +19,7 @@ import 'mes_candidatures.dart';
 import 'liste_litige.dart';
 import 'historique_paiement.dart';
 import 'finaliser_profil.dart';
+import 'profil_jeune.dart';
 
 // --- COULEURS UTILISÉES DANS LE DESIGN ---
 const Color primaryGreen = Color(0xFF10B981); // Vert principal du logo/home
@@ -323,6 +324,13 @@ class _HomeJeuneScreenState extends State<HomeJeuneScreen> {
                   // Aller vers Mes Candidatures
                   Navigator.of(context).pushReplacement(
                     MaterialPageRoute(builder: (context) => const MesCandidaturesScreen()),
+                  );
+                  return;
+                }
+                if (index == 2) {
+                  // Aller vers Profil
+                  Navigator.of(context).pushReplacement(
+                    MaterialPageRoute(builder: (context) => const ProfilJeuneScreen()),
                   );
                   return;
                 }

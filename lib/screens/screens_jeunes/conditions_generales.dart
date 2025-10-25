@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../widgets/custom_header.dart';
 
 
 class ConditionsGenerales extends StatelessWidget {
@@ -6,15 +7,7 @@ class ConditionsGenerales extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Conditions Générales d\'Utilisation (Jeune)',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        useMaterial3: true,
-      ),
-      home: const CguScreen(),
-      debugShowCheckedModeBanner: false,
-    );
+    return const CguScreen();
   }
 }
 
@@ -66,21 +59,10 @@ class CguScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: customBlue,
-      appBar: AppBar(
-        backgroundColor: customBlue,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
-          onPressed: () {
-            // Logique de retour
-          },
-        ),
-        title: const Text(
-          'Conditions Générales d\'Utilisation (Jeune)',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 18),
-        ),
-        centerTitle: true,
+      backgroundColor: const Color(0xFFf6fcfc),
+      appBar: CustomHeader(
+        title: 'Conditions Générales d\'Utilisation (Jeune)',
+        onBack: () => Navigator.of(context).pop(),
       ),
       
       body: Column(

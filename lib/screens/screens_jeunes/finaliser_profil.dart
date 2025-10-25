@@ -8,6 +8,7 @@ import '../../widgets/custom_header.dart'; // Supposons que c'est le chemin vali
 const Color primaryGreen = Color(0xFF10B981); // Vert principal
 const Color primaryBlue = Color(0xFF2563EB); // Bleu
 const Color bodyBackgroundColor = Color(0xFFf6fcfc); // Couleur de fond du Scaffold
+const Color orangeBrand = Color(0xFFE67E22);
 const Color inactiveGray = Color(0xFFE0E0E0); // Gris pour la barre de progression inactive
 
 class FinaliserProfilScreen extends StatefulWidget {
@@ -21,6 +22,16 @@ class _FinaliserProfilScreenState extends State<FinaliserProfilScreen> {
   final ImagePicker _picker = ImagePicker();
   String? _selectedDateOfBirth;
   String? _selectedLocation;
+  final List<String> _allCompetences = const [
+    'Livraisons',
+    'Cuisine',
+    'Evenementiel',
+    'Serveuse',
+    'Baby-sitting',
+    'Ménage',
+    'Vente de Magasin',
+  ];
+  final Set<String> _selectedCompetences = {};
 
   // Fonction pour sélectionner une image (caméra ou galerie)
   Future<void> _pickImage(ImageSource source) async {
@@ -292,35 +303,130 @@ class _FinaliserProfilScreenState extends State<FinaliserProfilScreen> {
     );
   }
 
-  // Widget pour le champ de texte "Compétences" (Textarea)
+  // Widget pour le champ "Compétences" (liste déroulante multi-sélection)
   Widget _buildCompetencesField() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 5,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: TextField(
-        maxLines: 4, // Permet plusieurs lignes
-        decoration: InputDecoration(
-          hintText: 'Compétences',
-          hintStyle: GoogleFonts.poppins(color: Colors.black54),
-          contentPadding: const EdgeInsets.symmetric(vertical: 18, horizontal: 15),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide: BorderSide.none,
-          ),
-          filled: true,
-          fillColor: Colors.white,
+    return GestureDetector(
+      onTap: _openCompetencesPicker,
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(10),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 5,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 15),
+        child: Row(
+          children: [
+            const Icon(Icons.workspace_premium_outlined, color: orangeBrand),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                _selectedCompetences.isEmpty
+                    ? 'Compétences'
+                    : _selectedCompetences.join(', '),
+                style: GoogleFonts.poppins(
+                  color: Colors.black87,
+                  fontSize: 16,
+                ),
+              ),
+            ),
+            const Icon(Icons.keyboard_arrow_down, color: Colors.black54),
+          ],
         ),
       ),
     );
+  }
+
+  void _openCompetencesPicker() async {
+    final tempInitial = Set<String>.from(_selectedCompetences);
+    final result = await showModalBottomSheet<Set<String>>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (sheetContext) {
+        final double h = MediaQuery.of(sheetContext).size.height * 0.6;
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            final temp = tempInitial;
+            return SafeArea(
+              child: SizedBox(
+                height: h,
+                child: Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                      child: Row(
+                        children: [
+                          Text('Choisir des compétences', style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600)),
+                          const Spacer(),
+                          IconButton(
+                            icon: const Icon(Icons.close),
+                            onPressed: () => Navigator.of(sheetContext).pop(temp),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Divider(height: 1),
+                    Expanded(
+                      child: ListView(
+                        children: _allCompetences.map((c) {
+                          final checked = temp.contains(c);
+                          return CheckboxListTile(
+                            value: checked,
+                            title: Text(c, style: GoogleFonts.poppins(fontSize: 14)),
+                            activeColor: primaryGreen,
+                            onChanged: (v) {
+                              setModalState(() {
+                                if (v == true) {
+                                  temp.add(c);
+                                } else {
+                                  temp.remove(c);
+                                }
+                              });
+                            },
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: SizedBox(
+                        width: double.infinity,
+                        height: 44,
+                        child: ElevatedButton(
+                          onPressed: () => Navigator.of(sheetContext).pop(temp),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: primaryGreen,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                          child: Text('Valider', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600)),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+
+    if (result != null) {
+      setState(() {
+        _selectedCompetences
+          ..clear()
+          ..addAll(result);
+      });
+    }
   }
 
   // Widget pour la section de téléversement de la pièce d'identité

@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+// Ne pas dépendre d'un écran précis ici; laisser les écrans fournir onBack si besoin
 
 // --- COULEURS ET CONSTANTES (à importer ou redéfinir) ---
 const Color primaryBlue = Color(0xFF2563EB); 
@@ -51,7 +52,12 @@ const Color darkGrey = Colors.black54;
                 children: [
                   // Bouton retour
                   GestureDetector(
-                    onTap: onBack ?? () => Navigator.of(context).pop(),
+                    onTap: onBack ?? () {
+                      final navigator = Navigator.of(context);
+                      if (navigator.canPop()) {
+                        navigator.pop();
+                      }
+                    },
                     child: const Icon(
                       Icons.arrow_back_ios,
                       color: Colors.white,

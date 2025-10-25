@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../widgets/custom_header.dart';
 
 
 class FaqCompteProfil extends StatelessWidget {
@@ -6,15 +7,7 @@ class FaqCompteProfil extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'FAQ Mon Compte & Profil',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        useMaterial3: true,
-      ),
-      home: const FaqProfileScreen(),
-      debugShowCheckedModeBanner: false,
-    );
+    return const FaqProfileScreen();
   }
 }
 
@@ -59,21 +52,10 @@ class FaqProfileScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: customBlue,
-      appBar: AppBar(
-        backgroundColor: customBlue,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
-          onPressed: () {
-            // Logique de retour
-          },
-        ),
-        title: const Text(
-          'Mon Compte & Profil',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
-        ),
-        centerTitle: true,
+      backgroundColor: const Color(0xFFf6fcfc),
+      appBar: CustomHeader(
+        title: 'Mon Compte & Profil',
+        onBack: () => Navigator.of(context).pop(),
       ),
       
       body: Column(

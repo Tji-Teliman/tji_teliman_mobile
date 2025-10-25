@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../widgets/custom_header.dart';
 
 
 class ContacterNous extends StatelessWidget {
@@ -6,15 +7,7 @@ class ContacterNous extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Nous Contacter',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        useMaterial3: true,
-      ),
-      home: const ContactUsScreen(),
-      debugShowCheckedModeBanner: false,
-    );
+    return const ContactUsScreen();
   }
 }
 
@@ -28,22 +21,10 @@ class ContactUsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: customBlue, // Fond bleu de l'App Bar
-      appBar: AppBar(
-        backgroundColor: customBlue,
-        elevation: 0,
-        leading: IconButton(
-          // Utilisation de la flèche de retour courbée (iOS style)
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
-          onPressed: () {
-            // Logique de retour
-          },
-        ),
-        title: const Text(
-          'Nous Contacter',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
-        ),
-        centerTitle: true,
+      backgroundColor: const Color(0xFFf6fcfc),
+      appBar: CustomHeader(
+        title: 'Nous Contacter',
+        onBack: () => Navigator.of(context).pop(),
       ),
       
       body: Column(

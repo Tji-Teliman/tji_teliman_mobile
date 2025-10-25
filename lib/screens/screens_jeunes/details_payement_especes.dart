@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../widgets/custom_header.dart';
 
 // Définition des couleurs personnalisées
 const Color _primaryBlue = Color(0xFF2563EB); // Bleu principal
@@ -11,19 +12,7 @@ class DetailsPayementEspeces extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Tji Teliman - Règles Paiement',
-      theme: ThemeData(
-        useMaterial3: true,
-        primaryColor: _primaryBlue,
-        colorScheme: ColorScheme.light(
-          primary: _primaryBlue,
-        ),
-        visualDensity: VisualDensity.adaptivePlatformDensity,
-      ),
-      home: const CashPaymentRulesScreen(),
-      debugShowCheckedModeBanner: false,
-    );
+    return const CashPaymentRulesScreen();
   }
 }
 // --- END MAIN APP STRUCTURE ---
@@ -37,30 +26,9 @@ class CashPaymentRulesScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _appBarColor,
-      appBar: AppBar(
-        // Utilisation d'un dégradé pour l'AppBar pour correspondre au style Tji Teliman
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [_appBarColor, _accentColor],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
-        ),
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 24),
-          onPressed: () {
-            // Logique de retour
-          },
-        ),
-        title: const Text(
-          'Règles du Paiement en Espèces',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 18),
-        ),
-        centerTitle: true,
+      backgroundColor: const Color(0xFFf6fcfc),
+      appBar: const CustomHeader(
+        title: 'Règles du Paiement en Espèces',
       ),
       
       body: Column(

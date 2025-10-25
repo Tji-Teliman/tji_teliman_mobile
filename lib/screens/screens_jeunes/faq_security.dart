@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../widgets/custom_header.dart';
 
 
 class FaqSecurity extends StatelessWidget {
@@ -6,15 +7,7 @@ class FaqSecurity extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'FAQ Sécurité & Confidentialité',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        useMaterial3: true,
-      ),
-      home: const FaqSecurityScreen(),
-      debugShowCheckedModeBanner: false,
-    );
+    return const FaqSecurityScreen();
   }
 }
 
@@ -60,21 +53,10 @@ class FaqSecurityScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: customBlue,
-      appBar: AppBar(
-        backgroundColor: customBlue,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
-          onPressed: () {
-            // Logique de retour
-          },
-        ),
-        title: const Text(
-          'Sécurité & Confidentialité',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
-        ),
-        centerTitle: true,
+      backgroundColor: const Color(0xFFf6fcfc),
+      appBar: CustomHeader(
+        title: 'Sécurité & Confidentialité',
+        onBack: () => Navigator.of(context).pop(),
       ),
       
       body: Column(

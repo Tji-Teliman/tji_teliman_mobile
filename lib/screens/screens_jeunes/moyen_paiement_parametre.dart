@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../widgets/custom_header.dart';
 
 class MoyenPaiementParametre extends StatelessWidget {
   const MoyenPaiementParametre({super.key});
@@ -8,20 +9,7 @@ class MoyenPaiementParametre extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Tji Teliman - Paiement',
-      theme: ThemeData(
-        useMaterial3: true,
-        primaryColor: _primaryBlue,
-        colorScheme: ColorScheme.light(
-          primary: _primaryBlue,
-          secondary: _primaryBlue, 
-        ),
-        visualDensity: VisualDensity.adaptivePlatformDensity,
-      ),
-      home: const PaymentMethodsScreen(),
-      debugShowCheckedModeBanner: false,
-    );
+    return const PaymentMethodsScreen();
   }
 }
 // --- END MAIN APP STRUCTURE ---
@@ -76,21 +64,9 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _appBarColor,
-      appBar: AppBar(
-        backgroundColor: _appBarColor,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 24),
-          onPressed: () {
-            // Logique de retour
-          },
-        ),
-        title: const Text(
-          'Moyens de Paiement',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 20),
-        ),
-        centerTitle: true,
+      backgroundColor: const Color(0xFFf6fcfc),
+      appBar: const CustomHeader(
+        title: 'Moyens de Paiement',
       ),
       
       body: Column(

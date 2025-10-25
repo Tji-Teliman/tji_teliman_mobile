@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../widgets/custom_header.dart';
 
 
 class PolitiqueEtConfidenlite extends StatelessWidget {
@@ -6,15 +7,7 @@ class PolitiqueEtConfidenlite extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Politique de Confidentialité',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        useMaterial3: true,
-      ),
-      home: const PrivacyPolicyScreen(),
-      debugShowCheckedModeBanner: false,
-    );
+    return const PrivacyPolicyScreen();
   }
 }
 
@@ -62,21 +55,9 @@ class PrivacyPolicyScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: customBlue,
-      appBar: AppBar(
-        backgroundColor: customBlue,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
-          onPressed: () {
-            // Logique de retour
-          },
-        ),
-        title: const Text(
-          'Politique de Confidentialité',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 18),
-        ),
-        centerTitle: true,
+      backgroundColor: const Color(0xFFf6fcfc),
+      appBar: const CustomHeader(
+        title: 'Politique de Confidentialité',
       ),
       
       body: Column(

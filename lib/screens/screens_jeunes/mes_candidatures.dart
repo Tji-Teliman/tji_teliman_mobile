@@ -12,6 +12,7 @@ import 'home_jeune.dart';
 import 'message_conversation.dart';
 // Import de la page Chat pour la navigation directe
 import 'chat_screen.dart';
+import 'profil_jeune.dart';
 
 // --- COULEURS ET CONSTANTES ---
 const Color primaryBlue = Color(0xFF2563EB); 
@@ -358,6 +359,13 @@ class _MesCandidaturesScreenState extends State<MesCandidaturesScreen> {
             // Aller vers Accueil
             Navigator.of(context).pushReplacement(
               MaterialPageRoute(builder: (context) => const HomeJeuneScreen()),
+            );
+            return;
+          }
+          if (index == 2) {
+            // Aller vers Profil
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (context) => const ProfilJeuneScreen()),
             );
             return;
           }

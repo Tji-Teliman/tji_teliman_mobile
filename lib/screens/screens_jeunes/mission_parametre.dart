@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../widgets/custom_header.dart';
 
 
 class MissionParametre extends StatelessWidget {
@@ -9,21 +10,7 @@ class MissionParametre extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Tji Teliman - Préférences',
-      theme: ThemeData(
-        useMaterial3: true,
-        primaryColor: _primaryBlue,
-        colorScheme: ColorScheme.light(
-          primary: _primaryBlue,
-          // Couleur pour la coche des Checkbox
-          secondary: _primaryBlue, 
-        ),
-        visualDensity: VisualDensity.adaptivePlatformDensity,
-      ),
-      home: const MissionPreferencesScreen(),
-      debugShowCheckedModeBanner: false,
-    );
+    return const MissionPreferencesScreen();
   }
 }
 // --- END MAIN APP STRUCTURE ---
@@ -162,22 +149,9 @@ class _MissionPreferencesScreenState extends State<MissionPreferencesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _primaryTeal,
-      appBar: AppBar(
-        backgroundColor: _primaryTeal,
-        elevation: 0,
-        leading: IconButton(
-          // Icône de retour iOS
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 24),
-          onPressed: () {
-            // Logique de retour
-          },
-        ),
-        title: const Text(
-          'Préférences de Missions',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
-        ),
-        centerTitle: true,
+      backgroundColor: const Color(0xFFf6fcfc),
+      appBar: const CustomHeader(
+        title: 'Préférences de Missions',
       ),
       body: Column(
         children: <Widget>[

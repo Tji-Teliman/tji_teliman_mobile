@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../widgets/custom_header.dart';
 
 // Définition des couleurs personnalisées
 const Color customBlue = Color(0xFF2563EB); // Couleur principale de la barre d'App et boutons
@@ -11,17 +12,7 @@ class ParametreChangeMdp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Modifier le mot de passe',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        useMaterial3: true,
-        scaffoldBackgroundColor: Colors.grey.shade100,
-        fontFamily: 'Inter', // Utilisation d'une police moderne (Inter est implicite dans Tailwind/Modern UI)
-      ),
-      home: const ChangePasswordScreen(),
-      debugShowCheckedModeBanner: false,
-    );
+    return const ChangePasswordScreen();
   }
 }
 
@@ -202,21 +193,9 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: customBlue,
-      appBar: AppBar(
-        backgroundColor: customBlue,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
-          onPressed: () {
-            // Logique de retour
-          },
-        ),
-        title: const Text(
-          'Modifier le mot de passe',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 18),
-        ),
-        centerTitle: true,
+      backgroundColor: const Color(0xFFf6fcfc),
+      appBar: const CustomHeader(
+        title: 'Modifier le mot de passe',
       ),
       body: Column(
         children: <Widget>[

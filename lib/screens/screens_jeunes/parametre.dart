@@ -1,4 +1,10 @@
 import 'package:flutter/material.dart';
+import '../../widgets/custom_header.dart';
+import 'profil_jeune.dart';
+import 'securite_parametre.dart';
+import 'competences_parametre.dart';
+import 'mission_parametre.dart';
+import 'moyen_paiement_parametre.dart';
 
 // --- 1. Gestionnaire d'état pour le thème ---
 class ThemeManager with ChangeNotifier {
@@ -65,28 +71,10 @@ class _MyAppState extends State<Parametre> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Paramètres du Compte',
-      // Thèmes pour simuler le mode sombre
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        useMaterial3: true,
-        brightness: Brightness.light,
-        scaffoldBackgroundColor: Colors.grey.shade100,
-      ),
-      darkTheme: ThemeData(
-        primarySwatch: Colors.blue,
-        useMaterial3: true,
-        brightness: Brightness.dark,
-        scaffoldBackgroundColor: const Color(0xFF121212), // Fond sombre
-      ),
-      themeMode: _themeManager.themeMode,
-      // Passer les gestionnaires à SettingsScreen
-      home: SettingsScreen(
-        themeManager: _themeManager,
-        notificationManager: _notificationManager, // PASSAGE DU NOUVEAU MANAGER
-      ),
-      debugShowCheckedModeBanner: false,
+    // Retourner directement l'écran, sans MaterialApp imbriqué
+    return SettingsScreen(
+      themeManager: _themeManager,
+      notificationManager: _notificationManager,
     );
   }
 }
@@ -129,11 +117,39 @@ class SettingsScreen extends StatelessWidget {
 
   // Fonction pour afficher un message à la place d'une navigation réelle
   void _handleTap(BuildContext context, String title) {
+    final t = title.toLowerCase();
+    if (t.contains('information') || t.contains('général') || t.contains('general')) {
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (context) => const ProfilJeuneScreen()),
+      );
+      return;
+    }
+    if (t.contains('sécurité') || t.contains('securite') || t.contains('connexion')) {
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (context) => const SecuriteParametre()),
+      );
+      return;
+    }
+    if (t.contains('compétence') || t.contains('competence')) {
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (context) => const CompetencesParametre()),
+      );
+      return;
+    }
+    if (t.contains('préférences') || t.contains('preferences') || t.contains('missions')) {
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (context) => const MissionParametre()),
+      );
+      return;
+    }
+    if (t.contains('paiement') || t.contains('payment')) {
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (context) => const MoyenPaiementParametre()),
+      );
+      return;
+    }
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text("Navigation vers '$title' (non implémentée)"),
-        duration: const Duration(milliseconds: 1000),
-      ),
+      SnackBar(content: Text("Navigation vers '$title'"), duration: const Duration(milliseconds: 800)),
     );
   }
 
@@ -274,22 +290,9 @@ class SettingsScreen extends StatelessWidget {
     final bool isDarkMode = themeManager.themeMode == ThemeMode.dark;
 
     return Scaffold(
-      // Utiliser les couleurs de thème pour le fond
-      backgroundColor: isDarkMode ? const Color(0xFF1E293B) : customBlue, 
-      appBar: AppBar(
-        backgroundColor: isDarkMode ? const Color(0xFF1E293B) : customBlue,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
-          onPressed: () {
-            // Logique de retour
-          },
-        ),
-        title: const Text(
-          'Paramètres du Compte',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 18),
-        ),
-        centerTitle: true,
+      backgroundColor: const Color(0xFFf6fcfc),
+      appBar: const CustomHeader(
+        title: 'Paramètres du Compte',
       ),
       
       body: Column(
@@ -298,8 +301,7 @@ class SettingsScreen extends StatelessWidget {
             child: Container(
               width: double.infinity,
               decoration: BoxDecoration(
-                // Utiliser la couleur de thème pour le corps
-                color: Theme.of(context).scaffoldBackgroundColor, 
+                color: Colors.white,
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(30.0)),
               ),
               child: SingleChildScrollView(

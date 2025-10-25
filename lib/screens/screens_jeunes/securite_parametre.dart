@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../widgets/custom_header.dart';
+import 'home_jeune.dart';
 
 // Définition des couleurs personnalisées Tji Teliman
 const Color _primaryBlue = Color(0xFF2563EB); // Bleu principal
@@ -11,19 +13,7 @@ class SecuriteParametre extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Tji Teliman - Sécurité',
-      theme: ThemeData(
-        useMaterial3: true,
-        primaryColor: _primaryBlue,
-        colorScheme: ColorScheme.light(
-          primary: _primaryBlue,
-        ),
-        visualDensity: VisualDensity.adaptivePlatformDensity,
-      ),
-      home: const SecuritySettingsScreen(),
-      debugShowCheckedModeBanner: false,
-    );
+    return const SecuritySettingsScreen();
   }
 }
 // --- END MAIN APP STRUCTURE ---
@@ -36,30 +26,19 @@ class SecuritySettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _appBarColor,
-      appBar: AppBar(
-        // Utilisation d'un dégradé pour l'AppBar
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [_appBarColor, _accentColor],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
-        ),
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 24),
-          onPressed: () {
-            // Logique de retour
-          },
-        ),
-        title: const Text(
-          'Sécurité et Connexion',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 18),
-        ),
-        centerTitle: true,
+      backgroundColor: const Color(0xFFf6fcfc),
+      appBar: CustomHeader(
+        title: 'Sécurité et Connexion',
+        onBack: () {
+          final navigator = Navigator.of(context);
+          if (navigator.canPop()) {
+            navigator.pop();
+          } else {
+            navigator.pushReplacement(
+              MaterialPageRoute(builder: (ctx) => const HomeJeuneScreen()),
+            );
+          }
+        },
       ),
       
       body: Column(

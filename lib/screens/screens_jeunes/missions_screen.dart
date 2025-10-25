@@ -5,6 +5,8 @@ import '../../widgets/custom_header.dart';
 import 'detail_missions.dart';
 import 'home_jeune.dart';
 import 'message_conversation.dart';
+import 'mes_candidatures.dart';
+import 'profil_jeune.dart';
 
 // --- COULEURS ET CONSTANTES ---
 const Color primaryGreen = Color(0xFF10B981); 
@@ -260,6 +262,20 @@ class _MissionsScreenState extends State<MissionsScreen> {
             // Aller vers Accueil
             Navigator.of(context).pushReplacement(
               MaterialPageRoute(builder: (context) => const HomeJeuneScreen()),
+            );
+            return;
+          }
+          if (index == 1) {
+            // Aller vers Candidatures
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (context) => const MesCandidaturesScreen()),
+            );
+            return;
+          }
+          if (index == 2) {
+            // Aller vers Profil
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (context) => const ProfilJeuneScreen()),
             );
             return;
           }
