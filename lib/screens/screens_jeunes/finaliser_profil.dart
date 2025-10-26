@@ -109,7 +109,7 @@ class _FinaliserProfilScreenState extends State<FinaliserProfilScreen> {
         onBack: () => Navigator.of(context).pop(),
       ),
       body: SingleChildScrollView(
-        padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.05),
+        padding: EdgeInsets.fromLTRB(20.0, 0.0, 20.0, 0.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: <Widget>[

@@ -33,7 +33,7 @@ const Color darkGrey = Colors.black54;
   @override
   // Hauteur FIXE pour garantir l'espace du cadre arrondi sur toutes les pages
   // Même sans bottomWidget, on réserve 120px afin d'éviter que le body ne recouvre le cadre arrondi
-  Size get preferredSize => const Size.fromHeight(120.0);
+  Size get preferredSize => const Size.fromHeight(130.0);
 
   @override
   Widget build(BuildContext context) {
@@ -41,7 +41,7 @@ const Color darkGrey = Colors.black54;
       children: [
         // Header bleu fixe
         Container(
-          height: 120,
+          height: 160,
           color: const Color(0xFF2f9bcf), // Couleur du header
           child: SafeArea(
             child: Padding(
@@ -102,7 +102,7 @@ const Color darkGrey = Colors.black54;
         
         // Corps avec coins arrondis
         Padding(
-          padding: const EdgeInsets.only(top: 80.0),
+          padding: const EdgeInsets.only(top: 120.0),
           child: Container(
             height: double.infinity,
             decoration: const BoxDecoration(
@@ -132,7 +132,7 @@ const Color darkGrey = Colors.black54;
           Positioned(
             left: 50,
             right: 50,
-            top: 70,
+            top: 110,
             child: Material(
               color: Colors.transparent,
               elevation: 6,

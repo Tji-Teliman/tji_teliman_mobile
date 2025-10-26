@@ -28,11 +28,11 @@ class ContactUsScreen extends StatelessWidget {
       ),
       
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20.0),
+        padding: const EdgeInsets.fromLTRB(20.0, 0.0, 20.0, 0.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            const SizedBox(height: 20),
+            const SizedBox(height: 0),
             // --- Champ Votre Nom ---
             const CustomTextField(hintText: 'Votre Nom'),
             const SizedBox(height: 15),

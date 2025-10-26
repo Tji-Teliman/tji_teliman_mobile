@@ -103,27 +103,28 @@ class _ModifierProfilScreenState extends State<ModifierProfilScreen> {
 
           // Corps arrondi chevauchant le header
           Positioned(
-            top: headerHeight - 50,
+            top: headerHeight - 40,
             left: 0,
             right: 0,
             bottom: 0,
-            child: SingleChildScrollView(
-              child: Container(
-                width: screenWidth,
-                decoration: const BoxDecoration(
-                  color: bodyBackgroundColor,
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(60),
-                    topRight: Radius.circular(60),
-                  ),
+            child: Container(
+              width: screenWidth,
+              decoration: const BoxDecoration(
+                color: bodyBackgroundColor,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(60),
+                  topRight: Radius.circular(60),
                 ),
-                child: Padding(
-                  padding: EdgeInsets.fromLTRB(
-                    screenWidth * 0.05,
-                    22,
-                    screenWidth * 0.05,
-                    30,
-                  ),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(
+                  screenWidth * 0.05,
+                  22,
+                  screenWidth * 0.05,
+                  30,
+                ),
+                child: SingleChildScrollView(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -230,7 +231,7 @@ class _ModifierProfilScreenState extends State<ModifierProfilScreen> {
 
           // Avatar + nom + rôle
           Positioned(
-            top: height * 0.18,
+            top: height * 0.28,
             left: 0,
             right: 0,
             child: Column(
@@ -239,7 +240,7 @@ class _ModifierProfilScreenState extends State<ModifierProfilScreen> {
                 Stack(
                   children: [
                     CircleAvatar(
-                      radius: 60,
+                      radius: 50,
                       backgroundImage: _profileImage == null
                           ? const AssetImage('assets/images/image_profil.png') as ImageProvider
                           : FileImage(File(_profileImage!.path)),

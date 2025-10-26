@@ -331,7 +331,7 @@ class SettingsScreen extends StatelessWidget {
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(30.0)),
               ),
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 20.0),
+                 padding: const EdgeInsets.fromLTRB(20.0, 0.0, 20.0, 0.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[

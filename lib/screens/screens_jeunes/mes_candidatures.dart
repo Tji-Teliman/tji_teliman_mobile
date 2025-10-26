@@ -324,7 +324,7 @@ class _MesCandidaturesScreenState extends State<MesCandidaturesScreen> {
         children: <Widget>[
           // Barres de Filtres
           Padding(
-            padding: const EdgeInsets.fromLTRB(20.0, 20.0, 20.0, 16.0),
+            padding: const EdgeInsets.fromLTRB(20.0, 0.0, 20.0, 0.0),
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(

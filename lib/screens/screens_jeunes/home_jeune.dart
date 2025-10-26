@@ -181,128 +181,130 @@ class _HomeJeuneScreenState extends State<HomeJeuneScreen> {
             left: 0,
             right: 0,
             bottom: 80, // Laisser de l'espace pour la barre de navigation (environ 80px)
-            child: SingleChildScrollView(
-              child: Container(
-                decoration: const BoxDecoration(
-                  color: bodyBackgroundColor, // Couleur du corps de la page
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(60), // Rayon de 60px (comme CustomHeader)
-                    topRight: Radius.circular(60), // Rayon de 60px (comme CustomHeader)
-                  ),
+            child: Container(
+              decoration: const BoxDecoration(
+                color: bodyBackgroundColor, // Couleur du corps de la page
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(60), // Rayon de 60px (comme CustomHeader)
+                  topRight: Radius.circular(60), // Rayon de 60px (comme CustomHeader)
                 ),
-                width: screenWidth, // Prend toute la largeur
-                child: Padding(
-                  // On retire le padding vertical supérieur et on ajoute un léger padding pour le contenu
-                  // On ajoute un padding Top pour le contenu (au lieu de l'ancienne translation)
-                  padding: EdgeInsets.fromLTRB(
-                    screenWidth * 0.05, 
-                    40.0, // Augmenté pour compenser le nouveau positionnement
-                    screenWidth * 0.05, 
-                    20.0 // Réduit pour optimiser l'espace
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                    
-                      // 2. L'ALERTE DE PROFIL INCOMPLET (Déplacée et réajustée)
-                      if (_showProfileAlert)
-                        // On supprime le Transform.translate et on utilise un Padding pour l'espacement visuel
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 20.0),
-                          child: _buildProfileAlert(),
-                        ),
-                      // Le reste du body
-                      
-                      // B. SECTION APERÇUS
-                      Text(
-                        'Aperçus',
-                        style: GoogleFonts.poppins(
-                          fontSize: 18, // Augmenté de 14 à 18
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black,
-                        ),
+              ),
+              width: screenWidth, // Prend toute la largeur
+              clipBehavior: Clip.antiAlias,
+              child: Padding(
+                // Padding du contenu interne
+                padding: EdgeInsets.fromLTRB(
+                  screenWidth * 0.05, 
+                  26.0, // Espace sous l'arrondi (réduit pour faire monter l'alerte)
+                  screenWidth * 0.05, 
+                  20.0,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    // Alerte FIXE (hors zone scrollable)
+                    if (_showProfileAlert)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 10.0),
+                        child: _buildProfileAlert(),
                       ),
-                      const SizedBox(height: 15), // Réduit de 25 à 15
-
-                      Row(
-                        children: <Widget>[
-                          // Carte 1: Missions Accomplies (même taille)
-                          Flexible(
-                            flex: 1, // Changé de 3 à 1 pour égaliser les tailles
-                            child: IntrinsicHeight(
-                              child: _buildStatCard(
-                                icon: Icons.check_circle_outline,
-                                value: missionsAccomplies.toString(),
-                                label: 'Missions Accomplies',
-                                color: primaryGreen,
+                    // Contenu scrollable uniquement
+                    Expanded(
+                      child: SingleChildScrollView(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            // B. SECTION APERÇUS
+                            Text(
+                              'Aperçus',
+                              style: GoogleFonts.poppins(
+                                fontSize: 18, // Augmenté de 14 à 18
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black,
                               ),
                             ),
-                          ),
-                          const SizedBox(width: 15),
-                          // Carte 2: Note (même taille)
-                          Flexible(
-                            flex: 1, // Changé de 2 à 1 pour égaliser les tailles
-                            child: IntrinsicHeight(
-                              child: _buildStatCard(
-                                icon: Icons.star_outline,
-                                value: note,
-                                label: 'Note',
-                                color: badgeOrange,
-                                isNoteCard: true, // Indicateur pour le style spécial
+                            const SizedBox(height: 8), // Espacement réduit
+                            
+                            Row(
+                              children: <Widget>[
+                                // Carte 1: Missions Accomplies (même taille)
+                                Flexible(
+                                  flex: 1, // Changé de 3 à 1 pour égaliser les tailles
+                                  child: IntrinsicHeight(
+                                    child: _buildStatCard(
+                                      icon: Icons.check_circle_outline,
+                                      value: missionsAccomplies.toString(),
+                                      label: 'Missions Accomplies',
+                                      color: primaryGreen,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 15),
+                                // Carte 2: Note (même taille)
+                                Flexible(
+                                  flex: 1, // Changé de 2 à 1 pour égaliser les tailles
+                                  child: IntrinsicHeight(
+                                    child: _buildStatCard(
+                                      icon: Icons.star_outline,
+                                      value: note,
+                                      label: 'Note',
+                                      color: badgeOrange,
+                                      isNoteCard: true, // Indicateur pour le style spécial
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            
+                            // C. SECTION ACTIONS RAPIDES
+                            Text(
+                              'ACTIONS RAPIDES',
+                              style: GoogleFonts.poppins(
+                                fontSize: 18, // Augmenté de 14 à 18
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black,
                               ),
                             ),
-                          ),
-                        ],
-                      ),
-
-                       SizedBox(height: screenHeight < 700 ? screenHeight * 0.02 : screenHeight * 0.025), // Réduit significativement
-
-                      // C. SECTION ACTIONS RAPIDES
-                      Text(
-                        'ACTIONS RAPIDES',
-                        style: GoogleFonts.poppins(
-                          fontSize: 18, // Augmenté de 14 à 18
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black,
+                             const SizedBox(height: 6),
+                            
+                            // Grille 2x2 des actions rapides
+                            GridView.count(
+                              shrinkWrap: true,
+                              crossAxisCount: 2,
+                              crossAxisSpacing: cardSpacing,
+                              mainAxisSpacing: cardSpacing,
+                              childAspectRatio: cardAspectRatio,
+                              physics: const NeverScrollableScrollPhysics(),
+                              children: <Widget>[
+                                _buildQuickActionCard(
+                                  icon: Icons.assignment_turned_in,
+                                  label: 'Missions Disponibles',
+                                  onTap: () => _handleQuickAction('Missions Disponibles'),
+                                ),
+                                _buildQuickActionCard(
+                                  icon: Icons.receipt_long,
+                                  label: 'Historiques Paiements',
+                                  onTap: () => _handleQuickAction('Historiques Paiements'),
+                                ),
+                                _buildQuickActionCard(
+                                  icon: Icons.library_books,
+                                  label: 'Mes Candidatures',
+                                  onTap: () => _handleQuickAction('Mes Candidatures'),
+                                ),
+                                _buildQuickActionCard(
+                                  icon: Icons.gavel,
+                                  label: 'Litige',
+                                  onTap: () => _handleQuickAction('Litige'),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 10),
+                          ],
                         ),
                       ),
-                       SizedBox(height: screenHeight < 700 ? screenHeight * 0.01 : screenHeight * 0.015), // Réduit significativement
-
-                      // Grille 2x2 des actions rapides
-                      GridView.count(
-                        shrinkWrap: true,
-                        crossAxisCount: 2,
-                        crossAxisSpacing: cardSpacing,
-                        mainAxisSpacing: cardSpacing,
-                        childAspectRatio: cardAspectRatio,
-                        physics: const NeverScrollableScrollPhysics(),
-                        children: <Widget>[
-                          _buildQuickActionCard(
-                            icon: Icons.assignment_turned_in,
-                            label: 'Missions Disponibles',
-                            onTap: () => _handleQuickAction('Missions Disponibles'),
-                          ),
-                          _buildQuickActionCard(
-                            icon: Icons.receipt_long,
-                            label: 'Historiques Paiements',
-                            onTap: () => _handleQuickAction('Historiques Paiements'),
-                          ),
-                          _buildQuickActionCard(
-                            icon: Icons.library_books,
-                            label: 'Mes Candidatures',
-                            onTap: () => _handleQuickAction('Mes Candidatures'),
-                          ),
-                          _buildQuickActionCard(
-                            icon: Icons.gavel,
-                            label: 'Litige',
-                            onTap: () => _handleQuickAction('Litige'),
-                          ),
-                        ],
-                      ),
-
-                      SizedBox(height: screenHeight < 700 ? screenHeight * 0.02 : screenHeight * 0.03), // Espacement final réduit
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ),

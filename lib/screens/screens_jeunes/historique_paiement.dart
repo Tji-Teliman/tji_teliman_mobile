@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../widgets/custom_header.dart';
+import 'home_jeune.dart';
+import 'noter_recruteur.dart';
 
 
 class HistoriquePaiement extends StatelessWidget {
@@ -78,11 +80,20 @@ class _MyPaymentsScreenState extends State<MyPaymentsScreen> {
       backgroundColor: const Color(0xFFf6fcfc), // Couleur de fond du CustomHeader
       appBar: CustomHeader(
         title: 'Mes Paiements',
-        onBack: () => Navigator.of(context).pop(),
+        onBack: () {
+          final navigator = Navigator.of(context);
+          if (navigator.canPop()) {
+            navigator.pop();
+          } else {
+            navigator.pushReplacement(
+              MaterialPageRoute(builder: (ctx) => const HomeJeuneScreen()),
+            );
+          }
+        },
       ),
       
       body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(20.0, 20.0, 20.0, 20.0),
+        padding: const EdgeInsets.fromLTRB(20.0, 0.0, 20.0, 0.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
@@ -380,9 +391,8 @@ class TransactionItem extends StatelessWidget {
                 ),
                 child: TextButton.icon(
                   onPressed: () {
-                    // Logique pour naviguer vers la page d'évaluation
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text("Évaluer le recruteur..."))
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (context) => const NoterRecruteur()),
                     );
                   },
                   icon: const Icon(Icons.star, color: Colors.white, size: 18),

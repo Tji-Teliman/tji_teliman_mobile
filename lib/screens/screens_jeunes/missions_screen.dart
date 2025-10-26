@@ -161,7 +161,7 @@ class _MissionsScreenState extends State<MissionsScreen> {
       
       // 2. Corps de la Page (Scrollable)
       body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(20.0, 20.0, 20.0, 20.0),
+        padding: const EdgeInsets.fromLTRB(20.0, 20.0, 20.0, 0.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
@@ -254,43 +254,6 @@ class _MissionsScreenState extends State<MissionsScreen> {
         ),
       ),
       
-      // 3. Barre de Navigation Personnalisée (BottomNavBar)
-      bottomNavigationBar: CustomBottomNavBar(
-        initialIndex: _selectedIndex,
-        onItemSelected: (index) {
-          if (index == 0) {
-            // Aller vers Accueil
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (context) => const HomeJeuneScreen()),
-            );
-            return;
-          }
-          if (index == 1) {
-            // Aller vers Candidatures
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (context) => const MesCandidaturesScreen()),
-            );
-            return;
-          }
-          if (index == 2) {
-            // Aller vers Profil
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (context) => const ProfilJeuneScreen()),
-            );
-            return;
-          }
-          if (index == 3) {
-            // Aller vers Discussions
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (context) => const MessageConversationScreen()),
-            );
-            return;
-          }
-          setState(() {
-            _selectedIndex = index;
-          });
-        },
-      ),
     );
   }
 }

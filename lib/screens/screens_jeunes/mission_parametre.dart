@@ -154,7 +154,7 @@ class _MissionPreferencesScreenState extends State<MissionPreferencesScreen> {
         title: 'Préférences de Missions',
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20.0),
+        padding: const EdgeInsets.fromLTRB(20.0, 0.0, 20.0, 0.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

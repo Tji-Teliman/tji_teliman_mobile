@@ -64,27 +64,28 @@ class _ProfilJeuneScreenState extends State<ProfilJeuneScreen> {
 
           // Corps avec arrondi, positionné pour chevaucher le header
           Positioned(
-            top: headerHeight - 50,
+            top: headerHeight - 40,
             left: 0,
             right: 0,
             bottom: 80,
-            child: SingleChildScrollView(
-              child: Container(
-                decoration: const BoxDecoration(
-                  color: bodyBackgroundColor,
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(60),
-                    topRight: Radius.circular(60),
-                  ),
+            child: Container(
+              decoration: const BoxDecoration(
+                color: bodyBackgroundColor,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(60),
+                  topRight: Radius.circular(60),
                 ),
-                width: screenWidth,
-                child: Padding(
-                  padding: EdgeInsets.fromLTRB(
-                    screenWidth * 0.05,
-                    22.0,
-                    screenWidth * 0.05,
-                    20.0,
-                  ),
+              ),
+              width: screenWidth,
+              clipBehavior: Clip.antiAlias,
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(
+                  screenWidth * 0.05,
+                  22.0,
+                  screenWidth * 0.05,
+                  20.0,
+                ),
+                child: SingleChildScrollView(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -215,7 +216,7 @@ class _ProfilJeuneScreenState extends State<ProfilJeuneScreen> {
           ),
           // Avatar centré + nom + rôle
           Positioned(
-            top: height * 0.18,
+            top: height * 0.28,
             left: 0,
             right: 0,
             child: Column(
@@ -224,7 +225,7 @@ class _ProfilJeuneScreenState extends State<ProfilJeuneScreen> {
                 Stack(
                   children: [
                     const CircleAvatar(
-                      radius: 60,
+                      radius: 50,
                       backgroundImage: AssetImage('assets/images/image_profil.png'),
                     ),
                     Positioned(

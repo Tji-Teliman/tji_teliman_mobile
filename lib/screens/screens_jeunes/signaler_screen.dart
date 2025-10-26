@@ -23,7 +23,7 @@ class DisputeFormScreen extends StatelessWidget {
         onBack: () => Navigator.of(context).pop(),
       ),
       body: const SingleChildScrollView(
-        padding: EdgeInsets.fromLTRB(20.0, 20.0, 20.0, 20.0),
+        padding: EdgeInsets.fromLTRB(20.0, 0.0, 20.0, 0.0),
         child: DisputeFormContent(),
       ),
     );

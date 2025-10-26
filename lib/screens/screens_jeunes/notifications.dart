@@ -308,7 +308,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     ),
                   )
                 : ListView.builder(
-                    padding: const EdgeInsets.fromLTRB(10.0, 20.0, 10.0, 10.0), 
+                     padding: const EdgeInsets.fromLTRB(20.0, 0.0, 20.0, 0.0),
                     itemCount: _notifications.length,
                     itemBuilder: (context, index) {
                       return _buildNotificationCard(context, _notifications[index]);

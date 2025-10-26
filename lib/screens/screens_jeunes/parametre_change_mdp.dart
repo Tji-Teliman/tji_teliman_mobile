@@ -198,7 +198,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
         title: 'Modifier le mot de passe',
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20.0),
+        padding: const EdgeInsets.fromLTRB(20.0, 0.0, 20.0, 0.0),
         child: Form(
           key: _formKey,
           child: Column(

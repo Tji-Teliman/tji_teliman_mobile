@@ -71,7 +71,7 @@ class _MotivationScreenState extends State<MotivationScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final headerTitle = 'Postuler pour ${widget.missionTitle}';
+    final headerTitle = 'Postuler pour la mission';
     
     return Scaffold(
       backgroundColor: bodyBackgroundColor,
@@ -84,7 +84,7 @@ class _MotivationScreenState extends State<MotivationScreen> {
       
       // 2. CORPS de la Page
       body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(20.0, 20.0, 20.0, 20.0),
+        padding: const EdgeInsets.fromLTRB(20.0, 0.0, 20.0, 0.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           // Retire mainAxisAlignment.center pour un alignement haut par défaut
@@ -196,28 +196,6 @@ class _MotivationScreenState extends State<MotivationScreen> {
         ),
       ),
       
-      // 3. FOOTER : Barre de Navigation Personnalisée
-      bottomNavigationBar: CustomBottomNavBar(
-        // Utilise l'index 0 (Accueil)
-        initialIndex: _selectedIndex,
-        onItemSelected: (index) {
-          if (index == 0) {
-            // Aller vers Accueil
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (context) => const HomeJeuneScreen()),
-            );
-            return;
-          }
-          if (index == 3) {
-            // Aller vers Discussions
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (context) => const MessageConversationScreen()),
-            );
-            return;
-          }
-          // Autres onglets: à implémenter si nécessaire
-        },
-      ),
     );
   }
 }
