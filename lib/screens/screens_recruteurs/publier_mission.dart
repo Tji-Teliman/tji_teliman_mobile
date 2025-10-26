@@ -5,6 +5,8 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'location_picker.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart' as geocoding;
+import 'home_recruteur.dart';
+import 'detail_mission_recruteur.dart';
 
 const Color primaryGreen = Color(0xFF10B981);
 const Color bodyBackgroundColor = Color(0xFFf6fcfc);
@@ -29,6 +31,17 @@ class _PublierMissionScreenState extends State<PublierMissionScreen> {
   TimeOfDay? _timeFrom;
   TimeOfDay? _timeTo;
   String? _categorie;
+  String? _validationBanner; // message d'avertissement (date/heure incohérentes)
+
+  @override
+  void initState() {
+    super.initState();
+    _titleController.addListener(_onFieldChanged);
+    _descriptionController.addListener(_onFieldChanged);
+    _remunerationController.addListener(_onFieldChanged);
+    _localisationController.addListener(_onFieldChanged);
+    _competencesController.addListener(_onFieldChanged);
+  }
 
   final List<String> _categories = const [
     'Ménage', 'Baby-sitting', 'Cuisine', 'Livraison', 'Événementiel', 'Autre'
@@ -60,6 +73,7 @@ class _PublierMissionScreenState extends State<PublierMissionScreen> {
           _dateFin = picked;
         }
       });
+      _updateValidationBanner();
     }
   }
 
@@ -76,11 +90,13 @@ class _PublierMissionScreenState extends State<PublierMissionScreen> {
           _timeTo = picked;
         }
       });
+      _updateValidationBanner();
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final bool isValid = _isFormValid();
     return Scaffold(
       backgroundColor: bodyBackgroundColor,
       appBar: const CustomHeader(
@@ -109,6 +125,30 @@ class _PublierMissionScreenState extends State<PublierMissionScreen> {
                   'Veillez Remplir le formulaire publier une nouvelle mission',
                   style: GoogleFonts.poppins(fontSize: 12, color: Colors.black87),
                 ),
+                if (_validationBanner != null) ...[
+                  const SizedBox(height: 10),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFF4E5),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: const Color(0xFFFFC107)),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(Icons.error_outline, color: Color(0xFFFFC107)),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            _validationBanner!,
+                            style: GoogleFonts.poppins(fontSize: 12, color: Colors.black87),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 14),
 
                 _buildTextField(_titleController, hint: 'Titre de la mission'),
@@ -141,29 +181,30 @@ class _PublierMissionScreenState extends State<PublierMissionScreen> {
                 ),
                 const SizedBox(height: 10),
 
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildPickerField(
-                        label: _timeFrom == null
-                            ? 'DE:'
-                            : _formatTime(_timeFrom!),
-                        icon: Icons.access_time,
-                        onTap: () => _pickTime(isFrom: true),
+                if (_dateDebut != null && _dateFin != null && _isSameDay(_dateDebut!, _dateFin!))
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildPickerField(
+                          label: _timeFrom == null
+                              ? 'DE:'
+                              : _formatTime(_timeFrom!),
+                          icon: Icons.access_time,
+                          onTap: () => _pickTime(isFrom: true),
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: _buildPickerField(
-                        label: _timeTo == null
-                            ? 'A:'
-                            : _formatTime(_timeTo!),
-                        icon: Icons.access_time,
-                        onTap: () => _pickTime(isFrom: false),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: _buildPickerField(
+                          label: _timeTo == null
+                              ? 'A:'
+                              : _formatTime(_timeTo!),
+                          icon: Icons.access_time,
+                          onTap: () => _pickTime(isFrom: false),
+                        ),
                       ),
-                    ),
-                  ],
-                ),
+                    ],
+                  ),
                 const SizedBox(height: 10),
 
                 _buildDropdownField(
@@ -184,7 +225,7 @@ class _PublierMissionScreenState extends State<PublierMissionScreen> {
                   child: ElevatedButton(
                     onPressed: _submit,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: primaryGreen,
+                      backgroundColor: isValid ? primaryGreen : Colors.grey,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
                       elevation: 3,
                     ),
@@ -204,6 +245,7 @@ class _PublierMissionScreenState extends State<PublierMissionScreen> {
 
   String _formatDate(DateTime d) => '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
   String _formatTime(TimeOfDay t) => '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
+  bool _isSameDay(DateTime a, DateTime b) => a.year == b.year && a.month == b.month && a.day == b.day;
 
   Widget _buildTextField(TextEditingController controller, {required String hint, TextInputType? keyboardType}) {
     return Container(
@@ -404,9 +446,257 @@ class _PublierMissionScreenState extends State<PublierMissionScreen> {
   }
 
   void _submit() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Mission publiée (mock)')),
+    if (_validateFormAndShowErrors()) {
+      _showPublishSuccessDialog();
+    }
+  }
+
+  void _resetForm() {
+    _titleController.clear();
+    _descriptionController.clear();
+    _remunerationController.clear();
+    _localisationController.clear();
+    _competencesController.clear();
+    setState(() {
+      _dateDebut = null;
+      _dateFin = null;
+      _timeFrom = null;
+      _timeTo = null;
+      _categorie = null;
+      _selectedLatLng = null;
+      _validationBanner = null;
+    });
+  }
+
+  void _showPublishSuccessDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) {
+        return Dialog(
+          insetPadding: const EdgeInsets.symmetric(horizontal: 24),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(18),
+            ),
+            padding: const EdgeInsets.fromLTRB(20, 22, 20, 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Center(
+                  child: Container(
+                    width: 54,
+                    height: 54,
+                    decoration: BoxDecoration(
+                      color: primaryGreen.withOpacity(0.15),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.check, color: primaryGreen, size: 32),
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Center(
+                  child: Text(
+                    'Mission Publier !',
+                    style: GoogleFonts.poppins(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.black,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  "Votre mission est maintenant publiée, et les candidats peuvent commencer à postuler. Vous serez averti dès que de nouvelles candidatures seront présentées.",
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.poppins(fontSize: 12, color: Colors.black87, height: 1.4),
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  height: 44,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.of(ctx).pop();
+                      final missionData = _buildMissionData();
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (c) => DetailMissionRecruteurScreen(missionData: missionData),
+                        ),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: primaryGreen,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+                      elevation: 0,
+                    ),
+                    child: Text('Voir la mission', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600)),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                SizedBox(
+                  height: 44,
+                  child: OutlinedButton(
+                    onPressed: () {
+                      Navigator.of(ctx).pop();
+                      _resetForm();
+                    },
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: primaryGreen, width: 1.2),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+                    ),
+                    child: Text('Publier une autre Mission', style: GoogleFonts.poppins(color: primaryGreen, fontWeight: FontWeight.w600)),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                SizedBox(
+                  height: 44,
+                  child: TextButton.icon(
+                    onPressed: () {
+                      Navigator.of(ctx).pop();
+                      Navigator.of(context).pushAndRemoveUntil(
+                        MaterialPageRoute(builder: (c) => const HomeRecruteurScreen()),
+                        (route) => false,
+                      );
+                    },
+                    icon: const Icon(Icons.arrow_back, color: Colors.black87, size: 18),
+                    label: Text(
+                      "Retour à l'Accueil",
+                      style: GoogleFonts.poppins(color: Colors.black87, fontWeight: FontWeight.w600),
+                    ),
+                    style: TextButton.styleFrom(
+                      backgroundColor: Colors.grey.shade200,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
+  }
+
+  bool _validateFormAndShowErrors() {
+    String? error;
+    if (_titleController.text.trim().isEmpty) {
+      error = 'Le titre de la mission est obligatoire.';
+    } else if (_descriptionController.text.trim().isEmpty) {
+      error = 'La description est obligatoire.';
+    } else if (_dateDebut == null) {
+      error = 'La date de début est obligatoire.';
+    } else if (_dateFin == null) {
+      error = 'La date de fin est obligatoire.';
+    } else if (_dateDebut != null && _dateFin != null && _dateFin!.isBefore(_dateDebut!)) {
+      error = 'La date de fin ne peut pas être inférieure à la date de début.';
+    } else if (_isSameDay(_dateDebut!, _dateFin!) && _timeFrom == null) {
+      error = 'L\'heure de début est obligatoire pour une mission d\'une journée.';
+    } else if (_isSameDay(_dateDebut!, _dateFin!) && _timeTo == null) {
+      error = 'L\'heure de fin est obligatoire pour une mission d\'une journée.';
+    } else if (_isSameDay(_dateDebut!, _dateFin!) && _timeFrom != null && _timeTo != null) {
+      final fromMinutes = _timeFrom!.hour * 60 + _timeFrom!.minute;
+      final toMinutes = _timeTo!.hour * 60 + _timeTo!.minute;
+      if (toMinutes - fromMinutes <= 0) {
+        error = 'L\'heure de fin doit être supérieure à l\'heure de début.';
+      }
+    } else if (_categorie == null || _categorie!.trim().isEmpty) {
+      error = 'La catégorie est obligatoire.';
+    } else if (_remunerationController.text.trim().isEmpty) {
+      error = 'La rémunération est obligatoire.';
+    } else if (double.tryParse(_remunerationController.text.trim()) == null) {
+      error = 'La rémunération doit être un nombre valide.';
+    } else if (_selectedLatLng == null) {
+      error = 'La localisation est obligatoire.';
+    }
+
+    if (error != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error)),
+      );
+      setState(() {
+        _validationBanner = error;
+      });
+      return false;
+    }
+    setState(() {
+      _validationBanner = null;
+    });
+    return true;
+  }
+
+  bool _isFormValid() {
+    if (_titleController.text.trim().isEmpty) return false;
+    if (_descriptionController.text.trim().isEmpty) return false;
+    if (_dateDebut == null || _dateFin == null) return false;
+    if (_dateFin!.isBefore(_dateDebut!)) return false;
+    if (_isSameDay(_dateDebut!, _dateFin!)) {
+      if (_timeFrom == null || _timeTo == null) return false;
+      final fromMinutes = _timeFrom!.hour * 60 + _timeFrom!.minute;
+      final toMinutes = _timeTo!.hour * 60 + _timeTo!.minute;
+      if (toMinutes - fromMinutes <= 0) return false;
+    }
+    if (_categorie == null || _categorie!.trim().isEmpty) return false;
+    if (_remunerationController.text.trim().isEmpty) return false;
+    if (double.tryParse(_remunerationController.text.trim()) == null) return false;
+    if (_selectedLatLng == null) return false;
+    return true;
+  }
+
+  Map<String, dynamic> _buildMissionData() {
+    final String title = _titleController.text.trim();
+    final String? description = _descriptionController.text.trim();
+    final String? locationLabel = _localisationController.text.trim().isEmpty
+        ? null
+        : _localisationController.text.trim();
+
+    String? duration;
+    if (_timeFrom != null && _timeTo != null) {
+      duration = 'Estimé: ${_timeFrom!.format(context)} - ${_timeTo!.format(context)}';
+    }
+
+    String? dateLimit;
+    if (_dateFin != null) {
+      dateLimit = 'Date Limite: ${_formatDate(_dateFin!)}';
+    }
+
+    return <String, dynamic>{
+      'missionTitle': title,
+      if (description != null && description.isNotEmpty) 'description': description,
+      if (_selectedLatLng != null) 'latitude': _selectedLatLng!.latitude,
+      if (_selectedLatLng != null) 'longitude': _selectedLatLng!.longitude,
+      if (locationLabel != null) 'location': locationLabel,
+      if (duration != null) 'duration': duration,
+      if (dateLimit != null) 'dateLimit': dateLimit,
+      if (_competencesController.text.trim().isNotEmpty) 'competences': _competencesController.text.trim(),
+      if (_dateDebut != null) 'dateDebut': _formatDate(_dateDebut!),
+      if (_dateFin != null) 'dateFin': _formatDate(_dateFin!),
+      if (_isSameDay(_dateDebut ?? DateTime(0), _dateFin ?? DateTime(1)) && _timeFrom != null) 'timeFrom': _formatTime(_timeFrom!),
+      if (_isSameDay(_dateDebut ?? DateTime(0), _dateFin ?? DateTime(1)) && _timeTo != null) 'timeTo': _formatTime(_timeTo!),
+    };
+  }
+
+  void _updateValidationBanner() {
+    String? msg;
+    if (_dateDebut != null && _dateFin != null && _dateFin!.isBefore(_dateDebut!)) {
+      msg = 'La date de fin ne peut pas être inférieure à la date de début.';
+    } else if (_dateDebut != null && _dateFin != null && _isSameDay(_dateDebut!, _dateFin!) && _timeFrom != null && _timeTo != null) {
+      final fromMinutes = _timeFrom!.hour * 60 + _timeFrom!.minute;
+      final toMinutes = _timeTo!.hour * 60 + _timeTo!.minute;
+      if (toMinutes - fromMinutes <= 0) {
+        msg = 'L\'heure de fin doit être supérieure à l\'heure de début.';
+      }
+    }
+    setState(() {
+      _validationBanner = msg;
+    });
+  }
+
+  void _onFieldChanged() {
+    // Met à jour la couleur du bouton en temps réel
+    setState(() {});
   }
 }
 
