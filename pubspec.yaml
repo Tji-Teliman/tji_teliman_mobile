@@ -42,6 +42,8 @@ dependencies:
   google_fonts: ^6.3.2
   flutter_svg: ^2.0.10
   google_maps_flutter: ^2.13.1
+  geocoding: ^2.2.2
+  geolocator: ^14.0.2
   image_picker: ^1.2.0
   record: ^6.1.2
   path_provider: ^2.1.5
@@ -99,4 +101,3 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
-   

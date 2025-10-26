@@ -29,6 +29,8 @@ import 'screens/screens_jeunes/finaliser_profil.dart';
 import 'package:tji_teliman_mobile/screens/screens_jeunes/profil_completion_screen.dart';
 import 'package:tji_teliman_mobile/screens/screens_jeunes/signaler_screen.dart';
 import 'package:tji_teliman_mobile/screens/screens_jeunes/securite_parametre.dart';
+import 'package:tji_teliman_mobile/screens/screens_recruteurs/home_recruteur.dart';
+import 'package:tji_teliman_mobile/screens/screens_recruteurs/finaliser_profil_entreprise.dart';
 
 Future<void> main() async {
   // Assure que les widgets sont initialisés
@@ -54,7 +56,7 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
       // L'écran de démarrage est défini ici
-      home: const HomeJeuneScreen(),
+      home: const HomeRecruteurScreen(),
       debugShowCheckedModeBanner: false,
     );
   }
