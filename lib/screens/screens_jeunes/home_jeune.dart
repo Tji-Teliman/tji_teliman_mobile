@@ -107,14 +107,14 @@ class _HomeJeuneScreenState extends State<HomeJeuneScreen> {
     // Ratio adaptatif selon la taille d'écran
     double cardAspectRatio;
     if (screenHeight < 700) {
-      // Petits écrans (iPhone SE, etc.) - cartes plus plates pour éviter débordement
-      cardAspectRatio = 2.0; // Augmenté pour éviter le débordement
+      // Petits écrans (iPhone SE, etc.) - cartes plus hautes pour éviter débordement
+      cardAspectRatio = 1.4;
     } else if (screenHeight > 900) {
-      // Grands écrans (iPhone Pro Max, etc.) - cartes plus grandes
-      cardAspectRatio = 1.2;
+      // Grands écrans (iPhone Pro Max, etc.) - cartes plus hautes
+      cardAspectRatio = 0.85;
     } else {
-      // Écrans moyens
-      cardAspectRatio = 1.5;
+      // Écrans moyens - cartes plus hautes
+      cardAspectRatio = 1.0;
     }
     
     // Décalage responsive du body - AJUSTÉ pour coller au header et inclure l'arrondi
@@ -652,13 +652,13 @@ class _HomeJeuneScreenState extends State<HomeJeuneScreen> {
     if (screenHeight < 700) {
       // iPhone SE - éléments plus petits pour éviter débordement
       iconSize = screenWidth * 0.05;
-      fontSize = screenWidth * 0.025;
+      fontSize = screenWidth * 0.024;
       paddingSize = screenWidth * 0.01;
       spacingSize = screenHeight * 0.003;
     } else {
       // Autres écrans
       iconSize = screenWidth * 0.08;
-      fontSize = screenWidth * 0.032;
+      fontSize = screenWidth * 0.030;
       paddingSize = screenWidth * 0.02;
       spacingSize = screenHeight * 0.008;
     }

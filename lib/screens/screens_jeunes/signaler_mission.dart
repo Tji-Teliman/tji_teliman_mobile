@@ -68,7 +68,7 @@ class _SignalMissionScreenState extends State<SignalMissionScreen> {
       ),
       
       body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(20.0, 0.0, 20.0, 0.0),
+        padding: const EdgeInsets.fromLTRB(20.0, 0.0, 20.0, 20.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
@@ -140,7 +140,7 @@ class _SignalMissionScreenState extends State<SignalMissionScreen> {
               ),
             ),
             
-            const SizedBox(height: 30),
+            const SizedBox(height: 20),
 
             // --- Boutons Annuler et Envoyer ---
             Row(

@@ -412,12 +412,16 @@ class _DefaultMissionCard extends StatelessWidget {
       children: [
         Icon(icon, size: 16, color: darkGrey),
         const SizedBox(width: 5),
-        Text(
-          text,
-          style: GoogleFonts.poppins(
-            fontSize: 14,
-            color: isPrice ? primaryBlue : darkGrey,
-            fontWeight: isPrice ? FontWeight.bold : FontWeight.normal,
+        Expanded(
+          child: Text(
+            text,
+            style: GoogleFonts.poppins(
+              fontSize: 13,
+              color: isPrice ? primaryBlue : darkGrey,
+              fontWeight: isPrice ? FontWeight.bold : FontWeight.normal,
+            ),
+            overflow: TextOverflow.ellipsis,
+            maxLines: 1,
           ),
         ),
       ],
@@ -446,18 +450,23 @@ class _DefaultMissionCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                title,
-                style: GoogleFonts.poppins(
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
+              Expanded(
+                child: Text(
+                  title,
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 2,
                 ),
               ),
+              const SizedBox(width: 8),
               Text(
                 price,
                 style: GoogleFonts.poppins(
-                  fontSize: 15,
+                  fontSize: 14,
                   fontWeight: FontWeight.w600,
                   color: primaryBlue,
                 ),
@@ -509,25 +518,25 @@ class _DefaultMissionCard extends StatelessWidget {
                 child: _buildInfoRow(icon: Icons.access_time, text: time, isPrice: false),
               ),
               
-              SizedBox(
-                height: 30, 
-                child: ElevatedButton(
-                  onPressed: onTap,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: primaryBlue,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    padding: const EdgeInsets.symmetric(horizontal: 10),
-                    elevation: 0,
+              const SizedBox(width: 8),
+              
+              ElevatedButton(
+                onPressed: onTap,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: primaryBlue,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Text(
-                    'Voir Plus',
-                    style: GoogleFonts.poppins(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  elevation: 0,
+                  minimumSize: const Size(90, 30),
+                ),
+                child: Text(
+                  'Voir Plus',
+                  style: GoogleFonts.poppins(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
                   ),
                 ),
               ),

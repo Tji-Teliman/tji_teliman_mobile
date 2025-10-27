@@ -82,7 +82,7 @@ class _MySkillsScreenState extends State<MySkillsScreen> {
         title: 'Mes Compétencess',
       ),
       body: Padding(
-         padding: const EdgeInsets.fromLTRB(20.0, 0.0, 20.0, 0.0),
+         padding: const EdgeInsets.fromLTRB(20.0, 0.0, 20.0, 100.0),
         child: Column(
           children: [
             // --- Liste des Compétences Actuelles ---

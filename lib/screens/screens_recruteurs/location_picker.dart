@@ -67,7 +67,12 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
           ),
           Container(
             color: Colors.white,
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+            padding: EdgeInsets.only(
+              left: 16,
+              right: 16,
+              top: 12,
+              bottom: MediaQuery.of(context).padding.bottom + 20,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [

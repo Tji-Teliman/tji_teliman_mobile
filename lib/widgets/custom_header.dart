@@ -13,6 +13,7 @@ const Color darkGrey = Colors.black54;
   final IconData? rightIcon; // Icône à droite (par exemple, la cloche pour notifications ou logo)
   final Widget? customRightWidget; // Peut être un logo ou une autre icône complexe
   final VoidCallback? onBack;
+  final VoidCallback? onRightIconTap; // Callback pour le clic sur l'icône de droite
   final Widget? bottomWidget; // Pour la barre de recherche (facultatif)
   final bool useCompactStyle; // Nouveau: pour utiliser le style compact (comme CompactHeader)
   final Widget? leftWidget; // Nouveau: widget à gauche (comme avatar de profil)
@@ -24,6 +25,7 @@ const Color darkGrey = Colors.black54;
     this.rightIcon,
     this.customRightWidget,
     this.onBack,
+    this.onRightIconTap,
     this.bottomWidget,
     this.useCompactStyle = false, // Par défaut, style normal
     this.leftWidget, // Widget à gauche (optionnel)
@@ -89,7 +91,10 @@ const Color darkGrey = Colors.black54;
                   if (customRightWidget != null)
                     customRightWidget!
                   else if (rightIcon != null)
-                    Icon(rightIcon, color: Colors.white, size: 24),
+                    GestureDetector(
+                      onTap: onRightIconTap,
+                      child: Icon(rightIcon, color: Colors.white, size: 24),
+                    ),
                   
                   // Espace à droite: 0 si une icône est fournie, sinon 35 pour équilibrer
                   SizedBox(width: (customRightWidget != null || rightIcon != null) ? 0 : 35),

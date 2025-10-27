@@ -9,83 +9,57 @@ const Color primaryBlue = Color(0xFF2563EB);
 const Color primaryGreen = Color(0xFF10B981);
 const Color orangeBrand = Color(0xFFE67E22);
 
-class ModifierProfilScreen extends StatefulWidget {
-  final String initialPrenom;
-  final String initialNom;
+class ModifierProfilRecruteurScreen extends StatefulWidget {
   final String initialEmail;
   final String initialPhone;
   final String initialLocation;
+  final String initialProfession;
   final String initialDateNaissance;
-  final String initialCompetences;
   final String fullName;
   final String role;
 
-  const ModifierProfilScreen({
+  const ModifierProfilRecruteurScreen({
     super.key,
-    required this.initialPrenom,
-    required this.initialNom,
     required this.initialEmail,
     required this.initialPhone,
     required this.initialLocation,
+    required this.initialProfession,
     required this.initialDateNaissance,
-    required this.initialCompetences,
     required this.fullName,
     required this.role,
   });
 
   @override
-  State<ModifierProfilScreen> createState() => _ModifierProfilScreenState();
+  State<ModifierProfilRecruteurScreen> createState() => _ModifierProfilRecruteurScreenState();
 }
 
-class _ModifierProfilScreenState extends State<ModifierProfilScreen> {
+class _ModifierProfilRecruteurScreenState extends State<ModifierProfilRecruteurScreen> {
   final ImagePicker _picker = ImagePicker();
   XFile? _profileImage;
-  late final TextEditingController prenomController;
-  late final TextEditingController nomController;
   late final TextEditingController emailController;
   late final TextEditingController phoneController;
   late final TextEditingController locationController;
+  late final TextEditingController professionController;
   late final TextEditingController dateNaissanceController;
-  late final TextEditingController competencesController;
-  late final List<String> _allCompetences;
-  late final Set<String> _selectedCompetences;
   DateTime? _selectedDate;
 
   @override
   void initState() {
     super.initState();
-    prenomController = TextEditingController(text: widget.initialPrenom);
-    nomController = TextEditingController(text: widget.initialNom);
     emailController = TextEditingController(text: widget.initialEmail);
     phoneController = TextEditingController(text: widget.initialPhone);
     locationController = TextEditingController(text: widget.initialLocation);
+    professionController = TextEditingController(text: widget.initialProfession);
     dateNaissanceController = TextEditingController(text: widget.initialDateNaissance);
-    competencesController = TextEditingController(text: widget.initialCompetences);
-    _allCompetences = const [
-      'Livraisons',
-      'Cuisine',
-      'Evenementiel',
-      'Serveuse',
-      'Baby-sitting',
-      'Ménage',
-      'Vente de Magasin',
-    ];
-    _selectedCompetences = widget.initialCompetences
-        .split(',')
-        .map((e) => e.trim())
-        .where((e) => e.isNotEmpty)
-        .toSet();
   }
 
   @override
   void dispose() {
-    prenomController.dispose();
-    nomController.dispose();
     emailController.dispose();
     phoneController.dispose();
     locationController.dispose();
+    professionController.dispose();
     dateNaissanceController.dispose();
-    competencesController.dispose();
     super.dispose();
   }
 
@@ -143,10 +117,6 @@ class _ModifierProfilScreenState extends State<ModifierProfilScreen> {
                         ),
                       ),
                       const SizedBox(height: 10),
-                      _labeledField('Prenom', prenomController, Icons.person_outline),
-                      const SizedBox(height: 10),
-                      _labeledField('Nom', nomController, Icons.person_outline),
-                      const SizedBox(height: 10),
                       _labeledField('Email', emailController, Icons.email_outlined,
                           keyboardType: TextInputType.emailAddress),
                       const SizedBox(height: 10),
@@ -155,9 +125,9 @@ class _ModifierProfilScreenState extends State<ModifierProfilScreen> {
                       const SizedBox(height: 10),
                       _labeledField('Localisation', locationController, Icons.location_on_outlined),
                       const SizedBox(height: 10),
-                      _dateField(),
+                      _labeledField('Profession', professionController, Icons.work_outline),
                       const SizedBox(height: 10),
-                      _competencesField(),
+                      _dateField(),
                       const SizedBox(height: 20),
                       SizedBox(
                         width: double.infinity,
@@ -251,7 +221,7 @@ class _ModifierProfilScreenState extends State<ModifierProfilScreen> {
                     CircleAvatar(
                       radius: 50,
                       backgroundImage: _profileImage == null
-                          ? const AssetImage('assets/images/image_profil.png') as ImageProvider
+                          ? const AssetImage('assets/images/profil_recruteur.png') as ImageProvider
                           : FileImage(File(_profileImage!.path)),
                     ),
                     Positioned(
@@ -353,144 +323,6 @@ class _ModifierProfilScreenState extends State<ModifierProfilScreen> {
         ),
       ],
     );
-  }
-
-  Widget _competencesField() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Compétences',
-          style: GoogleFonts.poppins(
-            fontSize: 12,
-            color: Colors.black87,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(height: 6),
-        GestureDetector(
-          onTap: _openCompetencesPicker,
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: Colors.grey.shade300, width: 1),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.03),
-                  blurRadius: 6,
-                  offset: const Offset(0, 3),
-                ),
-              ],
-            ),
-            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
-            child: Row(
-              children: [
-                const Icon(Icons.workspace_premium_outlined, color: orangeBrand),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    _selectedCompetences.isEmpty
-                        ? 'Sélectionnez vos compétences'
-                        : _selectedCompetences.join(', '),
-                    style: GoogleFonts.poppins(fontSize: 13.5, color: Colors.black87),
-                  ),
-                ),
-                const Icon(Icons.keyboard_arrow_down, color: Colors.black54),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  void _openCompetencesPicker() async {
-    final tempInitial = Set<String>.from(_selectedCompetences);
-    final result = await showModalBottomSheet<Set<String>>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (sheetContext) {
-        final double h = MediaQuery.of(sheetContext).size.height * 0.6;
-        return StatefulBuilder(
-          builder: (ctx, setModalState) {
-            final tempSelection = tempInitial;
-            return SafeArea(
-              child: SizedBox(
-                height: h,
-                child: Column(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                      child: Row(
-                        children: [
-                          Text('Choisir des compétences', style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600)),
-                          const Spacer(),
-                          IconButton(
-                            icon: const Icon(Icons.close),
-                            onPressed: () => Navigator.of(sheetContext).pop(tempSelection),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const Divider(height: 1),
-                    Expanded(
-                      child: ListView(
-                        children: _allCompetences.map((c) {
-                          final checked = tempSelection.contains(c);
-                          return CheckboxListTile(
-                            value: checked,
-                            title: Text(c, style: GoogleFonts.poppins(fontSize: 14)),
-                            activeColor: primaryBlue,
-                            onChanged: (v) {
-                              setModalState(() {
-                                if (v == true) {
-                                  tempSelection.add(c);
-                                } else {
-                                  tempSelection.remove(c);
-                                }
-                              });
-                            },
-                          );
-                        }).toList(),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: SizedBox(
-                        width: double.infinity,
-                        height: 44,
-                        child: ElevatedButton(
-                          onPressed: () => Navigator.of(sheetContext).pop(tempSelection),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: primaryGreen,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          ),
-                          child: Text('Valider', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600)),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      },
-    );
-
-    if (result != null) {
-      setState(() {
-        _selectedCompetences
-          ..clear()
-          ..addAll(result);
-        competencesController.text = _selectedCompetences.join(', ');
-      });
-    }
   }
 
   Widget _dateField() {
@@ -601,5 +433,4 @@ class _ModifierProfilScreenState extends State<ModifierProfilScreen> {
     );
   }
 }
-
 

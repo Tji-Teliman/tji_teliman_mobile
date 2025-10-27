@@ -7,12 +7,15 @@ import '../../widgets/custom_bottom_nav_bar_recruteur.dart';
 import '../../widgets/custom_menu.dart';
 
 // Réutilisation de certaines pages existantes tant que les versions recruteurs ne sont pas créées
-import '../screens_jeunes/message_conversation.dart';
 import '../screens_jeunes/notifications.dart';
 import '../screens_jeunes/liste_litige.dart';
 import '../screens_jeunes/historique_paiement.dart';
 import 'finaliser_profile_particulier.dart';
 import 'publier_mission.dart';
+import 'missions_recruteur.dart';
+import 'paiement.dart';
+import 'profil_recruteur.dart';
+import 'message_conversation_recruteur.dart';
 
 // --- COULEURS ---
 const Color primaryGreen = Color(0xFF10B981);
@@ -50,10 +53,22 @@ class _HomeRecruteurScreenState extends State<HomeRecruteurScreen> {
     );
   }
 
-  void _payWithOrangeMoney() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Redirection vers Orange Money...')),
+  void _payWithOrangeMoney() async {
+    final result = await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => const PaiementScreen(
+          jeune: 'Ramatou konaré',
+          mission: 'Aide Ménagere',
+        ),
+      ),
     );
+
+    // Si le paiement est confirmé, masquer l'alerte
+    if (result == true) {
+      setState(() {
+        _hasPendingPayment = false;
+      });
+    }
   }
 
   void _confirmCashPayment() {
@@ -70,8 +85,8 @@ class _HomeRecruteurScreenState extends State<HomeRecruteurScreen> {
       return;
     }
     if (action == 'Vos missions') {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Navigation vers Vos missions (à venir)')),
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (context) => const MissionsRecruteurScreen()),
       );
       return;
     }
@@ -103,11 +118,11 @@ class _HomeRecruteurScreenState extends State<HomeRecruteurScreen> {
 
     double cardAspectRatio;
     if (screenHeight < 700) {
-      cardAspectRatio = 2.0;
+      cardAspectRatio = 1.4;
     } else if (screenHeight > 900) {
-      cardAspectRatio = 1.2;
+      cardAspectRatio = 0.85;
     } else {
-      cardAspectRatio = 1.5;
+      cardAspectRatio = 1.0;
     }
 
     return Scaffold(
@@ -269,19 +284,24 @@ class _HomeRecruteurScreenState extends State<HomeRecruteurScreen> {
                 if (index == 0) {
                   return; // Déjà sur Accueil
                 }
+                if (index == 1) {
+                  Navigator.of(context).pushReplacement(
+                    MaterialPageRoute(builder: (context) => const MissionsRecruteurScreen()),
+                  );
+                  return;
+                }
+                if (index == 2) {
+                  Navigator.of(context).pushReplacement(
+                    MaterialPageRoute(builder: (context) => const ProfilRecruteurScreen()),
+                  );
+                  return;
+                }
                 if (index == 3) {
                   Navigator.of(context).pushReplacement(
                     MaterialPageRoute(builder: (context) => const MessageConversationScreen()),
                   );
                   return;
                 }
-                // Placeholder pour Missions et Profil recruteur
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Section à venir pour le recruteur')),
-                );
-                setState(() {
-                  _selectedIndex = index;
-                });
               },
             ),
           ),
@@ -633,12 +653,12 @@ class _HomeRecruteurScreenState extends State<HomeRecruteurScreen> {
 
     if (screenHeight < 700) {
       iconSize = screenWidth * 0.05;
-      fontSize = screenWidth * 0.025;
+      fontSize = screenWidth * 0.024;
       paddingSize = screenWidth * 0.01;
       spacingSize = screenHeight * 0.003;
     } else {
       iconSize = screenWidth * 0.08;
-      fontSize = screenWidth * 0.032;
+      fontSize = screenWidth * 0.030;
       paddingSize = screenWidth * 0.02;
       spacingSize = screenHeight * 0.008;
     }

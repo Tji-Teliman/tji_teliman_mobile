@@ -97,7 +97,7 @@ class _FinaliserProfileParticulierState extends State<FinaliserProfileParticulie
         onBack: () => Navigator.of(context).pop(),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(20.0, 0.0, 20.0, 0.0),
+        padding: const EdgeInsets.fromLTRB(20.0, 0.0, 20.0, 20.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: <Widget>[
@@ -135,10 +135,10 @@ class _FinaliserProfileParticulierState extends State<FinaliserProfileParticulie
             const SizedBox(height: 30),
 
             _buildIDUploadSection(),
-            const SizedBox(height: 40),
+            const SizedBox(height: 20),
 
             _buildSaveButton(context),
-            const SizedBox(height: 40),
+            const SizedBox(height: 20),
           ],
         ),
       ),

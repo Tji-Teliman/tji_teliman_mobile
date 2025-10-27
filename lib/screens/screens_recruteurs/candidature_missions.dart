@@ -136,6 +136,8 @@ class _CandidatureMissionsScreenState extends State<CandidatureMissionsScreen> {
               rating: 4.8,
               competences: const ['Manutention', 'Livraison', 'Aide à Domicile', 'Menuisier', 'Vente'],
               missionTitle: widget.missionTitle,
+              isValidated: c.status == _CandidateStatus.validated,
+              isRejected: c.status == _CandidateStatus.rejected,
             ),
           ),
         );
@@ -202,6 +204,8 @@ class _CandidatureMissionsScreenState extends State<CandidatureMissionsScreen> {
                                   rating: 4.8,
                                   competences: const ['Manutention', 'Livraison', 'Aide à Domicile', 'Menuisier', 'Vente'],
                                   missionTitle: widget.missionTitle,
+                                  isValidated: c.status == _CandidateStatus.validated,
+                                  isRejected: c.status == _CandidateStatus.rejected,
                                 ),
                               ),
                             );

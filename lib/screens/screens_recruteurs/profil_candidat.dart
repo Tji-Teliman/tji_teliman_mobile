@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'candidature_missions.dart';
+import 'chat_screen_recruteur.dart';
 
 const Color primaryGreen = Color(0xFF27AE60); // demandé: 27AE60
 const Color bodyBackgroundColor = Color(0xFFf6fcfc);
@@ -12,6 +13,8 @@ class ProfilCandidatScreen extends StatelessWidget {
   final List<String> competences;
   final String avatarAsset;
   final String missionTitle;
+  final bool isValidated;
+  final bool isRejected;
 
   const ProfilCandidatScreen({
     super.key,
@@ -21,6 +24,8 @@ class ProfilCandidatScreen extends StatelessWidget {
     required this.competences,
     this.avatarAsset = 'assets/images/image_profil.png',
     this.missionTitle = 'Candidatures',
+    this.isValidated = false,
+    this.isRejected = false,
   });
 
   @override
@@ -127,26 +132,26 @@ class ProfilCandidatScreen extends StatelessWidget {
 
           // Avatar + name + rating
           Positioned(
-            top: height * 0.28,
+            top: height * 0.32,
             left: 0,
             right: 0,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                CircleAvatar(radius: 48, backgroundImage: AssetImage(avatarAsset)),
+                CircleAvatar(radius: 45, backgroundImage: AssetImage(avatarAsset)),
                 const SizedBox(height: 8),
                 Text(
                   name,
-                  style: GoogleFonts.poppins(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700),
+                  style: GoogleFonts.poppins(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w700),
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 4),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.star, color: Colors.amber, size: 18),
+                    const Icon(Icons.star, color: Colors.amber, size: 16),
                     const SizedBox(width: 4),
-                    Text('${rating.toStringAsFixed(1)}/5.0', style: GoogleFonts.poppins(color: Colors.white, fontSize: 12)),
+                    Text('${rating.toStringAsFixed(1)}/5.0', style: GoogleFonts.poppins(color: Colors.white, fontSize: 11)),
                   ],
                 ),
               ],
@@ -228,6 +233,62 @@ class ProfilCandidatScreen extends StatelessWidget {
   }
 
   Widget _buildActions(BuildContext context) {
+    if (isValidated) {
+      // Bouton de communication pour les candidatures validées
+      return SizedBox(
+        height: 46,
+        width: double.infinity,
+        child: ElevatedButton.icon(
+          onPressed: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => ChatScreen(interlocutorName: name),
+              ),
+            );
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.blue,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+          icon: const Icon(Icons.chat_bubble, color: Colors.white, size: 22),
+          label: Text(
+            'Communiquer avec le jeune',
+            style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14),
+          ),
+        ),
+      );
+    }
+
+    if (isRejected) {
+      // Aucune action pour les candidatures rejetées
+      return Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.red.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.red.withOpacity(0.3)),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.info_outline, color: Colors.red, size: 24),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Cette candidature a été rejetée',
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.red,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Boutons sélectionner et rejeter pour les candidatures en attente
     return Row(
       children: [
         Expanded(

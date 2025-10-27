@@ -1,44 +1,40 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../widgets/custom_bottom_nav_bar_recruteur.dart';
+import '../../widgets/custom_menu.dart';
+import 'message_conversation_recruteur.dart';
+import 'home_recruteur.dart';
+import 'missions_recruteur.dart';
+import 'modifier_profil_recruteur.dart';
 
-import '../../../widgets/custom_bottom_nav_bar.dart';
-import '../../../widgets/custom_menu.dart';
-import 'home_jeune.dart';
-import 'mes_candidatures.dart';
-import 'message_conversation.dart';
-import 'notifications.dart';
-import 'mes_candidatures.dart';
-import 'modifier_profil.dart';
-
-// Couleurs utilisées (alignées sur home_jeune.dart)
+// Couleurs utilisées
 const Color primaryBlue = Color(0xFF2563EB);
 const Color primaryGreen = Color(0xFF10B981);
 const Color bodyBackgroundColor = Color(0xFFf6fcfc);
 const Color badgeOrange = Color(0xFFF59E0B);
 const Color orangeBrand = Color(0xFFE67E22);
 
-class ProfilJeuneScreen extends StatefulWidget {
-  const ProfilJeuneScreen({super.key});
+class ProfilRecruteurScreen extends StatefulWidget {
+  const ProfilRecruteurScreen({super.key});
 
   @override
-  State<ProfilJeuneScreen> createState() => _ProfilJeuneScreenState();
+  State<ProfilRecruteurScreen> createState() => _ProfilRecruteurScreenState();
 }
 
-class _ProfilJeuneScreenState extends State<ProfilJeuneScreen> {
+class _ProfilRecruteurScreenState extends State<ProfilRecruteurScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   int _selectedIndex = 2; // Onglet Profil
 
   // Données fictives conformes à la maquette
-  final String fullName = 'Rama Konaré';
+  final String fullName = 'Amadou Bakagoyo !';
   final String role = 'Recruteur';
-  final String email = 'ramatouyaya@gmail.com';
+  final String email = 'amadou.bakagoyo@gmail.com';
   final String phone = '+223 72 70 66 47';
-  final String location = 'Bamako , Garantibougou';
-  final String dateNaissance = '23/09/2000';
-  final String competences =
-      'Livraisons , Cuisine , Evenementiel , Serveuse,\nBaby-sitting, Ménage, Vente de Magasin';
-  final int missionsRealisees = 12;
-  final String noteRecruteur = '4.8/5';
+  final String location = 'Bamako, Garantibougou';
+  final String profession = 'Entrepreneur';
+  final String dateNaissance = '15/06/1985';
+  final int missionsPubliees = 12;
+  final String note = '4.8/5';
 
   @override
   Widget build(BuildContext context) {
@@ -55,7 +51,7 @@ class _ProfilJeuneScreenState extends State<ProfilJeuneScreen> {
       ),
       body: Stack(
         children: [
-          // Header identique à home_jeune.dart
+          // Header identique à home_recruteur.dart
           Positioned(
             top: 0,
             left: 0,
@@ -109,19 +105,19 @@ class _ProfilJeuneScreenState extends State<ProfilJeuneScreen> {
             left: 0,
             right: 0,
             bottom: 0,
-            child: CustomBottomNavBar(
+            child: CustomBottomNavBarRecruteur(
               initialIndex: _selectedIndex,
               onItemSelected: (index) {
                 if (index == _selectedIndex) return;
                 if (index == 0) {
                   Navigator.of(context).pushReplacement(
-                    MaterialPageRoute(builder: (context) => const HomeJeuneScreen()),
+                    MaterialPageRoute(builder: (context) => const HomeRecruteurScreen()),
                   );
                   return;
                 }
                 if (index == 1) {
                   Navigator.of(context).pushReplacement(
-                    MaterialPageRoute(builder: (context) => const MesCandidaturesScreen()),
+                    MaterialPageRoute(builder: (context) => const MissionsRecruteurScreen()),
                   );
                   return;
                 }
@@ -142,7 +138,7 @@ class _ProfilJeuneScreenState extends State<ProfilJeuneScreen> {
     );
   }
 
-  // Header adapté à la maquette du profil en réutilisant la logique/props
+  // Header adapté à la maquette du profil
   Widget _buildHeader(BuildContext context, double height) {
     return Container(
       height: height,
@@ -178,26 +174,26 @@ class _ProfilJeuneScreenState extends State<ProfilJeuneScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                   Align(
-                     alignment: Alignment.centerLeft,
-                     child: GestureDetector(
-                       behavior: HitTestBehavior.translucent,
-                       onTap: () {
-                         final navigator = Navigator.of(context);
-                         if (navigator.canPop()) {
-                           navigator.pop();
-                         } else {
-                           navigator.pushReplacement(
-                             MaterialPageRoute(builder: (context) => const HomeJeuneScreen()),
-                           );
-                         }
-                       },
-                       child: const Padding(
-                         padding: EdgeInsets.all(6.0),
-                         child: Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
-                       ),
-                     ),
-                   ),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.translucent,
+                      onTap: () {
+                        final navigator = Navigator.of(context);
+                        if (navigator.canPop()) {
+                          navigator.pop();
+                        } else {
+                          navigator.pushReplacement(
+                            MaterialPageRoute(builder: (context) => const HomeRecruteurScreen()),
+                          );
+                        }
+                      },
+                      child: const Padding(
+                        padding: EdgeInsets.all(6.0),
+                        child: Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
+                      ),
+                    ),
+                  ),
                   Expanded(
                     child: Center(
                       child: Text(
@@ -210,7 +206,7 @@ class _ProfilJeuneScreenState extends State<ProfilJeuneScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 20), // équilibre visuel
+                  const SizedBox(width: 20),
                 ],
               ),
             ),
@@ -227,7 +223,7 @@ class _ProfilJeuneScreenState extends State<ProfilJeuneScreen> {
                   children: [
                     const CircleAvatar(
                       radius: 50,
-                      backgroundImage: AssetImage('assets/images/image_profil.png'),
+                      backgroundImage: AssetImage('assets/images/profil_recruteur.png'),
                     ),
                     Positioned(
                       right: 0,
@@ -250,16 +246,14 @@ class _ProfilJeuneScreenState extends State<ProfilJeuneScreen> {
                           onTap: () {
                             Navigator.of(context).push(
                               MaterialPageRoute(
-                                builder: (context) => ModifierProfilScreen(
-                                  initialPrenom: 'Rama',
-                                  initialNom: 'Konaré',
+                                builder: (context) => ModifierProfilRecruteurScreen(
                                   initialEmail: email,
                                   initialPhone: phone,
                                   initialLocation: location,
+                                  initialProfession: profession,
                                   initialDateNaissance: dateNaissance,
-                                  initialCompetences: competences,
                                   fullName: fullName,
-                                  role: 'Jeune_Prestauteur',
+                                  role: role,
                                 ),
                               ),
                             );
@@ -282,84 +276,11 @@ class _ProfilJeuneScreenState extends State<ProfilJeuneScreen> {
                   ),
                 ),
                 Text(
-                  'Jeune_Prestateur',
+                  role,
                   style: GoogleFonts.poppins(
                     color: Colors.white,
                     fontSize: 12,
                     fontWeight: FontWeight.w300,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // Carte avatar + nom + rôle (style proche de la maquette)
-  Widget _buildAvatarCard() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Stack(
-            children: [
-              CircleAvatar(
-                radius: 32,
-                backgroundImage: const AssetImage('assets/images/image_home.png'),
-                backgroundColor: Colors.transparent,
-              ),
-              Positioned(
-                right: 0,
-                bottom: 0,
-                child: Container(
-                  width: 22,
-                  height: 22,
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Container(
-                    margin: const EdgeInsets.all(2),
-                    decoration: const BoxDecoration(
-                      color: primaryBlue,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(Icons.edit, size: 14, color: Colors.white),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  fullName,
-                  style: GoogleFonts.poppins(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                Text(
-                  role,
-                  style: GoogleFonts.poppins(
-                    fontSize: 12,
-                    color: Colors.black54,
                   ),
                 ),
               ],
@@ -413,19 +334,18 @@ class _ProfilJeuneScreenState extends State<ProfilJeuneScreen> {
         ),
         const SizedBox(height: 10),
         _infoTile(
-          icon: Icons.calendar_today_outlined,
-          label: 'Date de naissance',
-          value: dateNaissance,
+          icon: Icons.work_outline,
+          label: 'Profession',
+          value: profession,
           tileColor: Colors.white,
           iconBg: orangeBrand.withOpacity(0.12),
           iconColor: orangeBrand,
         ),
         const SizedBox(height: 10),
         _infoTile(
-          icon: Icons.workspace_premium_outlined,
-          label: 'Compétences',
-          value: competences,
-          multiLine: true,
+          icon: Icons.calendar_today_outlined,
+          label: 'Date de naissance',
+          value: dateNaissance,
           tileColor: Colors.white,
           iconBg: orangeBrand.withOpacity(0.12),
           iconColor: orangeBrand,
@@ -449,9 +369,9 @@ class _ProfilJeuneScreenState extends State<ProfilJeuneScreen> {
       ),
       child: Column(
         children: [
-          _statTile('Missions Realiser', missionsRealisees.toString()),
+          _statTile('Missions Publier', missionsPubliees.toString()),
           _divider(),
-          _statTile('Notes des Recruteur', noteRecruteur),
+          _statTile('Notes des jeunes', note),
         ],
       ),
     );
@@ -561,5 +481,4 @@ class _ProfilJeuneScreenState extends State<ProfilJeuneScreen> {
     );
   }
 }
-
 

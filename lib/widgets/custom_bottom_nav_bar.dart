@@ -134,16 +134,18 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar> {
     final itemWidth = screenWidth / navItems.length;
     final targetPositionX = itemWidth * _selectedIndex + (itemWidth / 2);
 
-    return Container(
-      // HAUTEUR PRINCIPALE AUGMENTÉE (MODIFIÉ)
-      height: 110, // Anciennement 90
-      child: Stack(
-        alignment: Alignment.bottomCenter,
-        children: [
-          // 1. Fond blanc de la Barre de Navigation (avec la découpe par CustomPainter)
-          Container(
-            // HAUTEUR DU FOND BLANC AUGMENTÉE (MODIFIÉ)
-            height: 90, // Anciennement 70
+    return SafeArea(
+      top: false,
+      child: Container(
+        // HAUTEUR PRINCIPALE AUGMENTÉE (MODIFIÉ)
+        height: 120, // Augmenté de 110 à 120
+        child: Stack(
+          alignment: Alignment.bottomCenter,
+          children: [
+            // 1. Fond blanc de la Barre de Navigation (avec la découpe par CustomPainter)
+            Container(
+              // HAUTEUR DU FOND BLANC AUGMENTÉE (MODIFIÉ)
+              height: 100, // Augmenté de 90 à 100
             decoration: BoxDecoration(
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(20),
@@ -153,7 +155,7 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar> {
             ),
             child: CustomPaint(
               // TAILLE DU PAINTER AUGMENTÉE (MODIFIÉ)
-              size: const Size.fromHeight(90), // Anciennement 70
+              size: const Size.fromHeight(100), // Augmenté de 90 à 100
               painter: NavBarPainter(
                 selectedIndex: _selectedIndex,
                 itemWidth: itemWidth,
@@ -169,6 +171,7 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar> {
           // 2. Icône sélectionnée flottante
           _buildActiveFloatingItem(targetPositionX),
         ],
+      ),
       ),
     );
   }
