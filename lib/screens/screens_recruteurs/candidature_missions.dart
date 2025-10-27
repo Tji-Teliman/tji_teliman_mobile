@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../widgets/custom_header.dart';
+import 'profil_candidat.dart';
+import 'signaler_candidat_placeholder.dart';
 
 const Color primaryGreen = Color(0xFF10B981);
 const Color bodyBackgroundColor = Color(0xFFf6fcfc);
@@ -124,7 +126,21 @@ class _CandidatureMissionsScreenState extends State<CandidatureMissionsScreen> {
   }
 
   Widget _buildCandidateCard(_Candidate c) {
-    return Container(
+    return InkWell(
+      onTap: () {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => ProfilCandidatScreen(
+              name: c.name,
+              motivation: c.motivation,
+              rating: 4.8,
+              competences: const ['Manutention', 'Livraison', 'Aide à Domicile', 'Menuisier', 'Vente'],
+              missionTitle: widget.missionTitle,
+            ),
+          ),
+        );
+      },
+      child: Container(
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -136,7 +152,7 @@ class _CandidatureMissionsScreenState extends State<CandidatureMissionsScreen> {
           ),
         ],
       ),
-      child: Padding(
+        child: Padding(
         padding: const EdgeInsets.all(12.0),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -161,7 +177,43 @@ class _CandidatureMissionsScreenState extends State<CandidatureMissionsScreen> {
                         ),
                       ),
                       const SizedBox(width: 8),
-                      const Icon(Icons.more_vert, size: 18, color: Colors.black45),
+                      PopupMenuButton<String>(
+                        padding: EdgeInsets.zero,
+                        icon: const Icon(Icons.more_vert, size: 18, color: Colors.black45),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        itemBuilder: (context) => <PopupMenuEntry<String>>[
+                          PopupMenuItem<String>(
+                            value: 'voir_profil',
+                            child: Text('Voir Profil', style: GoogleFonts.poppins(fontSize: 13)),
+                          ),
+                          const PopupMenuDivider(height: 1),
+                          PopupMenuItem<String>(
+                            value: 'signaler',
+                            child: Text('Signaler', style: GoogleFonts.poppins(fontSize: 13)),
+                          ),
+                        ],
+                        onSelected: (value) {
+                          if (value == 'voir_profil') {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => ProfilCandidatScreen(
+                                  name: c.name,
+                                  motivation: c.motivation,
+                                  rating: 4.8,
+                                  competences: const ['Manutention', 'Livraison', 'Aide à Domicile', 'Menuisier', 'Vente'],
+                                  missionTitle: widget.missionTitle,
+                                ),
+                              ),
+                            );
+                          } else if (value == 'signaler') {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => const SignalerCandidatPlaceholder(),
+                              ),
+                            );
+                          }
+                        },
+                      ),
                     ],
                   ),
                   const SizedBox(height: 6),
@@ -195,6 +247,7 @@ class _CandidatureMissionsScreenState extends State<CandidatureMissionsScreen> {
               ),
             ),
           ],
+        ),
         ),
       ),
     );

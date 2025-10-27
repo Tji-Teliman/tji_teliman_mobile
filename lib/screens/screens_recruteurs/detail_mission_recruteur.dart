@@ -288,12 +288,13 @@ class DetailMissionRecruteurScreen extends StatelessWidget {
     }
 
     if (dateFin != null && dateFin != dateDebut) {
-      // Dates différentes: calculer nombre de jours
-      final dStart = _parseDate(dateDebut);
-      final dEnd = _parseDate(dateFin);
+      // Dates différentes: calculer nombre de jours (robuste aux changements d'heure)
+      final dStart = _parseDateUtc(dateDebut);
+      final dEnd = _parseDateUtc(dateFin);
       if (dStart != null && dEnd != null) {
-        final diffDays = dEnd.difference(dStart).inDays + 1; // inclure les deux jours
-        final label = diffDays <= 1 ? '1 jour' : '$diffDays jours';
+        final diffDays = dEnd.difference(dStart).inDays; // exclusif (29-27 = 2)
+        final safeDays = diffDays < 1 ? 1 : diffDays;
+        final label = safeDays == 1 ? '1 jour' : '$safeDays jours';
         return 'Estimé: $label';
       }
       return 'Estimé: n/j';
@@ -344,10 +345,10 @@ class DetailMissionRecruteurScreen extends StatelessWidget {
     return data['dateLimit'] as String? ?? 'Date début: -';
   }
 
-  DateTime? _parseDate(String s) {
+  DateTime? _parseDateUtc(String s) {
     try {
       final parts = s.split('/');
-      return DateTime(int.parse(parts[2]), int.parse(parts[1]), int.parse(parts[0]));
+      return DateTime.utc(int.parse(parts[2]), int.parse(parts[1]), int.parse(parts[0]));
     } catch (_) {
       return null;
     }
