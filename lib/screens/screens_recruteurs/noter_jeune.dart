@@ -151,7 +151,9 @@ class _JeuneEvaluationScreenState extends State<JeuneEvaluationScreen> {
   }
 
   void _handleQuit() {
-    Navigator.of(context).pop();
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (context) => const HomeRecruteurScreen()),
+    );
   }
 
   @override
