@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../widgets/custom_bottom_nav_bar_recruteur.dart';
-import '../../widgets/custom_menu.dart';
+import '../../widgets/custom_menu_recruteur.dart';
 import 'message_conversation_recruteur.dart';
 import 'home_recruteur.dart';
 import 'missions_recruteur.dart';
@@ -45,7 +45,7 @@ class _ProfilRecruteurScreenState extends State<ProfilRecruteurScreen> {
     return Scaffold(
       key: _scaffoldKey,
       backgroundColor: bodyBackgroundColor,
-      drawer: CustomDrawer(
+      drawer: CustomDrawerRecruteur(
         userName: fullName,
         userProfile: 'Mon Profil',
       ),

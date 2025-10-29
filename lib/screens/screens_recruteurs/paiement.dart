@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../widgets/custom_header.dart';
+import 'home_recruteur.dart';
+import 'noter_jeune.dart';
 
 const Color bodyBackgroundColor = Color(0xFFf6fcfc);
 const Color primaryBlue = Color(0xFF2563EB);
@@ -56,67 +58,205 @@ class _PaiementScreenState extends State<PaiementScreen> {
       return;
     }
 
-    // Afficher une confirmation avec le même style que profil_candidat.dart
+    // Afficher une confirmation selon l'image
     showDialog(
       context: context,
-      barrierDismissible: true,
+      barrierDismissible: false,
       builder: (context) {
         return Dialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 22, 20, 16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Container(
-                  width: 54,
-                  height: 54,
-                  decoration: BoxDecoration(
-                    color: primaryGreen.withOpacity(0.15),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(Icons.check_circle, color: primaryGreen, size: 30),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'Paiement réussi',
-                  style: GoogleFonts.poppins(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  'Le paiement a été envoyé avec succès.',
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.poppins(fontSize: 12, color: Colors.black87),
-                ),
-                const SizedBox(height: 14),
-                SizedBox(
-                  width: double.infinity,
-                  height: 42,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.of(context).pop(); // Fermer la boîte de dialogue
-                      Navigator.of(context).pop(true); // Retourner true à la page précédente
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: primaryGreen,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  // Success Icon in circle
+                  Container(
+                    width: 70,
+                    height: 70,
+                    decoration: BoxDecoration(
+                      color: primaryGreen.withOpacity(0.37), // 37% opacity
+                      shape: BoxShape.circle,
                     ),
-                    child: Text(
-                      'OK',
-                      style: GoogleFonts.poppins(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
-                      ),
+                    child: const Icon(
+                      Icons.check_circle,
+                      color: primaryGreen, // #10B981
+                      size: 40,
                     ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 20),
+                  
+                  // Confirmation message
+                  Text(
+                    'Paiement confirmé avec succès :',
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.poppins(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  
+                  // Mission status
+                  Text(
+                    'La mission "${widget.mission}" est maintenant payée.',
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.poppins(
+                      fontSize: 14,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  
+                  // Payment details card
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(20.0),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey.shade200),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 10,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Amount
+                        Text(
+                          'Montant',
+                          style: GoogleFonts.poppins(
+                            fontSize: 14,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          '5 000 CFA',
+                          style: GoogleFonts.poppins(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        
+                        // Horizontal line separator
+                        Divider(
+                          color: Colors.grey.shade300,
+                          thickness: 1,
+                        ),
+                        const SizedBox(height: 20),
+                        
+                        // Payment method
+                        Text(
+                          'Méthode de paiement',
+                          style: GoogleFonts.poppins(
+                            fontSize: 14,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Orange Money',
+                          style: GoogleFonts.poppins(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 30),
+                  
+                  // Buttons row
+                  Row(
+                    children: [
+                      // Noter le jeune button
+                      Expanded(
+                        child: SizedBox(
+                          height: 50,
+                          child: ElevatedButton(
+                            onPressed: () {
+                              Navigator.of(context).pop(); // Close dialog
+                              Navigator.of(context).pop(); // Close paiement screen
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (context) => JeuneEvaluationScreen(
+                                    jeuneName: widget.jeune,
+                                    mission: widget.mission,
+                                    montant: '5 000 CFA',
+                                    dateFin: '06 Octobre 2025',
+                                  ),
+                                ),
+                              );
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFFF59E0B), // Orange
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(25),
+                              ),
+                              elevation: 0,
+                            ),
+                            child: Text(
+                              'Noter le jeune',
+                              style: GoogleFonts.poppins(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      
+                      // Return to home button
+                      Expanded(
+                        child: SizedBox(
+                          height: 50,
+                          child: ElevatedButton(
+                            onPressed: () {
+                              Navigator.of(context).pop(); // Close dialog
+                              Navigator.of(context).pop(); // Close paiement screen
+                              Navigator.of(context).pushReplacement(
+                                MaterialPageRoute(builder: (context) => const HomeRecruteurScreen()),
+                              );
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: primaryGreen, // #10B981
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(25),
+                              ),
+                              elevation: 0,
+                            ),
+                            child: Text(
+                              'Retour à l\'accueil',
+                              style: GoogleFonts.poppins(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         );
@@ -171,7 +311,6 @@ class _PaiementScreenState extends State<PaiementScreen> {
             _buildTextField(
               controller: _phoneController,
               hintText: 'Numero de téléphone Orange Money',
-              icon: Icons.phone_outlined,
               keyboardType: TextInputType.phone,
             ),
             const SizedBox(height: 15),
@@ -180,7 +319,6 @@ class _PaiementScreenState extends State<PaiementScreen> {
             _buildTextField(
               controller: _amountController,
               hintText: 'Montant à payer en FCFA',
-              icon: Icons.attach_money,
               keyboardType: TextInputType.number,
             ),
             const SizedBox(height: 30),
@@ -202,10 +340,10 @@ class _PaiementScreenState extends State<PaiementScreen> {
             const SizedBox(height: 30),
 
             // Bouton Payer
-            SizedBox(
-              width: double.infinity,
-              height: 50,
+            Center(
               child: Container(
+                width: 200,
+                height: 50,
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [primaryPurple, primaryBlue],
@@ -251,7 +389,6 @@ class _PaiementScreenState extends State<PaiementScreen> {
   Widget _buildTextField({
     required TextEditingController controller,
     required String hintText,
-    required IconData icon,
     TextInputType keyboardType = TextInputType.text,
   }) {
     return Container(
@@ -276,7 +413,6 @@ class _PaiementScreenState extends State<PaiementScreen> {
             color: Colors.grey.shade500,
             fontSize: 14,
           ),
-          prefixIcon: Icon(icon, color: primaryBlue),
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 16,

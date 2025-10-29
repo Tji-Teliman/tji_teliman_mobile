@@ -3,17 +3,18 @@ import 'package:google_fonts/google_fonts.dart';
 
 // Barre de navigation inférieure pour recruteur
 import '../../widgets/custom_bottom_nav_bar_recruteur.dart';
-// Menu latéral (même composant commun pour le moment)
-import '../../widgets/custom_menu.dart';
+// Menu latéral spécifique au recruteur
+import '../../widgets/custom_menu_recruteur.dart';
 
 // Réutilisation de certaines pages existantes tant que les versions recruteurs ne sont pas créées
 import '../screens_jeunes/notifications.dart';
 import '../screens_jeunes/liste_litige.dart';
-import '../screens_jeunes/historique_paiement.dart';
+import 'historique_paiement_recruteur.dart';
 import 'finaliser_profile_particulier.dart';
 import 'publier_mission.dart';
 import 'missions_recruteur.dart';
 import 'paiement.dart';
+import 'mode_paiement.dart';
 import 'profil_recruteur.dart';
 import 'message_conversation_recruteur.dart';
 
@@ -56,9 +57,11 @@ class _HomeRecruteurScreenState extends State<HomeRecruteurScreen> {
   void _payWithOrangeMoney() async {
     final result = await Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => const PaiementScreen(
+        builder: (context) => const ModePaiementScreen(
           jeune: 'Ramatou konaré',
           mission: 'Aide Ménagere',
+          montant: '5 000 CFA',
+          nomMission: 'Mission de terrain',
         ),
       ),
     );
@@ -92,7 +95,7 @@ class _HomeRecruteurScreenState extends State<HomeRecruteurScreen> {
     }
     if (action == 'Historiques Paiements') {
       Navigator.of(context).push(
-        MaterialPageRoute(builder: (context) => const HistoriquePaiement()),
+        MaterialPageRoute(builder: (context) => const HistoriquePaiementRecruteur()),
       );
       return;
     }
@@ -129,7 +132,7 @@ class _HomeRecruteurScreenState extends State<HomeRecruteurScreen> {
       key: _scaffoldKey,
       backgroundColor: bodyBackgroundColor,
 
-      drawer: CustomDrawer(
+      drawer: CustomDrawerRecruteur(
         userName: userName,
         userProfile: "Mon Profil",
       ),
