@@ -44,7 +44,7 @@ class SecuritySettingsScreen extends StatelessWidget {
       
       body: const SingleChildScrollView(
         padding: EdgeInsets.fromLTRB(20.0, 0.0, 20.0, 0.0),
-        child: SecuritySettingsContent(),
+                child: SecuritySettingsContent(),
       ),
     );
   }

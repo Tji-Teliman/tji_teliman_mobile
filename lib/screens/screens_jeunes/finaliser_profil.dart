@@ -308,17 +308,17 @@ class _FinaliserProfilScreenState extends State<FinaliserProfilScreen> {
     return GestureDetector(
       onTap: _openCompetencesPicker,
       child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(10),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 5,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 5,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
         padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 15),
         child: Row(
           children: [

@@ -414,11 +414,11 @@ class _DefaultMissionCard extends StatelessWidget {
         const SizedBox(width: 5),
         Expanded(
           child: Text(
-            text,
-            style: GoogleFonts.poppins(
+          text,
+          style: GoogleFonts.poppins(
               fontSize: 13,
-              color: isPrice ? primaryBlue : darkGrey,
-              fontWeight: isPrice ? FontWeight.bold : FontWeight.normal,
+            color: isPrice ? primaryBlue : darkGrey,
+            fontWeight: isPrice ? FontWeight.bold : FontWeight.normal,
             ),
             overflow: TextOverflow.ellipsis,
             maxLines: 1,
@@ -452,11 +452,11 @@ class _DefaultMissionCard extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  title,
-                  style: GoogleFonts.poppins(
+                title,
+                style: GoogleFonts.poppins(
                     fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
                   ),
                   overflow: TextOverflow.ellipsis,
                   maxLines: 2,
@@ -521,22 +521,22 @@ class _DefaultMissionCard extends StatelessWidget {
               const SizedBox(width: 8),
               
               ElevatedButton(
-                onPressed: onTap,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: primaryBlue,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
+                  onPressed: onTap,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: primaryBlue,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  elevation: 0,
+                    elevation: 0,
                   minimumSize: const Size(90, 30),
-                ),
-                child: Text(
-                  'Voir Plus',
-                  style: GoogleFonts.poppins(
+                  ),
+                  child: Text(
+                    'Voir Plus',
+                    style: GoogleFonts.poppins(
                     fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
                   ),
                 ),
               ),

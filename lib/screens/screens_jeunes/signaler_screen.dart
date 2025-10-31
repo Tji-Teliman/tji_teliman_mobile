@@ -263,20 +263,20 @@ class _DisputeFormContentState extends State<DisputeFormContent> {
                     ],
                   )
                 : const Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.cloud_upload_outlined,
-                        size: 35,
-                        color: Colors.grey,
-                      ),
-                      SizedBox(height: 8),
-                      Text(
-                        'Televerser la photo de votre carte d\'identité',
-                        style: TextStyle(color: Colors.grey, fontSize: 14),
-                      ),
-                    ],
-                  ),
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.cloud_upload_outlined,
+                  size: 35,
+                  color: Colors.grey,
+                ),
+                SizedBox(height: 8),
+                Text(
+                  'Televerser la photo de votre carte d\'identité',
+                  style: TextStyle(color: Colors.grey, fontSize: 14),
+                ),
+              ],
+            ),
           ),
         ),
         const SizedBox(height: 25),

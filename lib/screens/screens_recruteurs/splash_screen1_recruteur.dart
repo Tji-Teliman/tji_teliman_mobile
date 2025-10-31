@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'splash_screen2_recruteur.dart';
-import '../register_screen.dart';
+import 'register_recruteur.dart';
 
 class SplashScreen1Recruteur extends StatefulWidget {
   const SplashScreen1Recruteur({super.key});
@@ -161,7 +161,7 @@ class _SplashScreen1RecruteurState extends State<SplashScreen1Recruteur> with Si
                                       Navigator.of(context).pushReplacement(
                                         MaterialPageRoute(
                                           // Utilisation directe du nom de la classe de la page
-                                          builder: (context) => const RegisterScreen(), 
+                                          builder: (context) => const RegisterRecruteur(), 
                                         ),
                                       );
                                     },

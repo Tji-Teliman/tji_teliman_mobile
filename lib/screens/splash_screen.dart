@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'splash_screen_2.dart';
+import 'splash_screen_role.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -63,13 +63,13 @@ class _SplashScreenState extends State<SplashScreen>
 
     _animationController.repeat(reverse: true); // Fait pulser en boucle pendant 5s
 
-    // Navigation après 5 secondes vers OnboardingScreen
+    // Navigation après 5 secondes vers l'écran de sélection de rôle
     Future.delayed(const Duration(seconds: 5), () {
       if (mounted) {
         // Remplacement de la navigation nommée par la navigation directe
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
-            builder: (context) => const SplashScreen2(),
+            builder: (context) => const SplashScreenRole(),
           ),
         );
       }

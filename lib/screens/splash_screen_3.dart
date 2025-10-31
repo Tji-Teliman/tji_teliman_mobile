@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'splash_screen_4.dart';
-import 'register_screen.dart';
+import 'screens_jeunes/registre_jeune.dart';
 
 class SplashScreen3 extends StatefulWidget {
   const SplashScreen3({super.key});
@@ -151,7 +151,7 @@ class _SplashScreen3State extends State<SplashScreen3> with SingleTickerProvider
                                   Navigator.of(context).pushReplacement(
                                     MaterialPageRoute(
                                       // Utilisation directe du nom de la classe de la page
-                                      builder: (context) => const RegisterScreen(), 
+                                      builder: (context) => const RegisterJeune(), 
                                     ),
                                   );
                                 },

@@ -29,62 +29,62 @@ class ContactUsScreen extends StatelessWidget {
       
       body: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(20.0, 0.0, 20.0, 0.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
             const SizedBox(height: 0),
-            // --- Champ Votre Nom ---
-            const CustomTextField(hintText: 'Votre Nom'),
-            const SizedBox(height: 15),
-            // --- Champ Votre Adresse E-mail ---
-            const CustomTextField(hintText: 'Votre Adresse E-mail'),
-            const SizedBox(height: 15),
-            // --- Champ Sujet ---
-            const CustomTextField(hintText: 'Sujet'),
-            const SizedBox(height: 15),
-            // --- Champ Votre Message (Multi-lignes) ---
-            Container(
+                    // --- Champ Votre Nom ---
+                    const CustomTextField(hintText: 'Votre Nom'),
+                    const SizedBox(height: 15),
+                    // --- Champ Votre Adresse E-mail ---
+                    const CustomTextField(hintText: 'Votre Adresse E-mail'),
+                    const SizedBox(height: 15),
+                    // --- Champ Sujet ---
+                    const CustomTextField(hintText: 'Sujet'),
+                    const SizedBox(height: 15),
+                    // --- Champ Votre Message (Multi-lignes) ---
+                    Container(
               height: 150,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(8.0),
-                border: Border.all(color: Colors.grey.shade300, width: 1.5),
-              ),
-              child: const TextField(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(8.0),
+                        border: Border.all(color: Colors.grey.shade300, width: 1.5),
+                      ),
+                      child: const TextField(
                 maxLines: null,
-                expands: true,
-                keyboardType: TextInputType.multiline,
-                decoration: InputDecoration(
-                  hintText: 'Votre Message',
-                  hintStyle: TextStyle(color: Colors.grey),
-                  border: InputBorder.none,
-                  contentPadding: EdgeInsets.all(12.0),
+                        expands: true,
+                        keyboardType: TextInputType.multiline,
+                        decoration: InputDecoration(
+                          hintText: 'Votre Message',
+                          hintStyle: TextStyle(color: Colors.grey),
+                          border: InputBorder.none,
+                          contentPadding: EdgeInsets.all(12.0),
+                        ),
+                        style: TextStyle(fontSize: 16),
+                      ),
+                    ),
+                    const SizedBox(height: 40),
+                    // --- Bouton Envoyer ---
+                    ElevatedButton(
+                      onPressed: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text("Formulaire de contact envoyé !"))
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: customBlue,
+                        minimumSize: const Size(double.infinity, 50),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        elevation: 2,
+                      ),
+                      child: const Text(
+                        'Envoyer',
+                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                  ],
                 ),
-                style: TextStyle(fontSize: 16),
-              ),
-            ),
-            const SizedBox(height: 40),
-            // --- Bouton Envoyer ---
-            ElevatedButton(
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Formulaire de contact envoyé !"))
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: customBlue,
-                minimumSize: const Size(double.infinity, 50),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                elevation: 2,
-              ),
-              child: const Text(
-                'Envoyer',
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
-              ),
-            ),
-            const SizedBox(height: 20),
-          ],
-        ),
       ),
     );
   }

@@ -77,7 +77,7 @@ class _MyAppState extends State<Parametre> {
   Widget build(BuildContext context) {
     // Retourner directement l'écran, sans MaterialApp imbriqué
     return SettingsScreen(
-      themeManager: _themeManager,
+        themeManager: _themeManager,
       notificationManager: _notificationManager,
     );
   }
@@ -163,9 +163,9 @@ class SettingsScreen extends StatelessWidget {
         );
         return;
       default:
-        ScaffoldMessenger.of(context).showSnackBar(
+    ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("Navigation: $key"), duration: const Duration(milliseconds: 800)),
-        );
+    );
     }
   }
 

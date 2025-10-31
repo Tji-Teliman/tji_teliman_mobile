@@ -63,81 +63,81 @@ class SupportCenterScreen extends StatelessWidget {
       
       body: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(20.0, 0.0, 20.0, 20.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            // --- Titre Catégories ---
-            const Text(
-              'Catégories',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 20,
-                color: Colors.black87,
-              ),
-            ),
-            const SizedBox(height: 15),
-            // --- Grille de Catégories ---
-            GridView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    // --- Titre Catégories ---
+                    const Text(
+                      'Catégories',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 20,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    const SizedBox(height: 15),
+                    // --- Grille de Catégories ---
+                    GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
                 childAspectRatio: 1.2,
-                crossAxisSpacing: 15,
-                mainAxisSpacing: 15,
-              ),
-              itemCount: categories.length,
-              itemBuilder: (context, index) {
-                return AnimatedCategoryCard(category: categories[index]);
-              },
-            ),
-            const SizedBox(height: 40),
-            // --- Section Contact ---
-            const Text(
-              'Vous n\'avez pas trouvé de réponse ?',
-              style: TextStyle(
-                fontWeight: FontWeight.w600,
-                fontSize: 16,
-                color: Colors.black87,
-              ),
-            ),
-            const SizedBox(height: 15),
-            // Bouton Nous Contacter
-            ElevatedButton(
-              onPressed: () {
+                        crossAxisSpacing: 15,
+                        mainAxisSpacing: 15,
+                      ),
+                      itemCount: categories.length,
+                      itemBuilder: (context, index) {
+                        return AnimatedCategoryCard(category: categories[index]);
+                      },
+                    ),
+                    const SizedBox(height: 40),
+                    // --- Section Contact ---
+                    const Text(
+                      'Vous n\'avez pas trouvé de réponse ?',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 16,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    const SizedBox(height: 15),
+                    // Bouton Nous Contacter
+                    ElevatedButton(
+                      onPressed: () {
                 Navigator.of(context).push(
                   MaterialPageRoute(builder: (context) => const ContacterNous()),
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: customBlue,
-                minimumSize: const Size(double.infinity, 50),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                elevation: 2,
-              ),
-              child: const Text(
-                'Nous Contacter',
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
-              ),
-            ),
-            const SizedBox(height: 10),
-            // Lien Conditions Générales
-            Center(
-              child: TextButton(
-                onPressed: () {
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: customBlue,
+                        minimumSize: const Size(double.infinity, 50),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        elevation: 2,
+                      ),
+                      child: const Text(
+                        'Nous Contacter',
+                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    // Lien Conditions Générales
+                    Center(
+                      child: TextButton(
+                        onPressed: () {
                   Navigator.of(context).push(
                     MaterialPageRoute(builder: (context) => const ConditionsGenerales()),
-                  );
-                },
-                child: Text(
-                  'Voir les conditions Générales',
-                  style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
+                          );
+                        },
+                        child: Text(
+                          'Voir les conditions Générales',
+                          style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                  ],
                 ),
-              ),
-            ),
-            const SizedBox(height: 20),
-          ],
-        ),
       ),
     );
   }

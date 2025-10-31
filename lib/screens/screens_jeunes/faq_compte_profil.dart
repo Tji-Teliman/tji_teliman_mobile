@@ -61,65 +61,65 @@ class FaqProfileScreen extends StatelessWidget {
       
       body: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(20.0, 0.0, 20.0, 0.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            const Text(
-              'Catégories',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 20,
-                color: Colors.black87,
-              ),
-            ),
-            const SizedBox(height: 15),
-            Theme(
-              data: Theme.of(context).copyWith(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        const Text(
+                          'Catégories',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 20,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        const SizedBox(height: 15),
+                        Theme(
+                          data: Theme.of(context).copyWith(
                 dividerColor: Colors.transparent,
-              ),
-              child: Column(
-                children: faqItems.map((item) {
-                  return FaqExpansionTile(faqItem: item);
-                }).toList(),
-              ),
-            ),
+                          ),
+                          child: Column(
+                            children: faqItems.map((item) {
+                              return FaqExpansionTile(faqItem: item);
+                            }).toList(),
+                          ),
+                        ),
             const SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.help_outline, color: customBlue, size: 20),
-                const SizedBox(width: 8),
-                const Text(
-                  "Vous n'avez pas trouvé de réponse ?",
-                  style: TextStyle(fontSize: 14, color: Colors.black87),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.help_outline, color: customBlue, size: 20),
+                    const SizedBox(width: 8),
+                    const Text(
+                      "Vous n'avez pas trouvé de réponse ?",
+                      style: TextStyle(fontSize: 14, color: Colors.black87),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Center(
+                  child: SizedBox(
+                width: MediaQuery.of(context).size.width * 0.75,
+                    child: ElevatedButton(
+                      onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (context) => const ContacterNous()),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: customBlue,
+                        minimumSize: const Size(double.infinity, 50),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        elevation: 2,
+                      ),
+                      child: const Text(
+                        "Envoyer l'avis",
+                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                      ),
+                    ),
+                  ),
                 ),
               ],
             ),
-            const SizedBox(height: 10),
-            Center(
-              child: SizedBox(
-                width: MediaQuery.of(context).size.width * 0.75,
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(builder: (context) => const ContacterNous()),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: customBlue,
-                    minimumSize: const Size(double.infinity, 50),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    elevation: 2,
-                  ),
-                  child: const Text(
-                    "Envoyer l'avis",
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

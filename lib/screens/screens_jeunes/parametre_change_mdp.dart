@@ -199,86 +199,86 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(20.0, 0.0, 20.0, 0.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              _buildPasswordField(
-                controller: _currentPasswordController,
-                label: 'Mot de passe actuel',
-                hint: 'Entrez votre mot de passe actuel',
-                isVisible: _isCurrentPasswordVisible,
-                toggleVisibility: () {
-                  setState(() {
-                    _isCurrentPasswordVisible = !_isCurrentPasswordVisible;
-                  });
-                },
-              ),
-              _buildPasswordField(
-                controller: _newPasswordController,
-                label: 'Nouveau mot de passe',
-                hint: 'Créez un nouveau mot de passe',
-                isVisible: _isNewPasswordVisible,
-                toggleVisibility: () {
-                  setState(() {
-                    _isNewPasswordVisible = !_isNewPasswordVisible;
-                  });
-                },
-                isNewPassword: true,
-              ),
-              _buildPasswordField(
-                controller: _confirmPasswordController,
-                label: 'Confirmer le nouveau mot de passe',
-                hint: 'Confirmer votre nouveau mot de passe',
-                isVisible: _isConfirmPasswordVisible,
-                toggleVisibility: () {
-                  setState(() {
-                    _isConfirmPasswordVisible = !_isConfirmPasswordVisible;
-                  });
-                },
-              ),
-              const SizedBox(height: 20),
-              PasswordRuleIndicator(password: _newPassword),
-              const SizedBox(height: 15),
-              if (_passwordsDoNotMatch)
-                const Padding(
-                  padding: EdgeInsets.only(bottom: 15.0),
-                  child: Text(
-                    '⚠️ Les nouveaux mots de passe ne correspondent pas.',
-                    style: TextStyle(
-                      color: customRed, 
-                      fontWeight: FontWeight.w600,
-                      fontSize: 15,
-                    ),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      _buildPasswordField(
+                        controller: _currentPasswordController,
+                        label: 'Mot de passe actuel',
+                        hint: 'Entrez votre mot de passe actuel',
+                        isVisible: _isCurrentPasswordVisible,
+                        toggleVisibility: () {
+                          setState(() {
+                            _isCurrentPasswordVisible = !_isCurrentPasswordVisible;
+                          });
+                        },
+                      ),
+                      _buildPasswordField(
+                        controller: _newPasswordController,
+                        label: 'Nouveau mot de passe',
+                        hint: 'Créez un nouveau mot de passe',
+                        isVisible: _isNewPasswordVisible,
+                        toggleVisibility: () {
+                          setState(() {
+                            _isNewPasswordVisible = !_isNewPasswordVisible;
+                          });
+                        },
+                        isNewPassword: true,
+                      ),
+                      _buildPasswordField(
+                        controller: _confirmPasswordController,
+                        label: 'Confirmer le nouveau mot de passe',
+                        hint: 'Confirmer votre nouveau mot de passe',
+                        isVisible: _isConfirmPasswordVisible,
+                        toggleVisibility: () {
+                          setState(() {
+                            _isConfirmPasswordVisible = !_isConfirmPasswordVisible;
+                          });
+                        },
+                      ),
+                      const SizedBox(height: 20),
+                      PasswordRuleIndicator(password: _newPassword),
+                      const SizedBox(height: 15),
+                      if (_passwordsDoNotMatch)
+                        const Padding(
+                          padding: EdgeInsets.only(bottom: 15.0),
+                          child: Text(
+                            '⚠️ Les nouveaux mots de passe ne correspondent pas.',
+                            style: TextStyle(
+                              color: customRed, 
+                              fontWeight: FontWeight.w600,
+                              fontSize: 15,
+                            ),
+                          ),
+                        ),
+                      const SizedBox(height: 10),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 50,
+                        child: ElevatedButton(
+                          onPressed: _submitForm,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: customGreen,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10.0),
+                            ),
+                            elevation: 5,
+                          ),
+                          child: const Text(
+                            'Enregistrer les modifications',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              const SizedBox(height: 10),
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  onPressed: _submitForm,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: customGreen,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10.0),
-                    ),
-                    elevation: 5,
-                  ),
-                  child: const Text(
-                    'Enregistrer les modifications',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }
