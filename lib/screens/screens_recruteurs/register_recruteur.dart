@@ -4,6 +4,10 @@ import 'package:flutter/material.dart';
 import '../login_screen.dart';
 import 'home_recruteur.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'dart:convert';
+import '../../services/auth_service.dart';
+import '../../models/recruteur_registration.dart';
+import '../../config/api_config.dart';
 
 // --- COULEURS CONSTANTES ---
 const Color primaryGreen = Color(0xFF10B981);      
@@ -162,8 +166,31 @@ class RegistrationForm extends StatefulWidget {
 }
 
 class _RegistrationFormState extends State<RegistrationForm> {
-  // VARIABLES D'ÉTAT POUR LES CHAMPS CONDITIONNELS
+  // Contrôleurs pour les champs du formulaire
+  final _formKey = GlobalKey<FormState>();
+  final _nomController = TextEditingController();
+  final _prenomController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _telephoneController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
+  
+  // États
   String? _selectedRecruiterType; // Pour ENTREPRISE ou PARTICULIER
+  String? _selectedGenre;
+  bool _isSubmitting = false;
+  final _authService = AuthService();
+
+  @override
+  void dispose() {
+    _nomController.dispose();
+    _prenomController.dispose();
+    _emailController.dispose();
+    _telephoneController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    super.dispose();
+  }
 
   // Style des champs de texte AVEC BORDURE
   InputDecoration _inputDecoration(String hint) {
@@ -189,9 +216,104 @@ class _RegistrationFormState extends State<RegistrationForm> {
     );
   }
 
+  /// Gère la soumission du formulaire
+  Future<void> _submitForm() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    setState(() {
+      _isSubmitting = true;
+    });
+
+    try {
+      final request = RecruteurRegistrationRequest(
+        nom: _nomController.text.trim(),
+        prenom: _prenomController.text.trim(),
+        genre: _selectedGenre!,
+        email: _emailController.text.trim().isEmpty ? null : _emailController.text.trim(),
+        telephone: _telephoneController.text.trim(),
+        typeRecruteur: _selectedRecruiterType!,
+        motDePasse: _passwordController.text,
+        confirmationMotDePasse: _confirmPasswordController.text,
+      );
+
+
+      // Debug: Afficher les données envoyées
+      print('📤 Envoi inscription recruteur: ${request.toJson()}');
+      print('🔗 URL: ${ApiConfig.baseUrl}${ApiConfig.registerRecruteur}');
+
+      final response = await _authService.registerRecruteur(request);
+
+      // Debug: Afficher la réponse
+      print('📥 Réponse reçue - Status: ${response.statusCode}');
+      print('📥 Body: ${response.body}');
+
+      if (!mounted) return;
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        // Succès : Navigation vers la page d'accueil
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (context) => const HomeRecruteurScreen(),
+          ),
+        );
+      } else {
+        // Erreur : Afficher le message d'erreur et rester sur la page
+        String errorMessage = 'Inscription échouée (Code: ${response.statusCode})';
+        try {
+          if (response.body.isNotEmpty) {
+            final jsonResponse = jsonDecode(response.body);
+            if (jsonResponse is Map<String, dynamic>) {
+              // Tentative d'extraire le message d'erreur du backend
+              if (jsonResponse.containsKey('message')) {
+                errorMessage = jsonResponse['message'].toString();
+              } else if (jsonResponse.containsKey('error')) {
+                errorMessage = jsonResponse['error'].toString();
+              } else {
+                errorMessage = 'Erreur: ${response.body}';
+              }
+            } else {
+              errorMessage = response.body;
+            }
+          }
+        } catch (e) {
+          // Si le parsing JSON échoue, utiliser le body brut
+          if (response.body.isNotEmpty) {
+            errorMessage = 'Erreur: ${response.body}';
+          }
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
+    } catch (e) {
+      // Erreur réseau ou autre exception
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erreur de connexion: ${e.toString()}'),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 4),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSubmitting = false;
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final List<String> genres = ['MASCULIN', 'FÉMININ'];
+    final List<String> genres = ['MASCULIN', 'FEMININ'];
     final List<String> recruiterTypes = ['ENTREPRISE', 'PARTICULIER'];
     
     // Liste pour stocker tous les widgets du formulaire
@@ -199,9 +321,31 @@ class _RegistrationFormState extends State<RegistrationForm> {
       // Nom et Prénom 
       Row(
         children: <Widget>[
-          Expanded(child: TextFormField(decoration: _inputDecoration('Nom'))),
+          Expanded(
+            child: TextFormField(
+              controller: _nomController,
+              decoration: _inputDecoration('Nom'),
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return 'Le nom est requis';
+                }
+                return null;
+              },
+            ),
+          ),
           const SizedBox(width: 8), 
-          Expanded(child: TextFormField(decoration: _inputDecoration('Prenom'))),
+          Expanded(
+            child: TextFormField(
+              controller: _prenomController,
+              decoration: _inputDecoration('Prenom'),
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return 'Le prénom est requis';
+                }
+                return null;
+              },
+            ),
+          ),
         ],
       ),
       const SizedBox(height: 15), 
@@ -210,17 +354,50 @@ class _RegistrationFormState extends State<RegistrationForm> {
       DropdownButtonFormField<String>(
         decoration: _inputDecoration('Genre'),
         isExpanded: true,
-        value: null, 
+        value: _selectedGenre, 
         items: genres.map<DropdownMenuItem<String>>((String value) {
           return DropdownMenuItem<String>(child: Text(value), value: value);
         }).toList(),
-        onChanged: (String? newValue) {},
+        validator: (value) {
+          if (value == null) {
+            return 'Le genre est requis';
+          }
+          return null;
+        },
+        onChanged: (String? newValue) {
+          setState(() {
+            _selectedGenre = newValue;
+          });
+        },
       ),
       const SizedBox(height: 15), 
       
-      TextFormField(keyboardType: TextInputType.emailAddress, decoration: _inputDecoration('Email (facultatif)')),
+      TextFormField(
+        controller: _emailController,
+        keyboardType: TextInputType.emailAddress,
+        decoration: _inputDecoration('Email (facultatif)'),
+        validator: (value) {
+          if (value != null && value.trim().isNotEmpty) {
+            // Validation basique de l'email
+            if (!value.contains('@') || !value.contains('.')) {
+              return 'Email invalide';
+            }
+          }
+          return null;
+        },
+      ),
       const SizedBox(height: 15), 
-      TextFormField(keyboardType: TextInputType.phone, decoration: _inputDecoration('Telephone')),
+      TextFormField(
+        controller: _telephoneController,
+        keyboardType: TextInputType.phone,
+        decoration: _inputDecoration('Telephone'),
+        validator: (value) {
+          if (value == null || value.trim().isEmpty) {
+            return 'Le téléphone est requis';
+          }
+          return null;
+        },
+      ),
       const SizedBox(height: 15), 
       
       // Champ Rôle supprimé (sélection désormais via splash_screen_role)
@@ -234,6 +411,12 @@ class _RegistrationFormState extends State<RegistrationForm> {
         items: recruiterTypes.map<DropdownMenuItem<String>>((String value) {
           return DropdownMenuItem<String>(child: Text(value), value: value);
         }).toList(),
+        validator: (value) {
+          if (value == null) {
+            return 'Le type de recruteur est requis';
+          }
+          return null;
+        },
         onChanged: (String? newValue) {
           setState(() {
             _selectedRecruiterType = newValue;
@@ -246,20 +429,40 @@ class _RegistrationFormState extends State<RegistrationForm> {
 
     // Ajout des champs communs de fin (Mot de passe, Confirmer Mot de passe, Bouton)
     formWidgets.addAll([
-      TextFormField(obscureText: true, decoration: _inputDecoration('Mot de Passe')),
+      TextFormField(
+        controller: _passwordController,
+        obscureText: true,
+        decoration: _inputDecoration('Mot de Passe'),
+        validator: (value) {
+          if (value == null || value.isEmpty) {
+            return 'Le mot de passe est requis';
+          }
+          if (value.length < 6) {
+            return 'Le mot de passe doit contenir au moins 6 caractères';
+          }
+          return null;
+        },
+      ),
       const SizedBox(height: 15), 
-      TextFormField(obscureText: true, decoration: _inputDecoration('Confirmez Mot de Passe')),
+      TextFormField(
+        controller: _confirmPasswordController,
+        obscureText: true,
+        decoration: _inputDecoration('Confirmez Mot de Passe'),
+        validator: (value) {
+          if (value == null || value.isEmpty) {
+            return 'Veuillez confirmer le mot de passe';
+          }
+          if (value != _passwordController.text) {
+            return 'Les mots de passe ne correspondent pas';
+          }
+          return null;
+        },
+      ),
       const SizedBox(height: 25), 
       
       // Bouton S'inscrire
       ElevatedButton(
-        onPressed: () {
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(
-              builder: (context) => const HomeRecruteurScreen(),
-            ),
-          );
-        },
+        onPressed: _isSubmitting ? null : _submitForm,
         style: ElevatedButton.styleFrom(
           backgroundColor: primaryGreen, 
           shape: RoundedRectangleBorder(
@@ -269,10 +472,19 @@ class _RegistrationFormState extends State<RegistrationForm> {
           elevation: 5,
           shadowColor: primaryGreen.withOpacity(0.5),
         ),
-        child: Text(
-          "S'inscrire",
-          style: GoogleFonts.poppins(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold),
-        ),
+        child: _isSubmitting
+            ? const SizedBox(
+                height: 20,
+                width: 20,
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 2.5,
+                ),
+              )
+            : Text(
+                "S'inscrire",
+                style: GoogleFonts.poppins(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold),
+              ),
       ),
     ]);
 
@@ -293,9 +505,12 @@ class _RegistrationFormState extends State<RegistrationForm> {
             ],
           ),
           // Utilisation de la liste des widgets construite conditionnellement
-          child: Column(
-            mainAxisSize: MainAxisSize.min, 
-            children: formWidgets, // Utilisez la liste dynamique ici
+          child: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min, 
+              children: formWidgets, // Utilisez la liste dynamique ici
+            ),
           ),
         ),
         
@@ -317,27 +532,34 @@ class LoginLink extends StatelessWidget {
     
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
       children: <Widget>[
-        const Text(
-          'Vous avez un compte ? ', 
-          style: TextStyle(
-            color: Colors.black54,
-            fontSize: reducedFontSize, 
+        Flexible(
+          child: Text(
+            'Vous avez un compte ? ', 
+            style: const TextStyle(
+              color: Colors.black54,
+              fontSize: reducedFontSize, 
+            ),
+            textAlign: TextAlign.center,
           ),
         ),
-        GestureDetector(
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const LoginScreen()),
-            );
-          },
-          child: Text(
-            'Connectez-vous ici',
-            style: GoogleFonts.poppins(
-              color: headerGradientEndBlue, 
-              fontWeight: FontWeight.bold,
-              fontSize: reducedFontSize, 
+        Flexible(
+          child: GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const LoginScreen()),
+              );
+            },
+            child: Text(
+              'Connectez-vous ici',
+              style: GoogleFonts.poppins(
+                color: headerGradientEndBlue, 
+                fontWeight: FontWeight.bold,
+                fontSize: reducedFontSize, 
+              ),
+              textAlign: TextAlign.center,
             ),
           ),
         ),

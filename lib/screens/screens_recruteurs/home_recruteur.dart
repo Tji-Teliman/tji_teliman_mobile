@@ -17,6 +17,9 @@ import 'paiement.dart';
 import 'mode_paiement.dart';
 import 'profil_recruteur.dart';
 import 'message_conversation_recruteur.dart';
+// Import des services
+import '../../services/user_service.dart';
+import '../../services/token_service.dart';
 
 // --- COULEURS ---
 const Color primaryGreen = Color(0xFF10B981);
@@ -37,13 +40,87 @@ class _HomeRecruteurScreenState extends State<HomeRecruteurScreen> {
   bool _showProfileAlert = true;
   bool _hasPendingPayment = true; // Affiche l'alerte de paiement en attente
   int _selectedIndex = 0;
+  bool _isLoading = true;
+  bool _hasError = false;
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
-  // Données statiques pour l'en-tête (selon la maquette)
-  final String userName = "Amadou Bakagoyo !";
-  final int missionsPubliees = 12;
-  final String note = "3.7/5";
+  // Données dynamiques pour le profil
+  String userName = "";
+  int missionsPubliees = 0;
+  String note = "0.0/5";
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  // Charger les données du recruteur depuis le backend
+  Future<void> _loadUserData() async {
+    try {
+      setState(() {
+        _isLoading = true;
+        _hasError = false;
+      });
+
+      print('🔄 Chargement des données recruteur...');
+
+      // Récupérer le nom depuis le stockage local
+      final storedUserName = await TokenService.getUserName();
+      if (storedUserName != null && storedUserName.isNotEmpty) {
+        userName = storedUserName;
+      } else {
+        userName = "Recruteur";
+      }
+// Charger les missions publiées
+print('📡 Récupération des missions publiées...');
+final missionsResponse = await UserService.getMesMissions();
+if (missionsResponse.success) {
+  missionsPubliees = missionsResponse.data.length; // ← Nombre de missions
+  print('✅ Missions publiées: $missionsPubliees');
+  
+  // Debug: Afficher le détail des missions
+  for (var mission in missionsResponse.data) {
+    print('   🎯 Mission: ${mission.titre} (ID: ${mission.id})');
+  }
+} else {
+  print('❌ Erreur missions: ${missionsResponse.message}');
+  missionsPubliees = 0;
+}
+
+      // Charger la moyenne de notation (même endpoint que pour les jeunes)
+      print('📡 Récupération de la moyenne de notation...');
+      final notationResponse = await UserService.getMoyenneNotation();
+      if (notationResponse.success && notationResponse.data != null) {
+        final moyenne = notationResponse.data!.moyenne;
+        note = "${moyenne.toStringAsFixed(1)}/5";
+        print('✅ Moyenne de notation: $note');
+      } else {
+        print('ℹ️ Aucune notation trouvée: ${notationResponse.message}');
+        note = "0.0/5";
+      }
+
+      print('✅ Données recruteur chargées avec succès');
+      print('   👤 Nom: $userName');
+      print('   📊 Missions publiées: $missionsPubliees');
+      print('   ⭐ Note: $note');
+
+    } catch (e) {
+      print('❌ Erreur lors du chargement des données recruteur: $e');
+      setState(() {
+        _hasError = true;
+      });
+      // Valeurs par défaut en cas d'erreur
+      userName = "Recruteur";
+      missionsPubliees = 0;
+      note = "0.0/5";
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
 
   void _completeProfile() {
     setState(() {
@@ -51,7 +128,10 @@ class _HomeRecruteurScreenState extends State<HomeRecruteurScreen> {
     });
     Navigator.of(context).push(
       MaterialPageRoute(builder: (context) => const FinaliserProfileParticulier()),
-    );
+    ).then((_) {
+      // Recharger les données après retour du profil
+      _loadUserData();
+    });
   }
 
   void _payWithOrangeMoney() async {
@@ -108,6 +188,75 @@ class _HomeRecruteurScreenState extends State<HomeRecruteurScreen> {
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Action rapide : $action')),
+    );
+  }
+
+  // Widget pour l'indicateur de chargement
+  Widget _buildLoadingIndicator() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          CircularProgressIndicator(
+            color: primaryGreen,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Chargement de vos données...',
+            style: GoogleFonts.poppins(
+              color: Colors.black54,
+              fontSize: 16,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Widget pour l'état d'erreur
+  Widget _buildErrorState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.error_outline,
+            color: Colors.red,
+            size: 64,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Erreur de chargement',
+            style: GoogleFonts.poppins(
+              color: Colors.black87,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Impossible de charger vos données',
+            style: GoogleFonts.poppins(
+              color: Colors.black54,
+              fontSize: 14,
+            ),
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: _loadUserData,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: primaryGreen,
+            ),
+            child: Text(
+              'Réessayer',
+              style: GoogleFonts.poppins(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -182,94 +331,98 @@ class _HomeRecruteurScreenState extends State<HomeRecruteurScreen> {
                         child: _buildProfileAlert(),
                       ),
                     Expanded(
-                      child: SingleChildScrollView(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: <Widget>[
-                            Text(
-                              'Aperçus',
-                              style: GoogleFonts.poppins(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
+                      child: _isLoading 
+                          ? _buildLoadingIndicator()
+                          : _hasError
+                              ? _buildErrorState()
+                              : SingleChildScrollView(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: <Widget>[
+                                      Text(
+                                        'Aperçus',
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.black,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
 
-                            Row(
-                              children: <Widget>[
-                                Flexible(
-                                  flex: 1,
-                                  child: IntrinsicHeight(
-                                    child: _buildStatCard(
-                                      icon: Icons.assignment_outlined,
-                                      value: missionsPubliees.toString(),
-                                      label: 'Missions publiées',
-                                      color: primaryGreen,
-                                    ),
+                                      Row(
+                                        children: <Widget>[
+                                          Flexible(
+                                            flex: 1,
+                                            child: IntrinsicHeight(
+                                              child: _buildStatCard(
+                                                icon: Icons.assignment_outlined,
+                                                value: missionsPubliees.toString(),
+                                                label: 'Missions publiées',
+                                                color: primaryGreen,
+                                              ),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 15),
+                                          Flexible(
+                                            flex: 1,
+                                            child: IntrinsicHeight(
+                                              child: _buildStatCard(
+                                                icon: Icons.star_outline,
+                                                value: note,
+                                                label: 'Note',
+                                                color: badgeOrange,
+                                                isNoteCard: true,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 8),
+
+                                      Text(
+                                        'ACTIONS RAPIDES',
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.black,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 6),
+
+                                      GridView.count(
+                                        shrinkWrap: true,
+                                        crossAxisCount: 2,
+                                        crossAxisSpacing: cardSpacing,
+                                        mainAxisSpacing: cardSpacing,
+                                        childAspectRatio: cardAspectRatio,
+                                        physics: const NeverScrollableScrollPhysics(),
+                                        children: <Widget>[
+                                          _buildQuickActionCard(
+                                            icon: Icons.add_circle_outline,
+                                            label: 'Publier une Mission',
+                                            onTap: () => _handleQuickAction('Publier une Mission'),
+                                          ),
+                                          _buildQuickActionCard(
+                                            icon: Icons.assignment_turned_in,
+                                            label: 'Vos missions',
+                                            onTap: () => _handleQuickAction('Vos missions'),
+                                          ),
+                                          _buildQuickActionCard(
+                                            icon: Icons.receipt_long,
+                                            label: 'Historiques Paiements',
+                                            onTap: () => _handleQuickAction('Historiques Paiements'),
+                                          ),
+                                          _buildQuickActionCard(
+                                            icon: Icons.gavel,
+                                            label: 'Litige',
+                                            onTap: () => _handleQuickAction('Litige'),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 10),
+                                    ],
                                   ),
                                 ),
-                                const SizedBox(width: 15),
-                                Flexible(
-                                  flex: 1,
-                                  child: IntrinsicHeight(
-                                    child: _buildStatCard(
-                                      icon: Icons.star_outline,
-                                      value: note,
-                                      label: 'Note',
-                                      color: badgeOrange,
-                                      isNoteCard: true,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-
-                            Text(
-                              'ACTIONS RAPIDES',
-                              style: GoogleFonts.poppins(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black,
-                              ),
-                            ),
-                            const SizedBox(height: 6),
-
-                            GridView.count(
-                              shrinkWrap: true,
-                              crossAxisCount: 2,
-                              crossAxisSpacing: cardSpacing,
-                              mainAxisSpacing: cardSpacing,
-                              childAspectRatio: cardAspectRatio,
-                              physics: const NeverScrollableScrollPhysics(),
-                              children: <Widget>[
-                                _buildQuickActionCard(
-                                  icon: Icons.add_circle_outline,
-                                  label: 'Publier une Mission',
-                                  onTap: () => _handleQuickAction('Publier une Mission'),
-                                ),
-                                _buildQuickActionCard(
-                                  icon: Icons.assignment_turned_in,
-                                  label: 'Vos missions',
-                                  onTap: () => _handleQuickAction('Vos missions'),
-                                ),
-                                _buildQuickActionCard(
-                                  icon: Icons.receipt_long,
-                                  label: 'Historiques Paiements',
-                                  onTap: () => _handleQuickAction('Historiques Paiements'),
-                                ),
-                                _buildQuickActionCard(
-                                  icon: Icons.gavel,
-                                  label: 'Litige',
-                                  onTap: () => _handleQuickAction('Litige'),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 10),
-                          ],
-                        ),
-                      ),
                     ),
                   ],
                 ),
@@ -435,7 +588,7 @@ class _HomeRecruteurScreenState extends State<HomeRecruteurScreen> {
                       ),
                     ),
                     Text(
-                      userName,
+                      userName.isNotEmpty ? userName : "Chargement...",
                       style: GoogleFonts.poppins(
                         color: Colors.white,
                         fontSize: 22,
@@ -708,5 +861,3 @@ class _HomeRecruteurScreenState extends State<HomeRecruteurScreen> {
     );
   }
 }
-
-

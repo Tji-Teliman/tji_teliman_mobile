@@ -3,6 +3,12 @@
 import 'package:flutter/material.dart';
 import 'register_screen.dart'; 
 import 'package:google_fonts/google_fonts.dart';
+import 'dart:convert';
+import '../services/auth_service.dart';
+import '../models/login_request.dart';
+import 'screens_jeunes/home_jeune.dart';
+import 'screens_recruteurs/home_recruteur.dart';
+import 'splash_screen_role.dart';
 
 // --- COULEURS CONSTANTES (Réutilisées de RegisterScreen) ---
 const Color primaryGreen = Color(0xFF10B981);      
@@ -167,6 +173,12 @@ class LoginForm extends StatefulWidget {
 
 class _LoginFormState extends State<LoginForm> {
   bool _isPasswordVisible = false;
+  bool _isLoading = false;
+  
+  final _telephoneController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+  final _authService = AuthService();
 
   InputDecoration _inputDecoration(String hint, {IconData? prefixIcon, IconData? suffixIcon, Function? suffixOnTap}) {
     return InputDecoration(
@@ -202,6 +214,85 @@ class _LoginFormState extends State<LoginForm> {
     );
   }
 
+/// Gère la connexion
+Future<void> _handleLogin() async {
+  if (!_formKey.currentState!.validate()) {
+    return;
+  }
+
+  setState(() {
+    _isLoading = true;
+  });
+
+  try {
+    final loginRequest = LoginRequest(
+      telephone: _telephoneController.text.trim(),
+      motDePasse: _passwordController.text,
+    );
+
+    print('📤 Envoi connexion: ${loginRequest.toJson()}');
+
+    final loginResponse = await _authService.login(loginRequest);
+
+    if (!mounted) return;
+
+    final userRole = loginResponse.data.user.role;
+    print('✅ Connexion réussie - Rôle: $userRole');
+
+    // Redirection selon le rôle
+    if (userRole.toUpperCase().contains('JEUNE')) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => const HomeJeuneScreen()),
+      );
+    } else if (userRole.toUpperCase().contains('RECRUTEUR')) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => const HomeRecruteurScreen()),
+      );
+    } else {
+      // Rôle inconnu - retour à l'écran de sélection de rôle
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => const SplashScreenRole()),
+      );
+    }
+
+  } catch (e) {
+    if (!mounted) return;
+    
+    print('❌ Erreur connexion: $e');
+    
+    String errorMessage = 'Erreur de connexion';
+    if (e.toString().contains('Échec de la connexion')) {
+      errorMessage = 'Numéro de téléphone ou mot de passe incorrect';
+    } else if (e.toString().contains('Network is unreachable') || 
+               e.toString().contains('Connection refused')) {
+      errorMessage = 'Problème de connexion au serveur';
+    } else {
+      errorMessage = e.toString();
+    }
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(errorMessage),
+        backgroundColor: Colors.red,
+        duration: const Duration(seconds: 4),
+      ),
+    );
+  } finally {
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+}
+
+  @override
+  void dispose() {
+    _telephoneController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -217,101 +308,138 @@ class _LoginFormState extends State<LoginForm> {
           ),
         ],
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min, 
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          // Champ Téléphone
-          TextFormField(
-            keyboardType: TextInputType.phone, 
-            decoration: _inputDecoration(
-              '90-00-00-00', 
-              prefixIcon: Icons.phone_android,
-            ),
-          ),
-          const SizedBox(height: 15), 
-          
-          // Champ Mot de Passe
-          TextFormField(
-            obscureText: !_isPasswordVisible, 
-            decoration: _inputDecoration(
-              '••••••••••', 
-              prefixIcon: Icons.lock,
-              suffixIcon: _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
-              suffixOnTap: () {
-                setState(() {
-                  _isPasswordVisible = !_isPasswordVisible;
-                });
-              }
-            ),
-          ),
-          const SizedBox(height: 10), 
-          
-          // Lien Mot de passe oublié ?
-          Align(
-            alignment: Alignment.centerRight,
-            child: GestureDetector(
-              onTap: () {},
-              child: const Text(
-                'Mot de passe oublié ?',
-                style: TextStyle(
-                  color: headerGradientEndBlue, 
-                  fontWeight: FontWeight.bold,
-                  fontSize: 13.0, 
-                ),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min, 
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            // Champ Téléphone
+            TextFormField(
+              controller: _telephoneController,
+              keyboardType: TextInputType.phone, 
+              decoration: _inputDecoration(
+                '90-00-00-00', 
+                prefixIcon: Icons.phone_android,
               ),
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return 'Le numéro de téléphone est requis';
+                }
+                // Validation basique du format téléphone
+                if (value.trim().length < 8) {
+                  return 'Numéro de téléphone invalide';
+                }
+                return null;
+              },
             ),
-          ),
-          const SizedBox(height: 25), 
-          
-          // Bouton Se Connecter
-          ElevatedButton(
-            onPressed: () {},
-            style: ElevatedButton.styleFrom(
-              backgroundColor: primaryGreen, 
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(buttonBorderRadius), 
+            const SizedBox(height: 15), 
+            
+            // Champ Mot de Passe
+            TextFormField(
+              controller: _passwordController,
+              obscureText: !_isPasswordVisible, 
+              decoration: _inputDecoration(
+                '••••••••••', 
+                prefixIcon: Icons.lock,
+                suffixIcon: _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                suffixOnTap: () {
+                  setState(() {
+                    _isPasswordVisible = !_isPasswordVisible;
+                  });
+                }
               ),
-              minimumSize: const Size(double.infinity, 50), 
-              elevation: 5,
-              shadowColor: primaryGreen.withOpacity(0.5),
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Le mot de passe est requis';
+                }
+                return null;
+              },
             ),
-            child:  Text(
-              "Se connecter",
-              style: GoogleFonts.poppins(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold),
-            ),
-          ),
-          
-          const SizedBox(height: 20), 
-          
-          // Lien Créer un compte (Police augmentée à 15.0)
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              const Text(
-                'Nouveau ici ? ', 
-                style: TextStyle(color: Colors.black54, fontSize: 15.0),
-              ),
-              GestureDetector(
+            const SizedBox(height: 10), 
+            
+            // Lien Mot de passe oublié ?
+            Align(
+              alignment: Alignment.centerRight,
+              child: GestureDetector(
                 onTap: () {
-                  // Renvoie vers la page d'inscription
-                  Navigator.push(
-                    context, 
-                    MaterialPageRoute(builder: (context) => const RegisterScreen()),
+                  // TODO: Implémenter la réinitialisation du mot de passe
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Fonctionnalité à venir'),
+                    ),
                   );
                 },
-                child:  Text(
-                  'Créer un compte',
-                style: GoogleFonts.poppins(
-              color: headerGradientEndBlue, 
-              fontWeight: FontWeight.bold,
-              fontSize: 14.0, 
+                child: const Text(
+                  'Mot de passe oublié ?',
+                  style: TextStyle(
+                    color: headerGradientEndBlue, 
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13.0, 
                   ),
                 ),
               ),
-            ],
-          ),
-        ],
+            ),
+            const SizedBox(height: 25), 
+            
+            // Bouton Se Connecter
+            ElevatedButton(
+              onPressed: _isLoading ? null : _handleLogin,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: primaryGreen, 
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(buttonBorderRadius), 
+                ),
+                minimumSize: const Size(double.infinity, 50), 
+                elevation: 5,
+                shadowColor: primaryGreen.withOpacity(0.5),
+              ),
+              child: _isLoading
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2.5,
+                      ),
+                    )
+                  : Text(
+                      "Se connecter",
+                      style: GoogleFonts.poppins(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold),
+                    ),
+            ),
+            
+            const SizedBox(height: 20), 
+            
+            // Lien Créer un compte (Police augmentée à 15.0)
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                const Text(
+                  'Nouveau ici ? ', 
+                  style: TextStyle(color: Colors.black54, fontSize: 15.0),
+                ),
+                GestureDetector(
+                  onTap: () {
+                    // Renvoie vers la page d'inscription
+                    Navigator.push(
+                      context, 
+                      MaterialPageRoute(builder: (context) => const SplashScreenRole()),
+                    );
+                  },
+                  child: Text(
+                    'Créer un compte',
+                    style: GoogleFonts.poppins(
+                      color: headerGradientEndBlue, 
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14.0, 
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
