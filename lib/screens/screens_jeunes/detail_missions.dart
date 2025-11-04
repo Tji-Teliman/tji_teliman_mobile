@@ -6,6 +6,9 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 // ⚠️ Assurez-vous d'importer le bon chemin pour le CustomHeader
 import '../../widgets/custom_header.dart'; 
 import '../../widgets/custom_bottom_nav_bar.dart'; // Si vous avez une barre de navigation en bas
+import '../../services/mission_service.dart';
+import '../../services/user_service.dart';
+import '../../models/mission_detail_response.dart';
 import 'motivation.dart';
 import 'signaler_mission.dart';
 
@@ -69,15 +72,145 @@ class MapMissionCard extends StatelessWidget {
   }
 }
 
-class DetailMissionScreen extends StatelessWidget {
-  // Vous pouvez passer l'ID ou les données de la mission ici
-  final Map<String, dynamic> missionData;
+class DetailMissionScreen extends StatefulWidget {
+  final int missionId;
 
-  const DetailMissionScreen({super.key, required this.missionData});
+  const DetailMissionScreen({super.key, required this.missionId});
+
+  @override
+  State<DetailMissionScreen> createState() => _DetailMissionScreenState();
+}
+
+class _DetailMissionScreenState extends State<DetailMissionScreen> {
+  bool _isLoading = true;
+  bool _hasError = false;
+  MissionDetailData? _missionData;
+  String? _recruteurName;
+  String? _recruteurPhotoUrl;
+  double _recruteurRating = 0.0;
 
   // Coordonnées de repli (si les données réelles sont manquantes)
-  // J'utilise ici un exemple de localisation à Bamako.
-  static const LatLng _fallbackLocation = LatLng(12.639232, -8.002888); 
+  static const LatLng _fallbackLocation = LatLng(12.639232, -8.002888);
+
+  @override
+  void initState() {
+    super.initState();
+    _loadMissionData();
+  }
+
+  Future<void> _loadMissionData() async {
+    try {
+      setState(() {
+        _isLoading = true;
+        _hasError = false;
+      });
+
+      print('🔄 Chargement de la mission ID: ${widget.missionId}...');
+      final response = await MissionService.getMissionById(widget.missionId);
+      
+      if (response.success && response.data != null) {
+        setState(() {
+          _missionData = response.data;
+          _isLoading = false;
+        });
+
+        // TODO: Charger les infos du recruteur si disponible
+        // Pour l'instant, on utilise des valeurs par défaut car l'API ne les fournit pas
+        _loadRecruteurInfo();
+      } else {
+        throw Exception('Erreur: ${response.message}');
+      }
+    } catch (e) {
+      print('❌ Erreur lors du chargement de la mission: $e');
+      setState(() {
+        _hasError = true;
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _loadRecruteurInfo() async {
+    // Charger les infos du recruteur depuis les données de la mission
+    if (_missionData != null) {
+      final fullName = '${_missionData!.recruteurPrenom} ${_missionData!.recruteurNom}'.trim();
+      final photoPath = _missionData!.recruteurUrlPhoto;
+      final rating = _missionData!.recruteurNote ?? 0.0;
+      
+      // Convertir le chemin de la photo en URL HTTP
+      final photoUrl = _convertPhotoPathToUrl(photoPath);
+      
+      setState(() {
+        _recruteurName = fullName.isNotEmpty ? fullName : 'Recruteur';
+        _recruteurPhotoUrl = photoUrl;
+        _recruteurRating = rating;
+      });
+      
+      print('✅ Infos recruteur chargées:');
+      print('   👤 Nom: $_recruteurName');
+      print('   📷 Photo path: $photoPath');
+      print('   📷 Photo URL: $_recruteurPhotoUrl');
+      print('   ⭐ Note: $_recruteurRating');
+    }
+  } 
+
+  Future<void> _loadRecruteurInfo() async {
+    // Charger les infos du recruteur depuis les données de la mission
+    if (_missionData != null) {
+      final nomParts = [
+        _missionData!.recruteurPrenom,
+        _missionData!.recruteurNom,
+      ].where((s) => s != null && s.isNotEmpty).toList();
+      
+      final fullName = nomParts.join(' ').trim();
+      final photoPath = _missionData!.recruteurUrlPhoto;
+      final rating = _missionData!.recruteurNote ?? 0.0;
+      
+      // Convertir le chemin de la photo en URL HTTP
+      final photoUrl = _convertPhotoPathToUrl(photoPath);
+      
+      setState(() {
+        _recruteurName = fullName.isNotEmpty ? fullName : 'Recruteur';
+        _recruteurPhotoUrl = photoUrl;
+        _recruteurRating = rating;
+      });
+      
+      print('✅ Infos recruteur chargées:');
+      print('   👤 Nom: $_recruteurName');
+      print('   📷 Photo path: $photoPath');
+      print('   📷 Photo URL: $_recruteurPhotoUrl');
+      print('   ⭐ Note: $_recruteurRating');
+    }
+  }
+
+  // Helper pour convertir le chemin Windows en URL HTTP
+  String? _convertPhotoPathToUrl(String? photoPath) {
+    if (photoPath == null || photoPath.isEmpty) return null;
+    
+    // Si c'est déjà une URL HTTP, retourner tel quel
+    if (photoPath.startsWith('http://') || photoPath.startsWith('https://')) {
+      return photoPath;
+    }
+    
+    // Si c'est un chemin local Windows avec "uploads", convertir en URL
+    if (photoPath.contains('uploads')) {
+      final parts = photoPath.split('uploads');
+      if (parts.length > 1) {
+        String url = 'http://localhost:8080/uploads${parts[1]}';
+        // Remplacer les backslashes par des slashes pour l'URL
+        url = url.replaceAll('\\', '/');
+        return url;
+      }
+    }
+    
+    // Si le chemin commence directement par "uploads", ajouter juste l'URL de base
+    if (photoPath.startsWith('uploads')) {
+      String url = 'http://localhost:8080/$photoPath';
+      url = url.replaceAll('\\', '/');
+      return url;
+    }
+    
+    return null;
+  }
 
   // Helper pour afficher les étoiles
   Widget _buildRatingStars(double rating) {
@@ -146,20 +279,121 @@ class DetailMissionScreen extends StatelessWidget {
     );
   }
 
+  // Helper pour formater la durée
+  String _formatDuree() {
+    if (_missionData == null) return 'Non spécifié';
+    if (_missionData!.dureJours > 0) {
+      return '${_missionData!.dureJours} jour${_missionData!.dureJours > 1 ? 's' : ''}';
+    } else {
+      return '${_missionData!.dureHeures} heure${_missionData!.dureHeures > 1 ? 's' : ''}';
+    }
+  }
+
+  // Helper pour formater la date
+  String _formatDate(String dateStr) {
+    try {
+      final date = DateTime.parse(dateStr);
+      return '${date.day}/${date.month}/${date.year}';
+    } catch (e) {
+      return dateStr;
+    }
+  }
+
+  // Helper pour formater le prix
+  String _formatPrice() {
+    if (_missionData?.remuneration != null) {
+      final formatted = _missionData!.remuneration!.toStringAsFixed(0).replaceAllMapped(
+        RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+        (Match m) => '${m[1]} ',
+      );
+      return '$formatted CFA';
+    }
+    return 'Non spécifié';
+  }
+
+  // Helper pour formater les heures
+  String _formatHeures() {
+    if (_missionData?.heureDebut != null && _missionData?.heureFin != null) {
+      return '${_missionData!.heureDebut} - ${_missionData!.heureFin}';
+    } else if (_missionData?.heureDebut != null) {
+      return 'À partir de ${_missionData!.heureDebut}';
+    } else if (_missionData?.heureFin != null) {
+      return 'Jusqu\'à ${_missionData!.heureFin}';
+    }
+    return 'Horaires non spécifiés';
+  }
+
   @override
   Widget build(BuildContext context) {
+    // Gestion des états de chargement et d'erreur
+    if (_isLoading) {
+      return Scaffold(
+        backgroundColor: bodyBackgroundColor,
+        appBar: CustomHeader(
+          title: 'Chargement...',
+          onBack: () => Navigator.of(context).pop(),
+        ),
+        body: const Center(
+          child: CircularProgressIndicator(color: primaryGreen),
+        ),
+      );
+    }
+
+    if (_hasError || _missionData == null) {
+      return Scaffold(
+        backgroundColor: bodyBackgroundColor,
+        appBar: CustomHeader(
+          title: 'Erreur',
+          onBack: () => Navigator.of(context).pop(),
+        ),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error_outline, color: Colors.red, size: 64),
+              const SizedBox(height: 16),
+              Text(
+                'Erreur de chargement',
+                style: GoogleFonts.poppins(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Impossible de charger les détails de la mission',
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  color: Colors.black54,
+                ),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: _loadMissionData,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: primaryGreen,
+                ),
+                child: Text(
+                  'Réessayer',
+                  style: GoogleFonts.poppins(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     // 1. Logique pour extraire les coordonnées réelles
-    // ⚠️ COORDONNÉES DE DÉMONSTRATION: Si missionData ne contient pas lat/lng, 
-    // les valeurs par défaut sont utilisées pour afficher la carte.
-    final double? lat = missionData['latitude'] as double? ?? _fallbackLocation.latitude;
-    final double? lng = missionData['longitude'] as double? ?? _fallbackLocation.longitude;
-    
-    // Le point de localisation de la mission
-    final LatLng missionLocation = LatLng(lat!, lng!);
+    final LatLng missionLocation = LatLng(_missionData!.latitude, _missionData!.longitude);
       
     // Titre de mission et détection d'un titre long (affiché sur 2 lignes)
-    final String missionTitle = missionData['missionTitle'] ?? 'Aide Déménagement';
-    final bool isLongTitle = missionTitle.length > 24; // seuil simple pour réduire la taille
+    final String missionTitle = _missionData!.titre;
+    final bool isLongTitle = missionTitle.length > 24;
 
     return Scaffold(
       backgroundColor: bodyBackgroundColor,
@@ -222,23 +456,28 @@ class DetailMissionScreen extends StatelessWidget {
                   // Infos Recruteur (Photo, Nom, Note)
                   Row(
                     children: [
-                      const CircleAvatar(
+                      CircleAvatar(
                         radius: 25,
-                        backgroundImage: AssetImage('assets/images/amadou.jpg'), // ⚠️ Remplacer par la vraie image
+                        backgroundImage: _recruteurPhotoUrl != null
+                            ? NetworkImage(_recruteurPhotoUrl!)
+                            : null,
+                        child: _recruteurPhotoUrl == null
+                            ? const Icon(Icons.person, size: 30)
+                            : null,
                       ),
                       const SizedBox(width: 15),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Amadou B.',
+                            _recruteurName ?? 'Recruteur',
                             style: GoogleFonts.poppins(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
                               color: Colors.black87,
                             ),
                           ),
-                          _buildRatingStars(4.5), // Note 4.5/5
+                          _buildRatingStars(_recruteurRating),
                         ],
                       ),
                     ],
@@ -256,8 +495,7 @@ class DetailMissionScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    missionData['description'] ?? 
-                      "Déménagement d'un appartement situé au 2e étage sans ascenseur. Aide au transport de cartons et de quelques meubles démontés jusqu'au camion de déménagement. Une autre personne sera présente pour prêter main-forte.\n\nRendez-vous à 9h.",
+                    _missionData!.description,
                     style: GoogleFonts.poppins(
                       fontSize: 15,
                       color: Colors.black54,
@@ -296,8 +534,11 @@ class DetailMissionScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 10),
-                  _buildRequirement('Force physique à sécurité'),
-                  _buildRequirement('Disponibilité le matin'),
+                  // Afficher les exigences depuis les données
+                  if (_missionData!.exigence.isNotEmpty)
+                    _buildRequirement(_missionData!.exigence)
+                  else
+                    _buildRequirement('Aucune exigence spécifique'),
                 ],
               ),
             ),
@@ -325,9 +566,8 @@ class DetailMissionScreen extends StatelessWidget {
                     // 1. Localisation
                     Expanded(
                       child: _buildDetailIcon(
-                        // Afficher les coordonnées de démo si l'adresse textuelle n'est pas fournie
                         icon: Icons.location_on_outlined, 
-                        label: missionData['location'] ?? 'Kalaban Coura (Lat: ${missionLocation.latitude.toStringAsFixed(3)})',
+                        label: _missionData!.adresse,
                       ),
                     ),
                     
@@ -342,7 +582,7 @@ class DetailMissionScreen extends StatelessWidget {
                     Expanded(
                       child: _buildDetailIcon(
                         icon: Icons.access_time, 
-                        label: missionData['duration'] ?? 'Estimé: 3heures',
+                        label: _formatDuree(),
                       ),
                     ),
 
@@ -357,7 +597,7 @@ class DetailMissionScreen extends StatelessWidget {
                     Expanded(
                       child: _buildDetailIcon(
                         icon: Icons.calendar_today_outlined, 
-                        label: missionData['dateLimit'] ?? 'Date Limite: 25/10/23',
+                        label: 'Au ${_formatDate(_missionData!.dateFin)}',
                       ),
                     ),
                   ],
@@ -408,10 +648,9 @@ class DetailMissionScreen extends StatelessWidget {
             height: 50,
             child: ElevatedButton(
               onPressed: () {
-                final String title = (missionData['missionTitle'] as String?) ?? 'Aide Déménagement';
                 Navigator.of(context).push(
                   MaterialPageRoute(
-                    builder: (context) => MotivationScreen(missionTitle: title),
+                    builder: (context) => MotivationScreen(missionTitle: _missionData!.titre),
                   ),
                 );
               },
