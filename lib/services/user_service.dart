@@ -304,7 +304,7 @@ class UserService {
     print('📥 Status: ${response.statusCode}');
     print('📥 Body: ${response.body}');
 
-    if (response.statusCode == 200 || response.statusCode == 201) {
+    if (response.statusCode == 200 || response.statusCode == 201 || response.statusCode == 204) {
       return true;
     }
     // Tenter d'extraire un message d'erreur pertinent depuis le backend
@@ -339,6 +339,74 @@ class UserService {
     } catch (_) {
       // Si parsing échoue, conserver le message par défaut
     }
+    throw Exception(errorMessage);
+  }
+
+  // Valider une candidature (RECRUTEUR)
+  static Future<bool> validerCandidature(int candidatureId) async {
+    final token = await TokenService.getToken();
+    final url = Uri.parse('${ApiConfig.baseUrl}/api/candidatures/$candidatureId/valider');
+
+    final headers = <String, String>{
+      'Content-Type': 'application/json',
+      if (token != null) 'Authorization': 'Bearer $token',
+    };
+
+    final response = await http.put(url, headers: headers);
+
+    print('✅ Validation candidature $candidatureId');
+    print('📥 Status: ${response.statusCode}');
+    print('📥 Body: ${response.body}');
+
+    if (response.statusCode == 200 || response.statusCode == 201 || response.statusCode == 204) {
+      return true;
+    }
+
+    String errorMessage = 'Erreur lors de la validation: ${response.statusCode}';
+    try {
+      final decoded = json.decode(response.body);
+      if (decoded is Map<String, dynamic>) {
+        if (decoded['message'] is String && (decoded['message'] as String).trim().isNotEmpty) {
+          errorMessage = decoded['message'];
+        } else if (decoded['error'] is String && (decoded['error'] as String).trim().isNotEmpty) {
+          errorMessage = decoded['error'];
+        }
+      }
+    } catch (_) {}
+    throw Exception(errorMessage);
+  }
+
+  // Rejeter une candidature (RECRUTEUR)
+  static Future<bool> rejeterCandidature(int candidatureId) async {
+    final token = await TokenService.getToken();
+    final url = Uri.parse('${ApiConfig.baseUrl}/api/candidatures/$candidatureId/rejeter');
+
+    final headers = <String, String>{
+      'Content-Type': 'application/json',
+      if (token != null) 'Authorization': 'Bearer $token',
+    };
+
+    final response = await http.put(url, headers: headers);
+
+    print('❌ Rejet candidature $candidatureId');
+    print('📥 Status: ${response.statusCode}');
+    print('📥 Body: ${response.body}');
+
+    if (response.statusCode == 200 || response.statusCode == 201 || response.statusCode == 204) {
+      return true;
+    }
+
+    String errorMessage = 'Erreur lors du rejet: ${response.statusCode}';
+    try {
+      final decoded = json.decode(response.body);
+      if (decoded is Map<String, dynamic>) {
+        if (decoded['message'] is String && (decoded['message'] as String).trim().isNotEmpty) {
+          errorMessage = decoded['message'];
+        } else if (decoded['error'] is String && (decoded['error'] as String).trim().isNotEmpty) {
+          errorMessage = decoded['error'];
+        }
+      }
+    } catch (_) {}
     throw Exception(errorMessage);
   }
 

@@ -20,8 +20,10 @@ import 'profil_recruteur.dart';
 import 'message_conversation_recruteur.dart';
 // Import des services
 import '../../services/user_service.dart';
+import '../../services/payment_service.dart';
 import '../../services/token_service.dart';
 import '../../services/profile_service.dart';
+import '../../models/mission_recruteur_response.dart' as MR;
 
 // --- COULEURS ---
 const Color primaryGreen = Color(0xFF10B981);
@@ -40,7 +42,8 @@ class HomeRecruteurScreen extends StatefulWidget {
 
 class _HomeRecruteurScreenState extends State<HomeRecruteurScreen> {
   bool _showProfileAlert = true;
-  bool _hasPendingPayment = true; // Affiche l'alerte de paiement en attente
+  bool _hasPendingPayment = false; // N'affiche pas l'alerte avant chargement
+  bool _pendingPaymentsLoaded = false; // Etat de chargement des paiements
   int _selectedIndex = 0;
   bool _isLoading = true;
   bool _hasError = false;
@@ -53,11 +56,112 @@ class _HomeRecruteurScreenState extends State<HomeRecruteurScreen> {
   bool _isEntreprise = false;
   int missionsPubliees = 0;
   String note = "0.0/5";
+  int? _pendingMissionId;
+  final List<int> _pendingMissionIds = [];
+  List<MR.Mission> _missions = [];
 
   @override
   void initState() {
     super.initState();
     _loadUserData();
+  }
+
+  Future<void> _refreshPendingPayments() async {
+    try {
+      final paiements = await PaymentService.getPaiementsEnAttente();
+      final ids = <int>[];
+      for (final p in paiements) {
+        final statut = (p['statutPaiement'] ?? '').toString().toUpperCase();
+        // Ne garder que ceux non réussis
+        if (statut == 'REUSSIE' || statut == 'REUSSIT' || statut == 'SUCCES' || statut == 'SUCCESS') {
+          continue;
+        }
+        final midAny = p['missionId'];
+        int? mid;
+        if (midAny is int) {
+          mid = midAny;
+        } else if (midAny != null) {
+          mid = int.tryParse(midAny.toString());
+        }
+        if (mid != null) ids.add(mid);
+      }
+      setState(() {
+        _pendingMissionIds
+          ..clear()
+          ..addAll(ids.toSet());
+        _pendingMissionId = _pendingMissionIds.isNotEmpty ? _pendingMissionIds.first : null;
+        _hasPendingPayment = _pendingMissionIds.isNotEmpty;
+        _pendingPaymentsLoaded = true;
+      });
+    } catch (_) {
+      // En cas d'erreur, conserver l'état courant
+      setState(() {
+        _pendingPaymentsLoaded = true;
+      });
+    }
+  }
+
+  void _chooseMissionToPay() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) {
+        final pendingMissions = _missions.where((m) => _pendingMissionIds.contains(m.id)).toList();
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text('Sélectionner une mission à payer', style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w700)),
+              ),
+              const Divider(height: 1),
+              Flexible(
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: pendingMissions.length,
+                  itemBuilder: (context, index) {
+                    final m = pendingMissions[index];
+                    final montant = m.remuneration;
+                    String amountText = '';
+                    if (montant != null) {
+                      amountText = montant.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (mm) => '${mm[1]} ');
+                      amountText = '$amountText CFA';
+                    }
+                    return ListTile(
+                      title: Text(m.titre, style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                      subtitle: Text('Fin: ${m.dateFin}${amountText.isNotEmpty ? ' • $amountText' : ''}', style: GoogleFonts.poppins(fontSize: 12)),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () async {
+                        Navigator.of(context).pop();
+                        final result = await Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => ModePaiementScreen(missionId: m.id),
+                          ),
+                        );
+                        if (result == true) {
+                          // Optimistic UI: remove the mission from pending list immediately
+                          setState(() {
+                            _pendingMissionIds.remove(m.id);
+                            _hasPendingPayment = _pendingMissionIds.isNotEmpty;
+                            _pendingMissionId = _pendingMissionIds.isNotEmpty ? _pendingMissionIds.first : null;
+                            _pendingPaymentsLoaded = true;
+                          });
+                          // Background sync with backend (no await)
+                          _refreshPendingPayments();
+                        }
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   // Charger les données du recruteur depuis le backend
@@ -96,10 +200,14 @@ if (missionsResponse.success) {
   for (var mission in missionsResponse.data) {
     print('   🎯 Mission: ${mission.titre} (ID: ${mission.id})');
   }
+  _missions = missionsResponse.data;
 } else {
   print('❌ Erreur missions: ${missionsResponse.message}');
   missionsPubliees = 0;
 }
+
+      // Déterminer les paiements en attente via le backend (source de vérité)
+      await _refreshPendingPayments();
 
       // Charger la moyenne de notation (même endpoint que pour les jeunes)
       print('📡 Récupération de la moyenne de notation...');
@@ -183,22 +291,35 @@ if (missionsResponse.success) {
   }
 
   void _payWithOrangeMoney() async {
-    final result = await Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => const ModePaiementScreen(
-          jeune: 'Ramatou konaré',
-          mission: 'Aide Ménagere',
-          montant: '5 000 CFA',
-          nomMission: 'Mission de terrain',
+    if (_pendingMissionIds.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Aucune mission à payer trouvée.')),
+      );
+      return;
+    }
+    if (_pendingMissionIds.length == 1) {
+      final result = await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => ModePaiementScreen(
+            missionId: _pendingMissionIds.first,
+          ),
         ),
-      ),
-    );
-
-    // Si le paiement est confirmé, masquer l'alerte
-    if (result == true) {
-      setState(() {
-        _hasPendingPayment = false;
-      });
+      );
+      if (result == true) {
+        // Optimistic UI: remove the only pending mission immediately
+        setState(() {
+          if (_pendingMissionIds.isNotEmpty) {
+            _pendingMissionIds.remove(_pendingMissionIds.first);
+          }
+          _hasPendingPayment = _pendingMissionIds.isNotEmpty;
+          _pendingMissionId = _pendingMissionIds.isNotEmpty ? _pendingMissionIds.first : null;
+          _pendingPaymentsLoaded = true;
+        });
+        // Background sync with backend (no await)
+        _refreshPendingPayments();
+      }
+    } else {
+      _chooseMissionToPay();
     }
   }
 
@@ -368,7 +489,7 @@ if (missionsResponse.success) {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    if (_hasPendingPayment)
+                    if (_pendingPaymentsLoaded && _hasPendingPayment)
                       Padding(
                         padding: const EdgeInsets.only(bottom: 10.0),
                         child: _buildPendingPaymentAlert(),
@@ -754,7 +875,9 @@ if (missionsResponse.success) {
           ),
           const SizedBox(height: 8),
           Text(
-            "Vous avez une mission terminée en attente de paiement. Veuillez procéder au paiement pour finaliser la mission.",
+            _pendingMissionIds.length <= 1
+                ? "Vous avez une mission terminée en attente de paiement. Veuillez procéder au paiement pour finaliser la mission."
+                : "Vous avez ${_pendingMissionIds.length} missions terminées en attente de paiement.",
             style: GoogleFonts.poppins(color: Colors.white, fontSize: 12),
           ),
           const SizedBox(height: 10),
@@ -762,7 +885,7 @@ if (missionsResponse.success) {
             width: double.infinity,
             height: 38,
             child: ElevatedButton(
-              onPressed: _payWithOrangeMoney,
+              onPressed: _pendingMissionIds.length <= 1 ? _payWithOrangeMoney : _chooseMissionToPay,
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.white,
                 foregroundColor: badgeOrange,
@@ -770,7 +893,7 @@ if (missionsResponse.success) {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
               child: Text(
-                'Payer via l\'application',
+                _pendingMissionIds.length <= 1 ? 'Payer via l\'application' : 'Choisir une mission à payer',
                 style: GoogleFonts.poppins(
                   fontWeight: FontWeight.w700,
                   fontSize: 13,

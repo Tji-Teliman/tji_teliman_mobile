@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../widgets/custom_header.dart';
+import '../../services/payment_service.dart';
 import 'home_recruteur.dart';
 import 'noter_jeune.dart';
 
@@ -12,11 +13,17 @@ const Color primaryPurple = Color(0xFF8B5CF6);
 class PaiementScreen extends StatefulWidget {
   final String jeune;
   final String mission;
+  final String montant;
+  final String? phone;
+  final int? candidatureId;
 
   const PaiementScreen({
     super.key,
     required this.jeune,
     required this.mission,
+    required this.montant,
+    this.phone,
+    this.candidatureId,
   });
 
   @override
@@ -26,6 +33,22 @@ class PaiementScreen extends StatefulWidget {
 class _PaiementScreenState extends State<PaiementScreen> {
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _amountController = TextEditingController();
+  bool _submitting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Prefill amount from provided montant if parseable
+    final digits = RegExp(r'\d+[\d\s]*').stringMatch(widget.montant) ?? '';
+    final normalized = digits.replaceAll(RegExp(r'\s+'), '');
+    if (normalized.isNotEmpty) {
+      _amountController.text = normalized;
+    }
+    // Prefill phone if provided
+    if (widget.phone != null && widget.phone!.trim().isNotEmpty) {
+      _phoneController.text = widget.phone!.trim();
+    }
+  }
 
   @override
   void dispose() {
@@ -58,23 +81,55 @@ class _PaiementScreenState extends State<PaiementScreen> {
       return;
     }
 
-    // Afficher une confirmation selon l'image
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) {
-        return Dialog(
-          backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: SingleChildScrollView(
-            child: Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
+    if (widget.candidatureId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Aucune candidature liée au paiement', style: GoogleFonts.poppins()),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    double? montant;
+    try {
+      montant = double.tryParse(_amountController.text.replaceAll(' ', ''));
+    } catch (_) {}
+    if (montant == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Montant invalide', style: GoogleFonts.poppins()),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    setState(() { _submitting = true; });
+    PaymentService.postPaiement(
+      candidatureId: widget.candidatureId!,
+      telephone: _phoneController.text.trim(),
+      montant: montant,
+    ).then((ok) {
+      if (!mounted) return;
+      setState(() { _submitting = false; });
+      // Afficher une confirmation
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) {
+          return Dialog(
+            backgroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
                   // Success Icon in circle
                   Container(
                     width: 70,
@@ -143,7 +198,7 @@ class _PaiementScreenState extends State<PaiementScreen> {
                         ),
                         const SizedBox(height: 6),
                         Text(
-                          '5 000 CFA',
+                          widget.montant,
                           style: GoogleFonts.poppins(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -191,13 +246,13 @@ class _PaiementScreenState extends State<PaiementScreen> {
                           child: ElevatedButton(
                             onPressed: () {
                               Navigator.of(context).pop(); // Close dialog
-                              Navigator.of(context).pop(); // Close paiement screen
+                              Navigator.of(context).pop(true); // Close paiement screen and notify success
                               Navigator.of(context).push(
                                 MaterialPageRoute(
                                   builder: (context) => JeuneEvaluationScreen(
                                     jeuneName: widget.jeune,
                                     mission: widget.mission,
-                                    montant: '5 000 CFA',
+                                    montant: widget.montant,
                                     dateFin: '06 Octobre 2025',
                                   ),
                                 ),
@@ -230,7 +285,7 @@ class _PaiementScreenState extends State<PaiementScreen> {
                           child: ElevatedButton(
                             onPressed: () {
                               Navigator.of(context).pop(); // Close dialog
-                              Navigator.of(context).pop(); // Close paiement screen
+                              Navigator.of(context).pop(true); // Close paiement screen and notify success
                               Navigator.of(context).pushReplacement(
                                 MaterialPageRoute(builder: (context) => const HomeRecruteurScreen()),
                               );
@@ -260,8 +315,61 @@ class _PaiementScreenState extends State<PaiementScreen> {
             ),
           ),
         );
-      },
-    );
+      });
+    }).catchError((e) {
+      if (!mounted) return;
+      setState(() { _submitting = false; });
+      showDialog(
+        context: context,
+        builder: (context) {
+          return Dialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFF3E3E).withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(Icons.error_outline, color: const Color(0xFFFF3E3E).withOpacity(0.83), size: 40),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Erreur de paiement',
+                    style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    e.toString().replaceFirst(RegExp(r'^Exception:\s*'), ''),
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.poppins(fontSize: 14, color: Colors.black87),
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 44,
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFFF3E3E).withOpacity(0.83),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: Text('Fermer', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold)),
+                    ),
+                  )
+                ],
+              ),
+            ),
+          );
+        },
+      );
+    });
   }
 
   @override
@@ -360,7 +468,7 @@ class _PaiementScreenState extends State<PaiementScreen> {
                   ],
                 ),
                 child: ElevatedButton(
-                  onPressed: _handlePayment,
+                  onPressed: _submitting ? null : _handlePayment,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Color(0xFF2563EB),
                     shadowColor: Colors.transparent,
@@ -368,14 +476,16 @@ class _PaiementScreenState extends State<PaiementScreen> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  child: Text(
-                    'Payer',
-                    style: GoogleFonts.poppins(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
+                  child: _submitting
+                      ? SizedBox(height: 22, width: 22, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                      : Text(
+                          'Payer',
+                          style: GoogleFonts.poppins(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
                 ),
               ),
             ),

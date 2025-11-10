@@ -35,6 +35,7 @@ class _ProfilCandidatScreenState extends State<ProfilCandidatScreen> {
   bool _isRejected = false;
   bool _loading = true;
   String? _error;
+  bool _acting = false;
 
   @override
   void initState() {
@@ -408,20 +409,46 @@ class _ProfilCandidatScreenState extends State<ProfilCandidatScreen> {
           child: SizedBox(
             height: 46,
             child: ElevatedButton(
-              onPressed: () {
-                _showResultDialog(
-                  context,
-                  title: 'Candidat sélectionné',
-                  message: 'Votre sélection a été enregistrée avec succès.',
-                  color: primaryGreen,
-                  icon: Icons.check,
-                );
-              },
+              onPressed: _acting
+                  ? null
+                  : () async {
+                      setState(() => _acting = true);
+                      try {
+                        final ok = await UserService.validerCandidature(widget.candidatureId);
+                        if (!mounted) return;
+                        if (ok) {
+                          setState(() {
+                            _isValidated = true;
+                            _isRejected = false;
+                          });
+                          _showResultDialog(
+                            context,
+                            title: 'Candidat sélectionné',
+                            message: 'Votre sélection a été enregistrée avec succès.',
+                            color: primaryGreen,
+                            icon: Icons.check,
+                          );
+                        }
+                      } catch (e) {
+                        if (!mounted) return;
+                        _showResultDialog(
+                          context,
+                          title: 'Erreur',
+                          message: e.toString().replaceFirst(RegExp(r'^Exception:\s*'), ''),
+                          color: Colors.red,
+                          icon: Icons.error_outline,
+                        );
+                      } finally {
+                        if (mounted) setState(() => _acting = false);
+                      }
+                    },
               style: ElevatedButton.styleFrom(
                 backgroundColor: primaryGreen,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
-              child: Text('Sélectionner ce jeune', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600)),
+              child: _acting
+                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                  : Text('Sélectionner ce jeune', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600)),
             ),
           ),
         ),
@@ -430,20 +457,46 @@ class _ProfilCandidatScreenState extends State<ProfilCandidatScreen> {
           child: SizedBox(
             height: 46,
             child: ElevatedButton(
-              onPressed: () {
-                _showResultDialog(
-                  context,
-                  title: 'Candidature rejetée',
-                  message: 'Le rejet a été enregistré avec succès.',
-                  color: const Color(0xFFFF3E3E).withOpacity(0.83),
-                  icon: Icons.close,
-                );
-              },
+              onPressed: _acting
+                  ? null
+                  : () async {
+                      setState(() => _acting = true);
+                      try {
+                        final ok = await UserService.rejeterCandidature(widget.candidatureId);
+                        if (!mounted) return;
+                        if (ok) {
+                          setState(() {
+                            _isRejected = true;
+                            _isValidated = false;
+                          });
+                          _showResultDialog(
+                            context,
+                            title: 'Candidature rejetée',
+                            message: 'Le rejet a été enregistré avec succès.',
+                            color: const Color(0xFFFF3E3E).withOpacity(0.83),
+                            icon: Icons.close,
+                          );
+                        }
+                      } catch (e) {
+                        if (!mounted) return;
+                        _showResultDialog(
+                          context,
+                          title: 'Erreur',
+                          message: e.toString().replaceFirst(RegExp(r'^Exception:\s*'), ''),
+                          color: Colors.red,
+                          icon: Icons.error_outline,
+                        );
+                      } finally {
+                        if (mounted) setState(() => _acting = false);
+                      }
+                    },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFFF3E3E).withOpacity(0.83), // demandé: FF3E3E à 83% opacité
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
-              child: Text('Rejeter', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600)),
+              child: _acting
+                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                  : Text('Rejeter', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600)),
             ),
           ),
         ),

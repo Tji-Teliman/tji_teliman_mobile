@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../widgets/custom_header.dart';
 import 'home_jeune.dart';
 import 'noter_recruteur.dart';
+import '../../services/payment_service.dart';
 
 
 class HistoriquePaiement extends StatelessWidget {
@@ -53,14 +54,103 @@ class _MyPaymentsScreenState extends State<MyPaymentsScreen> {
   // L'indice de la page actuelle (pour la NavBar)
   int _currentTabIndex = 0; 
   
-  final List<Transaction> transactions = const [
-    Transaction(title: "Cours de Maths", date: "05 Octobre 2025", amount: "+ 5 000 CFA", status: "Payé", canEvaluate: true),
-    Transaction(title: "Retrait d'argent", date: "05 Octobre 2025", amount: "- 20 000 CFA", status: "Réussi"),
-    Transaction(title: "Cours d'Anglais", date: "04 Octobre 2025", amount: "+ 7 500 CFA", status: "En attente"),
-    Transaction(title: "Cours de Maths", date: "04 Octobre 2025", amount: "+ 6 000 CFA", status: "Annulé"),
-    Transaction(title: "Livraison", date: "03 Octobre 2025", amount: "+ 2 000 CFA", status: "Payé"),
-    Transaction(title: "Aide à la personne", date: "02 Octobre 2025", amount: "+ 10 000 CFA", status: "Payé"),
-  ];
+  List<Transaction> transactions = [];
+  bool _loading = true;
+  String? _error;
+  String _totalGains = '0 CFA';
+  String _monthlyGains = '+ 0 CFA';
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchPayments();
+  }
+
+  Future<void> _fetchPayments() async {
+    try {
+      setState(() {
+        _loading = true;
+        _error = null;
+      });
+      final list = await PaymentService.getMesPaiementsJeune();
+      double total = 0;
+      double monthly = 0;
+      final now = DateTime.now();
+      final mapped = list.map((p) {
+        final montantAny = p['montant'] ?? p['missionRemuneration'];
+        double montant = 0;
+        if (montantAny is num) {
+          montant = montantAny.toDouble();
+        } else if (montantAny != null) {
+          montant = double.tryParse(montantAny.toString()) ?? 0;
+        }
+        total += montant;
+        // datePaiement pour filtrer le mois courant
+        final rawDate = (p['datePaiement'] ?? p['missionDateFin'] ?? '').toString();
+        final dt = _parseDate(rawDate);
+        if (dt != null && dt.year == now.year && dt.month == now.month) {
+          monthly += montant;
+        }
+        final statut = (p['statutPaiement'] ?? '').toString();
+        final titre = (p['missionTitre'] ?? '').toString().trim();
+        return Transaction(
+          title: titre.isNotEmpty ? titre : 'Mission',
+          date: _formatDate(rawDate),
+          amount: '+ ${_formatAmount(montant)} CFA',
+          status: _mapStatut(statut),
+          canEvaluate: false,
+        );
+      }).toList();
+      setState(() {
+        transactions = mapped;
+        _totalGains = '${_formatAmount(total)} CFA';
+        _monthlyGains = '+ ${_formatAmount(monthly)} CFA';
+      });
+    } catch (e) {
+      setState(() {
+        _error = 'Erreur de chargement';
+      });
+    } finally {
+      setState(() {
+        _loading = false;
+      });
+    }
+  }
+
+  DateTime? _parseDate(String raw) {
+    try {
+      return DateTime.parse(raw);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  String _formatAmount(double value) {
+    final s = value.toStringAsFixed(0);
+    return s.replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]} ');
+  }
+
+  String _formatDate(String raw) {
+    try {
+      final dt = DateTime.parse(raw);
+      const months = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+      final day = dt.day.toString().padLeft(2, '0');
+      final month = months[dt.month - 1];
+      final year = dt.year.toString();
+      return '$day $month $year';
+    } catch (_) {
+      return raw;
+    }
+  }
+
+  String _mapStatut(String s) {
+    final u = s.toUpperCase();
+    if (u.contains('REUSS')) return 'Payé';
+    if (u.contains('SUCC')) return 'Payé';
+    if (u.contains('ATTEN')) return 'En attente';
+    if (u.contains('ANNUL')) return 'Annulé';
+    return s.isEmpty ? '—' : s;
+  }
   
   // Fonction appelée lorsque l'utilisateur tape sur un élément de la NavBar
   void _onTabSelected(int index) {
@@ -98,9 +188,9 @@ class _MyPaymentsScreenState extends State<MyPaymentsScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             // --- Résumé Financier ---
-            const FinancialSummaryCard(
-              totalGains: '150.000 CFA',
-              monthlyGains: '+ 45 000 CFA',
+            FinancialSummaryCard(
+              totalGains: _totalGains,
+              monthlyGains: _monthlyGains,
             ),
             const SizedBox(height: 20),
 
@@ -120,15 +210,31 @@ class _MyPaymentsScreenState extends State<MyPaymentsScreen> {
             const SizedBox(height: 10),
 
             // --- Liste des Transactions ---
-            ListView.separated(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: transactions.length,
-              separatorBuilder: (context, index) => const Divider(height: 1, color: Colors.grey),
-              itemBuilder: (context, index) {
-                return TransactionItem(transaction: transactions[index]);
-              },
-            ),
+            if (_loading)
+              const Center(child: Padding(
+                padding: EdgeInsets.symmetric(vertical: 24.0),
+                child: CircularProgressIndicator(),
+              ))
+            else if (_error != null)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 24.0),
+                child: Center(child: Text(_error!, style: TextStyle(color: Colors.red))),
+              )
+            else if (transactions.isEmpty)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 24.0),
+                child: Center(child: Text('Aucun paiement trouvé')), 
+              )
+            else
+              ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: transactions.length,
+                separatorBuilder: (context, index) => const Divider(height: 1, color: Colors.grey),
+                itemBuilder: (context, index) {
+                  return TransactionItem(transaction: transactions[index]);
+                },
+              ),
             // Espace final ajusté maintenant qu'il n'y a plus de barre de navigation
             const SizedBox(height: 20), 
           ],

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../widgets/custom_header.dart';
 import 'home_recruteur.dart';
+import '../../services/payment_service.dart';
 
 class HistoriquePaiementRecruteur extends StatelessWidget {
   const HistoriquePaiementRecruteur({super.key});
@@ -45,44 +46,91 @@ class MyPaymentsRecruteurScreen extends StatefulWidget {
 }
 
 class _MyPaymentsRecruteurScreenState extends State<MyPaymentsRecruteurScreen> {
-  
-  final List<TransactionRecruteur> transactions = const [
-    TransactionRecruteur(
-      title: "Cours de Maths",
-      date: "05 Octobre 2025",
-      amount: "+ 5 000 CFA",
-      status: "Payé",
-      recipient: "Fatou Bamba",
-    ),
-    TransactionRecruteur(
-      title: "Cours d'Anglais",
-      date: "04 Octobre 2025",
-      amount: "+ 7 500 CFA",
-      status: "Payé",
-      recipient: "Amadou Diop",
-    ),
-    TransactionRecruteur(
-      title: "Aide Ménagère",
-      date: "03 Octobre 2025",
-      amount: "+ 10 000 CFA",
-      status: "Payé",
-      recipient: "Mariam Traoré",
-    ),
-    TransactionRecruteur(
-      title: "Livraison",
-      date: "02 Octobre 2025",
-      amount: "+ 8 000 CFA",
-      status: "Payé",
-      recipient: "Sidi Kone",
-    ),
-    TransactionRecruteur(
-      title: "Cours de Français",
-      date: "01 Octobre 2025",
-      amount: "+ 6 500 CFA",
-      status: "Payé",
-      recipient: "Awa Diallo",
-    ),
-  ];
+  List<TransactionRecruteur> transactions = [];
+  bool _loading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchPayments();
+  }
+
+  Future<void> _fetchPayments() async {
+    try {
+      setState(() {
+        _loading = true;
+        _error = null;
+      });
+      final list = await PaymentService.getMesPaiementsRecruteur();
+      final mapped = list.map((p) {
+        final montantAny = p['montant'] ?? p['missionRemuneration'];
+        double montant = 0;
+        if (montantAny is num) {
+          montant = montantAny.toDouble();
+        } else if (montantAny != null) {
+          montant = double.tryParse(montantAny.toString()) ?? 0;
+        }
+        final prenomJeune = (p['jeunePrestateurPrenom'] ?? '').toString();
+        final nomJeune = (p['jeunePrestateurNom'] ?? '').toString();
+        final statut = (p['statutPaiement'] ?? '').toString();
+        final titre = (p['missionTitre'] ?? '').toString().trim();
+        final date = (p['datePaiement'] ?? p['missionDateFin'] ?? '').toString();
+        return TransactionRecruteur(
+          title: titre.isNotEmpty ? titre : 'Mission',
+          date: _formatDate(date),
+          amount: '+ ${_formatAmount(montant)} CFA',
+          status: _mapStatut(statut),
+          recipient: _formatRecipient(prenomJeune, nomJeune),
+        );
+      }).toList();
+      setState(() {
+        transactions = mapped;
+      });
+    } catch (e) {
+      setState(() {
+        _error = 'Erreur de chargement';
+      });
+    } finally {
+      setState(() {
+        _loading = false;
+      });
+    }
+  }
+
+  String _formatAmount(double value) {
+    final s = value.toStringAsFixed(0);
+    return s.replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]} ');
+  }
+
+  String _formatDate(String raw) {
+    try {
+      final dt = DateTime.parse(raw);
+      const months = [
+        'Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'
+      ];
+      final day = dt.day.toString().padLeft(2, '0');
+      final month = months[dt.month - 1];
+      final year = dt.year.toString();
+      return '$day $month $year';
+    } catch (_) {
+      return raw;
+    }
+  }
+
+  String _mapStatut(String s) {
+    final u = s.toUpperCase();
+    if (u.contains('REUSS')) return 'Payé';
+    if (u.contains('SUCC')) return 'Payé';
+    if (u.contains('ATTEN')) return 'En attente';
+    if (u.contains('ANNUL')) return 'Annulé';
+    return s.isEmpty ? '—' : s;
+  }
+
+  String? _formatRecipient(String prenom, String nom) {
+    final full = ('$prenom $nom').trim();
+    return full.isEmpty ? null : full;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -125,15 +173,31 @@ class _MyPaymentsRecruteurScreenState extends State<MyPaymentsRecruteurScreen> {
             const SizedBox(height: 10),
 
             // --- Liste des Transactions ---
-            ListView.separated(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: transactions.length,
-              separatorBuilder: (context, index) => const Divider(height: 1, color: Colors.grey),
-              itemBuilder: (context, index) {
-                return TransactionItem(transaction: transactions[index]);
-              },
-            ),
+            if (_loading)
+              const Center(child: Padding(
+                padding: EdgeInsets.symmetric(vertical: 24.0),
+                child: CircularProgressIndicator(),
+              ))
+            else if (_error != null)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 24.0),
+                child: Center(child: Text(_error!, style: const TextStyle(color: Colors.red))),
+              )
+            else if (transactions.isEmpty)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 24.0),
+                child: Center(child: Text('Aucun paiement trouvé')), 
+              )
+            else
+              ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: transactions.length,
+                separatorBuilder: (context, index) => const Divider(height: 1, color: Colors.grey),
+                itemBuilder: (context, index) {
+                  return TransactionItem(transaction: transactions[index]);
+                },
+              ),
             const SizedBox(height: 20),
           ],
         ),
