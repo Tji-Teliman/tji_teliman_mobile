@@ -1,32 +1,128 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../config/api_config.dart';
+import '../../services/user_service.dart';
 import 'candidature_missions.dart';
 import 'chat_screen_recruteur.dart';
 
 const Color primaryGreen = Color(0xFF27AE60); // demandé: 27AE60
 const Color bodyBackgroundColor = Color(0xFFf6fcfc);
 
-class ProfilCandidatScreen extends StatelessWidget {
-  final String name;
-  final String motivation;
-  final double rating; // ex: 4.8
-  final List<String> competences;
-  final String avatarAsset;
+class ProfilCandidatScreen extends StatefulWidget {
+  final int candidatureId;
   final String missionTitle;
-  final bool isValidated;
-  final bool isRejected;
+  final int? missionId;
 
   const ProfilCandidatScreen({
     super.key,
-    required this.name,
-    required this.motivation,
-    required this.rating,
-    required this.competences,
-    this.avatarAsset = 'assets/images/image_profil.png',
-    this.missionTitle = 'Candidatures',
-    this.isValidated = false,
-    this.isRejected = false,
+    required this.candidatureId,
+    required this.missionTitle,
+    this.missionId,
   });
+
+  @override
+  State<ProfilCandidatScreen> createState() => _ProfilCandidatScreenState();
+}
+
+class _ProfilCandidatScreenState extends State<ProfilCandidatScreen> {
+  String? _name;
+  String? _motivation;
+  double _rating = 0.0;
+  int _ratingsCount = 0;
+  List<String> _competences = [];
+  String? _photoUrl;
+  bool _isValidated = false;
+  bool _isRejected = false;
+  bool _loading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchProfil();
+  }
+
+  Future<void> _fetchProfil() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final data = await UserService.getProfilCandidature(widget.candidatureId);
+      final prenom = (data['jeunePrenom'] ?? '').toString();
+      final nom = (data['jeuneNom'] ?? '').toString();
+      final photoRaw = data['jeuneUrlPhoto'];
+      final motivation = (data['motivationContenu'] ?? '').toString();
+      final statut = (data['statutCandidature'] ?? '').toString();
+      final moyenne = data['moyenneNotes'];
+      final nbEval = data['nombreEvaluations'];
+      // Compétences: l'API renvoie 'competences' comme List<String>. Repli: 'jeuneCompetences' string "A, B, C"
+      final compList = data['competences'];
+      List<String> comps;
+      if (compList is List) {
+        comps = compList.map((e) => e.toString()).where((e) => e.trim().isNotEmpty).toList();
+      } else {
+        final compStr = data['jeuneCompetences'];
+        comps = (compStr is String)
+            ? compStr.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList()
+            : <String>[];
+      }
+
+      if (!mounted) return;
+      setState(() {
+        _name = [prenom, nom].where((s) => s.trim().isNotEmpty).join(' ').trim();
+        _photoUrl = (photoRaw is String) ? _toHttpUrl(photoRaw) : null;
+        _motivation = motivation.isEmpty ? 'Aucune motivation fournie' : motivation;
+        _isValidated = _mapValidated(statut);
+        _isRejected = _mapRejected(statut);
+        _rating = (moyenne is num) ? moyenne.toDouble() : 0.0;
+        _ratingsCount = (nbEval is num) ? nbEval.toInt() : 0;
+        _competences = comps;
+        _loading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = e.toString().replaceFirst(RegExp(r'^Exception:\s*'), '');
+        _loading = false;
+      });
+    }
+  }
+
+  bool _mapValidated(String statut) {
+    switch (statut.toUpperCase()) {
+      case 'ACCEPTEE':
+      case 'ACCEPTÉE':
+      case 'ACCEPTE':
+      case 'ACCEPTÉ':
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  bool _mapRejected(String statut) {
+    switch (statut.toUpperCase()) {
+      case 'REFUSEE':
+      case 'REFUSÉE':
+      case 'REFUSE':
+      case 'REFUSÉ':
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  String? _toHttpUrl(String raw) {
+    if (raw.isEmpty) return null;
+    final normalised = raw.replaceAll('\\', '/');
+    final idx = normalised.toLowerCase().indexOf('/uploads/');
+    final path = idx >= 0 ? normalised.substring(idx) : normalised;
+    if (path.startsWith('http://') || path.startsWith('https://')) return path;
+    final base = ApiConfig.baseUrl.endsWith('/') ? ApiConfig.baseUrl.substring(0, ApiConfig.baseUrl.length - 1) : ApiConfig.baseUrl;
+    final p = path.startsWith('/') ? path : '/$path';
+    return '$base$p';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -63,12 +159,21 @@ class ProfilCandidatScreen extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildMessageCard(),
-                      const SizedBox(height: 16),
-                      _buildCompetencesCard(),
-                      const SizedBox(height: 24),
-                      _buildActions(context),
-                      const SizedBox(height: 20),
+                      if (_loading)
+                        Center(child: Padding(padding: const EdgeInsets.all(16), child: CircularProgressIndicator(color: primaryGreen)))
+                      else if (_error != null)
+                        Padding(
+                          padding: const EdgeInsets.all(14.0),
+                          child: Text(_error!, style: GoogleFonts.poppins(color: Colors.redAccent)),
+                        )
+                      else ...[
+                        _buildMessageCard(),
+                        const SizedBox(height: 16),
+                        _buildCompetencesCard(),
+                        const SizedBox(height: 24),
+                        _buildActions(context),
+                        const SizedBox(height: 20),
+                      ],
                     ],
                   ),
                 ),
@@ -113,7 +218,7 @@ class ProfilCandidatScreen extends StatelessWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          'Profil de $name',
+                          'Profil de ${_name ?? '...'}',
                           style: GoogleFonts.poppins(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700),
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -138,10 +243,15 @@ class ProfilCandidatScreen extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                CircleAvatar(radius: 45, backgroundImage: AssetImage(avatarAsset)),
+                CircleAvatar(
+                  radius: 45,
+                  backgroundColor: primaryGreen.withOpacity(0.2),
+                  backgroundImage: (_photoUrl != null && _photoUrl!.startsWith('http')) ? NetworkImage(_photoUrl!) : null,
+                  child: (_photoUrl == null || !_photoUrl!.startsWith('http')) ? const Icon(Icons.person, color: Colors.white, size: 40) : null,
+                ),
                 const SizedBox(height: 8),
                 Text(
-                  name,
+                  _name ?? '...',
                   style: GoogleFonts.poppins(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w700),
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -151,7 +261,7 @@ class ProfilCandidatScreen extends StatelessWidget {
                   children: [
                     const Icon(Icons.star, color: Colors.amber, size: 16),
                     const SizedBox(width: 4),
-                    Text('${rating.toStringAsFixed(1)}/5.0', style: GoogleFonts.poppins(color: Colors.white, fontSize: 11)),
+                    Text('${_rating.toStringAsFixed(1)}/5.0 (${_ratingsCount})', style: GoogleFonts.poppins(color: Colors.white, fontSize: 11)),
                   ],
                 ),
               ],
@@ -179,7 +289,7 @@ class ProfilCandidatScreen extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.all(14.0),
             child: Text(
-              motivation,
+              _motivation ?? '-',
               style: GoogleFonts.poppins(fontSize: 12, color: Colors.black87, height: 1.5),
             ),
           ),
@@ -210,11 +320,14 @@ class ProfilCandidatScreen extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 10),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: competences.map((c) => _chip(c)).toList(),
-            ),
+            if (_competences.isEmpty)
+              Text('Aucune compétence fournie', style: GoogleFonts.poppins(fontSize: 12, color: Colors.black54))
+            else
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: _competences.map((c) => _chip(c)).toList(),
+              ),
           ],
         ),
       ),
@@ -233,7 +346,7 @@ class ProfilCandidatScreen extends StatelessWidget {
   }
 
   Widget _buildActions(BuildContext context) {
-    if (isValidated) {
+    if (_isValidated) {
       // Bouton de communication pour les candidatures validées
       return SizedBox(
         height: 46,
@@ -242,7 +355,7 @@ class ProfilCandidatScreen extends StatelessWidget {
           onPressed: () {
             Navigator.of(context).push(
               MaterialPageRoute(
-                builder: (context) => ChatScreen(interlocutorName: name),
+                builder: (context) => ChatScreen(interlocutorName: _name ?? 'Jeune'),
               ),
             );
           },
@@ -259,7 +372,7 @@ class ProfilCandidatScreen extends StatelessWidget {
       );
     }
 
-    if (isRejected) {
+    if (_isRejected) {
       // Aucune action pour les candidatures rejetées
       return Container(
         padding: const EdgeInsets.all(20),
@@ -380,7 +493,10 @@ class ProfilCandidatScreen extends StatelessWidget {
                       Navigator.of(ctx).pop();
                       Navigator.of(context).pushReplacement(
                         MaterialPageRoute(
-                          builder: (_) => CandidatureMissionsScreen(missionTitle: missionTitle),
+                          builder: (_) => CandidatureMissionsScreen(
+                            missionTitle: widget.missionTitle,
+                            missionId: widget.missionId,
+                          ),
                         ),
                       );
                     },

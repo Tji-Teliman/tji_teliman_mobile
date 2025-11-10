@@ -11,6 +11,7 @@ import '../screens_jeunes/notifications.dart';
 import '../screens_jeunes/liste_litige.dart';
 import 'historique_paiement_recruteur.dart';
 import 'finaliser_profile_particulier.dart';
+import 'finaliser_profil_entreprise.dart';
 import 'publier_mission.dart';
 import 'missions_recruteur.dart';
 import 'paiement.dart';
@@ -20,6 +21,7 @@ import 'message_conversation_recruteur.dart';
 // Import des services
 import '../../services/user_service.dart';
 import '../../services/token_service.dart';
+import '../../services/profile_service.dart';
 
 // --- COULEURS ---
 const Color primaryGreen = Color(0xFF10B981);
@@ -47,6 +49,8 @@ class _HomeRecruteurScreenState extends State<HomeRecruteurScreen> {
 
   // Données dynamiques pour le profil
   String userName = "";
+  String userRole = "";
+  bool _isEntreprise = false;
   int missionsPubliees = 0;
   String note = "0.0/5";
 
@@ -68,10 +72,18 @@ class _HomeRecruteurScreenState extends State<HomeRecruteurScreen> {
 
       // Récupérer le nom depuis le stockage local
       final storedUserName = await TokenService.getUserName();
+      final storedRole = await TokenService.getUserRole();
+      final storedRecruiterType = await TokenService.getRecruiterType();
       if (storedUserName != null && storedUserName.isNotEmpty) {
         userName = storedUserName;
       } else {
         userName = "Recruteur";
+      }
+      if (storedRole != null) {
+        userRole = storedRole;
+      }
+      if (storedRecruiterType != null && storedRecruiterType.isNotEmpty) {
+        _isEntreprise = storedRecruiterType.toUpperCase().contains('ENTRE');
       }
 // Charger les missions publiées
 print('📡 Récupération des missions publiées...');
@@ -101,6 +113,41 @@ if (missionsResponse.success) {
         note = "0.0/5";
       }
 
+      // Vérifier la complétion du profil côté backend
+      try {
+        final profil = await ProfileService.getMonProfil();
+        final data = profil['data'] as Map<String, dynamic>?;
+        bool complete = false;
+        if (data != null) {
+          // Déterminer type recruteur depuis le profil
+          final typeRec = data['typeRecruteur']?.toString().toUpperCase();
+          _isEntreprise = (typeRec?.contains('ENTRE') == true)
+              || data.containsKey('nomEntreprise')
+              || data.containsKey('secteurActivite')
+              || data.containsKey('emailEntreprise');
+          if (_isEntreprise) {
+            // Logique ENTREPRISE: l'alerte disparaît si nomEntreprise est renseigné
+            final hasNomEnt = (data['nomEntreprise']?.toString().trim().isNotEmpty == true);
+            complete = hasNomEnt;
+          } else {
+            // Logique PARTICULIER: photo OU dateNaissance
+            final rawPhoto = data['photo'] ?? data['urlPhoto'];
+            String photoStr = '';
+            if (rawPhoto is Map) {
+              photoStr = (rawPhoto['url'] ?? rawPhoto['path'] ?? rawPhoto['value'] ?? '').toString();
+            } else if (rawPhoto != null) {
+              photoStr = rawPhoto.toString();
+            }
+            final hasPhoto = photoStr.trim().isNotEmpty;
+            final hasDob = data['dateNaissance']?.toString().isNotEmpty == true;
+            complete = hasPhoto || hasDob;
+          }
+        }
+        _showProfileAlert = !complete;
+      } catch (e) {
+        _showProfileAlert = true;
+      }
+
       print('✅ Données recruteur chargées avec succès');
       print('   👤 Nom: $userName');
       print('   📊 Missions publiées: $missionsPubliees');
@@ -126,9 +173,10 @@ if (missionsResponse.success) {
     setState(() {
       _showProfileAlert = false;
     });
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (context) => const FinaliserProfileParticulier()),
-    ).then((_) {
+    final route = _isEntreprise
+        ? MaterialPageRoute(builder: (context) => const FinaliserProfilEntreprise())
+        : MaterialPageRoute(builder: (context) => const FinaliserProfileParticulier());
+    Navigator.of(context).push(route).then((_) {
       // Recharger les données après retour du profil
       _loadUserData();
     });
@@ -325,7 +373,7 @@ if (missionsResponse.success) {
                         padding: const EdgeInsets.only(bottom: 10.0),
                         child: _buildPendingPaymentAlert(),
                       ),
-                    if (_showProfileAlert)
+                    if (_showProfileAlert && !_isLoading)
                       Padding(
                         padding: const EdgeInsets.only(bottom: 10.0),
                         child: _buildProfileAlert(),

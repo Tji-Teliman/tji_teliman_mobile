@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../../services/profile_service.dart';
+import '../../../services/token_service.dart';
+import '../../../services/user_service.dart';
+import '../../../config/api_config.dart';
 
 import '../../../widgets/custom_bottom_nav_bar.dart';
 import '../../../widgets/custom_menu.dart';
@@ -28,17 +32,112 @@ class _ProfilJeuneScreenState extends State<ProfilJeuneScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   int _selectedIndex = 2; // Onglet Profil
 
-  // Données fictives conformes à la maquette
-  final String fullName = 'Rama Konaré';
-  final String role = 'Recruteur';
-  final String email = 'ramatouyaya@gmail.com';
-  final String phone = '+223 72 70 66 47';
-  final String location = 'Bamako , Garantibougou';
-  final String dateNaissance = '23/09/2000';
-  final String competences =
-      'Livraisons , Cuisine , Evenementiel , Serveuse,\nBaby-sitting, Ménage, Vente de Magasin';
-  final int missionsRealisees = 12;
-  final String noteRecruteur = '4.8/5';
+  // Données dynamiques
+  String fullName = '';
+  String _prenom = '';
+  String _nom = '';
+  String role = 'Jeune_Prestauteur';
+  String email = '';
+  String phone = '';
+  String location = '';
+  String dateNaissance = '';
+  String competences = '';
+  int missionsRealisees = 0;
+  String noteRecruteur = '0.0/5';
+
+  String photoUrl = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfil();
+  }
+
+  Future<void> _loadProfil() async {
+    try {
+      final storedName = await TokenService.getUserName();
+      if (storedName != null && storedName.isNotEmpty) {
+        fullName = storedName;
+      }
+
+      final profil = await ProfileService.getMonProfil();
+      final data = profil['data'] as Map<String, dynamic>?;
+      if (data != null) {
+        // Nom complet depuis backend si non présent en local
+        final prenom = (data['prenom'] ?? (data['user'] is Map ? data['user']['prenom'] : null))?.toString();
+        final nom = (data['nom'] ?? (data['user'] is Map ? data['user']['nom'] : null))?.toString();
+        _prenom = prenom ?? _prenom;
+        _nom = nom ?? _nom;
+        final combined = [prenom, nom].where((e) => (e ?? '').toString().trim().isNotEmpty).join(' ').trim();
+        if (combined.isNotEmpty) fullName = combined;
+
+        final rawPhoto = data['photo'] ?? data['urlPhoto'];
+        String tempPhoto = '';
+        if (rawPhoto is Map) {
+          tempPhoto = (rawPhoto['url'] ?? rawPhoto['path'] ?? rawPhoto['value'] ?? '').toString();
+        } else if (rawPhoto != null) {
+          tempPhoto = rawPhoto.toString();
+        }
+        final converted = _convertPhotoPathToUrl(tempPhoto);
+        photoUrl = converted ?? tempPhoto;
+
+        email = (data['email'] ?? (data['user'] is Map ? (data['user']['email']) : null))?.toString() ?? email;
+        phone = (data['telephone'] ?? (data['user'] is Map ? (data['user']['telephone'] ?? data['user']['phone']) : null))?.toString() ?? phone;
+        location = data['adresse']?.toString() ?? location;
+        // dateNaissance backend: yyyy-MM-dd -> afficher dd/MM/yyyy
+        final dob = data['dateNaissance']?.toString();
+        if (dob != null && dob.contains('-')) {
+          final parts = dob.split('-');
+          if (parts.length == 3) {
+            dateNaissance = '${parts[2].padLeft(2, '0')}/${parts[1].padLeft(2, '0')}/${parts[0]}';
+          } else {
+            dateNaissance = dob;
+          }
+        } else {
+          dateNaissance = dob ?? dateNaissance;
+        }
+        final rawComp = data['competences'];
+        if (rawComp is List) {
+          if (rawComp.isNotEmpty && rawComp.first is Map) {
+            final list = rawComp.map((e) {
+              final m = e as Map;
+              return (m['nom'] ?? m['libelle'] ?? m['name'] ?? '').toString();
+            }).where((s) => s.trim().isNotEmpty).toList();
+            competences = list.join(' , ');
+          } else {
+            final list = rawComp.map((e) => e.toString()).toList();
+            competences = list.join(' , ');
+          }
+        } else if (rawComp != null) {
+          competences = rawComp.toString().replaceAll('[', '').replaceAll(']', '');
+        }
+      }
+
+      // Charger statistiques comme dans home_jeune.dart
+      try {
+        final missionsResponse = await UserService.getMesMissionsAccomplies();
+        if (missionsResponse.success) {
+          missionsRealisees = missionsResponse.data.nombreMissions;
+        }
+      } catch (_) {}
+
+      try {
+        final notationResponse = await UserService.getMoyenneNotation();
+        if (notationResponse.success && notationResponse.data != null) {
+          final moyenne = notationResponse.data!.moyenne;
+          noteRecruteur = "${moyenne.toStringAsFixed(1)}/5";
+        } else {
+          noteRecruteur = "0.0/5";
+        }
+      } catch (_) {
+        noteRecruteur = "0.0/5";
+      }
+    } catch (_) {
+      // garder les valeurs par défaut si erreur
+    } finally {
+      if (mounted) setState(() {});
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -225,9 +324,11 @@ class _ProfilJeuneScreenState extends State<ProfilJeuneScreen> {
               children: [
                 Stack(
                   children: [
-                    const CircleAvatar(
+                    CircleAvatar(
                       radius: 50,
-                      backgroundImage: AssetImage('assets/images/image_profil.png'),
+                      backgroundImage: photoUrl.isNotEmpty
+                          ? NetworkImage(photoUrl)
+                          : const AssetImage('') as ImageProvider,
                     ),
                     Positioned(
                       right: 0,
@@ -248,21 +349,47 @@ class _ProfilJeuneScreenState extends State<ProfilJeuneScreen> {
                         ),
                         child: InkWell(
                           onTap: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (context) => ModifierProfilScreen(
-                                  initialPrenom: 'Rama',
-                                  initialNom: 'Konaré',
-                                  initialEmail: email,
-                                  initialPhone: phone,
-                                  initialLocation: location,
-                                  initialDateNaissance: dateNaissance,
-                                  initialCompetences: competences,
-                                  fullName: fullName,
-                                  role: 'Jeune_Prestauteur',
-                                ),
-                              ),
-                            );
+                            Navigator.of(context)
+                                .push(
+                                  MaterialPageRoute(
+                                    builder: (context) => ModifierProfilScreen(
+                                      initialPrenom: _prenom,
+                                      initialNom: _nom,
+                                      initialEmail: email,
+                                      initialPhone: phone,
+                                      initialLocation: location,
+                                      initialDateNaissance: dateNaissance,
+                                      initialCompetences: competences,
+                                      fullName: fullName,
+                                      role: role,
+                                      initialPhotoUrl: photoUrl,
+                                    ),
+                                  ),
+                                )
+                                .then((result) {
+                              if (!mounted) return;
+                              if (result is Map<String, dynamic>) {
+                                setState(() {
+                                  // Nom complet et détails
+                                  final newFullName = result['fullName']?.toString();
+                                  if (newFullName != null && newFullName.trim().isNotEmpty) {
+                                    fullName = newFullName.trim();
+                                  }
+                                  final newPrenom = result['prenom']?.toString();
+                                  final newNom = result['nom']?.toString();
+                                  if (newPrenom != null) _prenom = newPrenom;
+                                  if (newNom != null) _nom = newNom;
+
+                                  email = result['email']?.toString() ?? email;
+                                  phone = result['telephone']?.toString() ?? phone;
+                                  location = result['adresse']?.toString() ?? location;
+                                  dateNaissance = result['dateNaissance']?.toString() ?? dateNaissance;
+                                  competences = result['competences']?.toString() ?? competences;
+                                  final p = result['photoUrl']?.toString() ?? '';
+                                  if (p.isNotEmpty) photoUrl = p;
+                                });
+                              }
+                            });
                           },
                           child: const Center(
                             child: Icon(Icons.edit, size: 14, color: Colors.black),
@@ -274,7 +401,7 @@ class _ProfilJeuneScreenState extends State<ProfilJeuneScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  fullName,
+                  fullName.isNotEmpty ? fullName : 'Mon Profil',
                   style: GoogleFonts.poppins(
                     color: Colors.white,
                     fontSize: 16,
@@ -282,7 +409,7 @@ class _ProfilJeuneScreenState extends State<ProfilJeuneScreen> {
                   ),
                 ),
                 Text(
-                  'Jeune_Prestateur',
+                  role,
                   style: GoogleFonts.poppins(
                     color: Colors.white,
                     fontSize: 12,
@@ -559,6 +686,36 @@ class _ProfilJeuneScreenState extends State<ProfilJeuneScreen> {
         ],
       ),
     );
+  }
+
+  // Convertit un chemin local (ex: C:\\...\\uploads\\...) en URL HTTP complète
+  String? _convertPhotoPathToUrl(String? photoPath) {
+    if (photoPath == null || photoPath.isEmpty) return null;
+    if (photoPath.startsWith('http://') || photoPath.startsWith('https://')) {
+      return photoPath;
+    }
+    if (photoPath.contains('uploads')) {
+      String base = ApiConfig.baseUrl;
+      if (base.endsWith('/')) base = base.substring(0, base.length - 1);
+      final uploadsIndex = photoPath.indexOf('uploads');
+      if (uploadsIndex != -1) {
+        String relativePath = photoPath.substring(uploadsIndex + 'uploads'.length);
+        relativePath = relativePath.replaceAll('\\', '/');
+        if (!relativePath.startsWith('/')) {
+          relativePath = '/$relativePath';
+        }
+        final url = '$base/uploads$relativePath';
+        return url;
+      }
+    }
+    if (photoPath.startsWith('uploads')) {
+      String base = ApiConfig.baseUrl;
+      if (base.endsWith('/')) base = base.substring(0, base.length - 1);
+      String url = '$base/$photoPath';
+      url = url.replaceAll('\\', '/');
+      return url;
+    }
+    return null;
   }
 }
 

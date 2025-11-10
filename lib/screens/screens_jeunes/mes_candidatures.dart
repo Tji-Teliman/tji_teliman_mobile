@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../services/user_service.dart';
 
 // Importation des widgets existants (selon la demande de l'utilisateur)
 import '../../widgets/custom_bottom_nav_bar.dart';
@@ -60,39 +61,82 @@ class _MesCandidaturesScreenState extends State<MesCandidaturesScreen> {
   int _bottomNavIndex = 1; 
   CandidatureStatus _selectedFilter = CandidatureStatus.toutes;
 
-  // Données factices
-  final List<Candidature> _candidatures = [
-    Candidature(
-      title: 'Aide à la livraison du Marché Central',
-      location: 'Marché Central',
-      datePostulee: '01 Oct',
-      status: CandidatureStatus.enAttente,
-    ),
-    Candidature(
-      title: 'Animatrice pour le festival du Dibi',
-      location: 'Place du Cinquantenaire',
-      datePostulee: '01 Oct',
-      status: CandidatureStatus.acceptee,
-    ),
-    Candidature(
-      title: 'Aide à Domicile',
-      location: 'Kalanba Coura',
-      datePostulee: '01 Oct',
-      status: CandidatureStatus.refusee,
-    ),
-    Candidature(
-      title: 'Cours de Mathématiques pour Seconde',
-      location: 'Hippodrome',
-      datePostulee: '30 Sept',
-      status: CandidatureStatus.acceptee,
-    ),
-    Candidature(
-      title: 'Petits travaux de plomberie',
-      location: 'Hamdallaye',
-      datePostulee: '29 Sept',
-      status: CandidatureStatus.enAttente,
-    ),
-  ];
+  final List<Candidature> _candidatures = [];
+  bool _isLoading = true;
+  String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchCandidatures();
+  }
+
+  Future<void> _fetchCandidatures() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+    try {
+      final items = await UserService.getMesCandidatures();
+      final mapped = items.map((e) {
+        final String titre = (e['missionTitre'] ?? '').toString();
+        final String lieu = (e['missionLieu'] ?? '').toString();
+        final String dateIso = (e['dateSoumission'] ?? '').toString();
+        final String dateAffichee = _formatShortDate(dateIso);
+        final String statutStr = (e['statut'] ?? '').toString();
+        final CandidatureStatus st = _mapBackendStatus(statutStr);
+        return Candidature(
+          title: titre,
+          location: lieu,
+          datePostulee: dateAffichee,
+          status: st,
+        );
+      }).toList();
+      if (!mounted) return;
+      setState(() {
+        _candidatures
+          ..clear()
+          ..addAll(mapped);
+        _isLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+        _errorMessage = e.toString().replaceFirst(RegExp(r'^Exception:\s*'), '');
+      });
+    }
+  }
+
+  CandidatureStatus _mapBackendStatus(String statut) {
+    switch (statut.toUpperCase()) {
+      case 'ACCEPTEE':
+      case 'ACCEPTÉE':
+      case 'ACCEPTE':
+      case 'ACCEPTÉ':
+        return CandidatureStatus.acceptee;
+      case 'REFUSEE':
+      case 'REFUSÉE':
+      case 'REFUSE':
+      case 'REFUSÉ':
+        return CandidatureStatus.refusee;
+      case 'EN_ATTENTE':
+      default:
+        return CandidatureStatus.enAttente;
+    }
+  }
+
+  String _formatShortDate(String iso) {
+    try {
+      final dt = DateTime.parse(iso);
+      const months = ['janv', 'févr', 'mars', 'avr', 'mai', 'juin', 'juil', 'août', 'sept', 'oct', 'nov', 'déc'];
+      final m = (dt.month >= 1 && dt.month <= 12) ? months[dt.month - 1] : '';
+      final dd = dt.day.toString().padLeft(2, '0');
+      return '$dd $m';
+    } catch (_) {
+      return iso;
+    }
+  }
 
   List<Candidature> get _filteredCandidatures {
     if (_selectedFilter == CandidatureStatus.toutes) {
@@ -338,15 +382,35 @@ class _MesCandidaturesScreenState extends State<MesCandidaturesScreen> {
             ),
           ),
 
-          // Liste des Candidatures
+          // Liste / États
           Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.only(bottom: 10.0), 
-              itemCount: _filteredCandidatures.length,
-              itemBuilder: (context, index) {
-                return _buildCandidatureCard(_filteredCandidatures[index]);
-              },
-            ),
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : (_errorMessage != null)
+                    ? Center(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                          child: Text(
+                            _errorMessage!,
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.poppins(color: Colors.redAccent),
+                          ),
+                        ),
+                      )
+                    : (_filteredCandidatures.isEmpty)
+                        ? Center(
+                            child: Text(
+                              'Aucune candidature',
+                              style: GoogleFonts.poppins(color: darkGrey),
+                            ),
+                          )
+                        : ListView.builder(
+                            padding: const EdgeInsets.only(bottom: 10.0), 
+                            itemCount: _filteredCandidatures.length,
+                            itemBuilder: (context, index) {
+                              return _buildCandidatureCard(_filteredCandidatures[index]);
+                            },
+                          ),
           ),
         ],
       ),

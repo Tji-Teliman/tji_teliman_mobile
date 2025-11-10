@@ -31,7 +31,7 @@ class Mission {
   final double longitude;
   final String adresse;
   final String placeId;
-  final String? remuneration;
+  final double? remuneration;
   final String datePublication;
   final String statut;
   final String heureDebut;
@@ -77,7 +77,11 @@ class Mission {
       longitude: (json['longitude'] ?? 0.0).toDouble(),
       adresse: json['adresse'] ?? '',
       placeId: json['placeId'] ?? '',
-      remuneration: json['remuneration'],
+      remuneration: json['remuneration'] != null 
+          ? (json['remuneration'] is double 
+             ? json['remuneration'] 
+             : double.tryParse(json['remuneration'].toString()) ?? 0.0)
+          : null,
       datePublication: json['datePublication'] ?? '',
       statut: json['statut'] ?? '',
       heureDebut: json['heureDebut'] ?? '',

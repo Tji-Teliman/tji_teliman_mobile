@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../services/user_service.dart';
 
 // Importation des widgets réutilisables
 import '../../widgets/custom_header.dart';
@@ -16,8 +17,10 @@ const Color bodyBackgroundColor = Color(0xFFf6fcfc);
 class MotivationScreen extends StatefulWidget {
   // Le titre de la mission est passé en argument pour l'affichage dans le header
   final String missionTitle;
+  // Identifiant de la mission à laquelle postuler (optionnel pour compatibilité)
+  final int? missionId;
   
-  const MotivationScreen({super.key, required this.missionTitle});
+  const MotivationScreen({super.key, required this.missionTitle, this.missionId});
 
   @override
   State<MotivationScreen> createState() => _MotivationScreenState();
@@ -27,6 +30,7 @@ class _MotivationScreenState extends State<MotivationScreen> {
   final TextEditingController _motivationController = TextEditingController();
   static const int maxCharacters = 200;
   int _charCount = 0;
+  bool _isSubmitting = false;
   
   // L'index de la barre de navigation est fixé à 0 (Accueil).
   final int _selectedIndex = 0; 
@@ -38,28 +42,180 @@ class _MotivationScreenState extends State<MotivationScreen> {
     _motivationController.addListener(_updateCharCount);
   }
 
+  void _showApplySuccessDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) {
+        return Dialog(
+          insetPadding: const EdgeInsets.symmetric(horizontal: 24),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(18),
+            ),
+            padding: const EdgeInsets.fromLTRB(20, 22, 20, 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Center(
+                  child: Container(
+                    width: 54,
+                    height: 54,
+                    decoration: BoxDecoration(
+                      color: primaryBlue.withOpacity(0.15),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.check, color: primaryBlue, size: 32),
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Center(
+                  child: Text(
+                    'Candidature soumise !',
+                    style: GoogleFonts.poppins(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.black,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  "Votre candidature a été soumise avec succès. Vous serez informé de la suite.",
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.poppins(fontSize: 12, color: Colors.black87, height: 1.4),
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  height: 44,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.of(ctx).pop();
+                      Navigator.of(context).pushAndRemoveUntil(
+                        MaterialPageRoute(builder: (c) => const HomeJeuneScreen()),
+                        (route) => false,
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF10B981),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+                      elevation: 0,
+                    ),
+                    child: Text("Retour à l'Accueil", style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   void _updateCharCount() {
     setState(() {
       _charCount = _motivationController.text.length;
     });
   }
 
-  void _submitApplication() {
-    // ⚠️ Logique de soumission de candidature à implémenter ici
-    // La motivation (_motivationController.text) peut être vide.
-    
-    // Exemple de feedback simple pour l'utilisateur
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          "Candidature soumise pour : ${widget.missionTitle}. Motivation: ${_charCount > 0 ? 'Oui' : 'Non'}", 
-          style: GoogleFonts.poppins()
+  Future<void> _submitApplication() async {
+    if (_isSubmitting) return;
+    if (widget.missionId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Identifiant de mission manquant', style: GoogleFonts.poppins()),
+          backgroundColor: Colors.redAccent,
         ),
-        backgroundColor: primaryBlue,
-      ),
+      );
+      return;
+    }
+    setState(() => _isSubmitting = true);
+    try {
+      final success = await UserService.postulerMission(
+        missionId: widget.missionId!,
+        motivation: _motivationController.text.trim().isEmpty ? null : _motivationController.text.trim(),
+      );
+      if (!mounted) return;
+      if (success) {
+        _showApplySuccessDialog();
+      }
+    } catch (e) {
+      if (!mounted) return;
+      final cleanMessage = e.toString().replaceFirst(RegExp(r'^Exception:\s*'), '');
+      _showApplyErrorDialog(cleanMessage);
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
+    }
+  }
+
+  void _showApplyErrorDialog(String message) {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (ctx) {
+        return Dialog(
+          insetPadding: const EdgeInsets.symmetric(horizontal: 24),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(18),
+            ),
+            padding: const EdgeInsets.fromLTRB(20, 22, 20, 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Center(
+                  child: Container(
+                    width: 54,
+                    height: 54,
+                    decoration: BoxDecoration(
+                      color: Colors.redAccent.withOpacity(0.12),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.error_outline, color: Colors.redAccent, size: 32),
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Center(
+                  child: Text(
+                    'Échec de la candidature',
+                    style: GoogleFonts.poppins(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.black,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  message,
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.poppins(fontSize: 12, color: Colors.black87, height: 1.4),
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  height: 44,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.of(ctx).pop(),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF10B981),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+                      elevation: 0,
+                    ),
+                    child: Text('OK', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
-    // Retour à la page précédente après la soumission
-    // Navigator.of(context).pop(); 
   }
 
   @override
@@ -170,7 +326,7 @@ class _MotivationScreenState extends State<MotivationScreen> {
             ElevatedButton(
               // La candidature n'est plus obligatoire. 
               // On désactive seulement si le texte est trop long (> maxCharacters).
-              onPressed: _charCount <= maxCharacters 
+              onPressed: (_charCount <= maxCharacters && !_isSubmitting)
                   ? _submitApplication
                   : null,
               style: ElevatedButton.styleFrom(

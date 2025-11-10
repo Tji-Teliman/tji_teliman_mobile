@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 // Importation du widget CustomHeader (Assurez-vous que le chemin est correct dans votre projet)
 import '../../widgets/custom_header.dart'; // Supposons que c'est le chemin valide.
+import '../../services/profile_service.dart';
 
 // --- COULEURS ET CONSTANTES GLOBALES (À ADAPTER À VOTRE FICHIER CONSTANTES SI EXISTANT) ---
 const Color primaryGreen = Color(0xFF10B981); // Vert principal
@@ -22,26 +25,72 @@ class _FinaliserProfilScreenState extends State<FinaliserProfilScreen> {
   final ImagePicker _picker = ImagePicker();
   String? _selectedDateOfBirth;
   String? _selectedLocation;
-  final List<String> _allCompetences = const [
-    'Livraisons',
-    'Cuisine',
-    'Evenementiel',
-    'Serveuse',
-    'Baby-sitting',
-    'Ménage',
-    'Vente de Magasin',
-  ];
+  final TextEditingController _locationController = TextEditingController();
+  final List<String> _competenceNames = [];
   final Set<String> _selectedCompetences = {};
+  XFile? _profilePhoto;
+  XFile? _idCard;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCompetences();
+  }
+
+  Future<void> _loadCompetences() async {
+    try {
+      final list = await ProfileService.getCompetences();
+      final names = list.map((e) => (e['nom'] ?? '').toString()).where((s) => s.trim().isNotEmpty).toList();
+      if (mounted) {
+        setState(() {
+          _competenceNames
+            ..clear()
+            ..addAll(names);
+        });
+      }
+    } catch (_) {
+      // garder vide en cas d'erreur
+    }
+  }
+
+  @override
+  void dispose() {
+    _locationController.dispose();
+    super.dispose();
+  }
+
+  bool _isFormComplete() {
+    final hasPhoto = _profilePhoto != null;
+    final hasDob = _selectedDateOfBirth != null && _selectedDateOfBirth!.isNotEmpty;
+    final hasAdresse = _locationController.text.isNotEmpty;
+    final hasCompetences = _selectedCompetences.isNotEmpty;
+    final hasId = _idCard != null;
+    return hasPhoto && hasDob && hasAdresse && hasCompetences && hasId;
+  }
+
+  double _computeProgress() {
+    int completed = 0;
+    if (_profilePhoto != null) completed++;
+    if (_selectedDateOfBirth != null && _selectedDateOfBirth!.isNotEmpty) completed++;
+    if (_locationController.text.isNotEmpty) completed++;
+    if (_selectedCompetences.isNotEmpty) completed++;
+    if (_idCard != null) completed++;
+    // Démarre à 50% et ajoute 10% par critère (5 critères au total)
+    return 0.5 + (completed * 0.1);
+  }
 
   // Fonction pour sélectionner une image (caméra ou galerie)
-  Future<void> _pickImage(ImageSource source) async {
+  Future<void> _pickImage(ImageSource source, {required String target}) async {
     try {
       final XFile? image = await _picker.pickImage(source: source);
       if (image != null) {
-        // Ici vous pouvez traiter l'image sélectionnée
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Image sélectionnée: ${image.name}')),
-        );
+        setState(() {
+          if (target == 'profile') {
+            _profilePhoto = image;
+          } else if (target == 'id') {
+            _idCard = image;
+          }
+        });
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -63,7 +112,7 @@ class _FinaliserProfilScreenState extends State<FinaliserProfilScreen> {
                 title: const Text('Caméra'),
                 onTap: () {
                   Navigator.of(context).pop();
-                  _pickImage(ImageSource.camera);
+                  _pickImage(ImageSource.camera, target: type == "photo de profil" ? 'profile' : 'id');
                 },
               ),
               ListTile(
@@ -71,7 +120,7 @@ class _FinaliserProfilScreenState extends State<FinaliserProfilScreen> {
                 title: const Text('Galerie'),
                 onTap: () {
                   Navigator.of(context).pop();
-                  _pickImage(ImageSource.gallery);
+                  _pickImage(ImageSource.gallery, target: type == "photo de profil" ? 'profile' : 'id');
                 },
               ),
             ],
@@ -115,7 +164,7 @@ class _FinaliserProfilScreenState extends State<FinaliserProfilScreen> {
           children: <Widget>[
             const SizedBox(height: 20),
             // 1. Barre de Progression
-            _buildProgressBar(context, progress: 0.5),
+            _buildProgressBar(context, progress: _computeProgress()),
             const SizedBox(height: 10),
             Text(
               'Plus que quelques étapes pour débloquer toutes les missions !',
@@ -139,6 +188,7 @@ class _FinaliserProfilScreenState extends State<FinaliserProfilScreen> {
             _buildTextField(
               hint: 'Localisation',
               icon: Icons.location_on_outlined,
+              controller: _locationController,
             ),
             const SizedBox(height: 20),
 
@@ -201,12 +251,22 @@ class _FinaliserProfilScreenState extends State<FinaliserProfilScreen> {
             shape: BoxShape.circle,
             color: primaryGreen.withOpacity(0.2),
             border: Border.all(color: primaryGreen, width: 2),
+            image: _profilePhoto != null
+                ? DecorationImage(
+                    image: kIsWeb
+                        ? NetworkImage(_profilePhoto!.path)
+                        : FileImage(File(_profilePhoto!.path)) as ImageProvider,
+                    fit: BoxFit.cover,
+                  )
+                : null,
           ),
-          child: Icon(
-            Icons.person,
-            size: 60,
-            color: primaryGreen,
-          ),
+          child: _profilePhoto == null
+              ? Icon(
+                  Icons.person,
+                  size: 60,
+                  color: primaryGreen,
+                )
+              : null,
         ),
         const SizedBox(height: 20),
         // Bouton Ajouter/Modifier la photo
@@ -272,7 +332,7 @@ class _FinaliserProfilScreenState extends State<FinaliserProfilScreen> {
   }
 
   // Widget pour les champs de texte simples (Localisation)
-  Widget _buildTextField({required String hint, required IconData icon}) {
+  Widget _buildTextField({required String hint, required IconData icon, TextEditingController? controller}) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -286,7 +346,9 @@ class _FinaliserProfilScreenState extends State<FinaliserProfilScreen> {
         ],
       ),
       child: TextField(
+        controller: controller,
         readOnly: hint != 'Localisation', // Rendre la date et la localisation non éditables si un sélecteur est prévu
+        onChanged: (_) => setState(() {}),
         decoration: InputDecoration(
           hintText: hint,
           hintStyle: GoogleFonts.poppins(color: Colors.black54),
@@ -377,7 +439,7 @@ class _FinaliserProfilScreenState extends State<FinaliserProfilScreen> {
                     const Divider(height: 1),
                     Expanded(
                       child: ListView(
-                        children: _allCompetences.map((c) {
+                        children: _competenceNames.map((c) {
                           final checked = temp.contains(c);
                           return CheckboxListTile(
                             value: checked,
@@ -439,7 +501,15 @@ class _FinaliserProfilScreenState extends State<FinaliserProfilScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.cloud_upload_outlined, color: Colors.black, size: 40),
+            if (_idCard == null)
+              Icon(Icons.cloud_upload_outlined, color: Colors.black, size: 40)
+            else
+              SizedBox(
+                height: 80,
+                child: kIsWeb
+                    ? Image.network(_idCard!.path, fit: BoxFit.cover)
+                    : Image.file(File(_idCard!.path), fit: BoxFit.cover),
+              ),
             const SizedBox(height: 10),
             Text(
               'Televerser la photo de votre carte d\'identité',
@@ -462,11 +532,67 @@ class _FinaliserProfilScreenState extends State<FinaliserProfilScreen> {
       width: double.infinity,
       height: 55,
       child: ElevatedButton(
-        onPressed: () {
-          // Logique d'enregistrement et de redirection
-        },
+        onPressed: _isFormComplete() ? () async {
+          try {
+            // Validation des 5 champs requis
+            final missing = <String>[];
+            if (_profilePhoto == null) missing.add('Photo de profil');
+            if (_selectedDateOfBirth == null || _selectedDateOfBirth!.isEmpty) missing.add('Date de naissance');
+            if (_locationController.text.isEmpty) missing.add('Adresse');
+            if (_selectedCompetences.isEmpty) missing.add('Compétences');
+            if (_idCard == null) missing.add('Carte d\'identité');
+            if (missing.isNotEmpty) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Veuillez compléter: ${missing.join(', ')}')),
+              );
+              return;
+            }
+
+            final Map<String, String> fields = {};
+            // convertir dd/MM/yyyy en yyyy-MM-dd
+            final parts = _selectedDateOfBirth!.split('/');
+            if (parts.length == 3) {
+              fields['dateNaissance'] = '${parts[2]}-${parts[1].padLeft(2, '0')}-${parts[0].padLeft(2, '0')}';
+            }
+            fields['adresse'] = _locationController.text;
+            fields['competences'] = _selectedCompetences.join(',');
+
+            // Appel service selon plateforme
+            Map<String, dynamic> result;
+            if (kIsWeb) {
+              final photoBytes = await _profilePhoto!.readAsBytes();
+              final idBytes = await _idCard!.readAsBytes();
+              result = await ProfileService.updateMonProfil(
+                fields: fields,
+                photoBytes: photoBytes,
+                photoFilename: _profilePhoto!.name,
+                carteIdentiteBytes: idBytes,
+                carteIdentiteFilename: _idCard!.name,
+              );
+            } else {
+              result = await ProfileService.updateMonProfil(
+                fields: fields,
+                photoProfil: File(_profilePhoto!.path),
+                carteIdentite: File(_idCard!.path),
+              );
+            }
+
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(result['message']?.toString() ?? 'Profil mis à jour')),
+              );
+              Navigator.of(context).pop(true);
+            }
+          } catch (e) {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Erreur de sauvegarde: $e')),
+              );
+            }
+          }
+        } : null,
         style: ElevatedButton.styleFrom(
-          backgroundColor: primaryGreen,
+          backgroundColor: _isFormComplete() ? primaryGreen : Colors.grey,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(30),
           ),

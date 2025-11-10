@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 // Importation nécessaire pour Google Maps
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import '../../config/api_config.dart';
 
 // ⚠️ Assurez-vous d'importer le bon chemin pour le CustomHeader
 import '../../widgets/custom_header.dart'; 
@@ -153,35 +154,6 @@ class _DetailMissionScreenState extends State<DetailMissionScreen> {
     }
   } 
 
-  Future<void> _loadRecruteurInfo() async {
-    // Charger les infos du recruteur depuis les données de la mission
-    if (_missionData != null) {
-      final nomParts = [
-        _missionData!.recruteurPrenom,
-        _missionData!.recruteurNom,
-      ].where((s) => s != null && s.isNotEmpty).toList();
-      
-      final fullName = nomParts.join(' ').trim();
-      final photoPath = _missionData!.recruteurUrlPhoto;
-      final rating = _missionData!.recruteurNote ?? 0.0;
-      
-      // Convertir le chemin de la photo en URL HTTP
-      final photoUrl = _convertPhotoPathToUrl(photoPath);
-      
-      setState(() {
-        _recruteurName = fullName.isNotEmpty ? fullName : 'Recruteur';
-        _recruteurPhotoUrl = photoUrl;
-        _recruteurRating = rating;
-      });
-      
-      print('✅ Infos recruteur chargées:');
-      print('   👤 Nom: $_recruteurName');
-      print('   📷 Photo path: $photoPath');
-      print('   📷 Photo URL: $_recruteurPhotoUrl');
-      print('   ⭐ Note: $_recruteurRating');
-    }
-  }
-
   // Helper pour convertir le chemin Windows en URL HTTP
   String? _convertPhotoPathToUrl(String? photoPath) {
     if (photoPath == null || photoPath.isEmpty) return null;
@@ -193,18 +165,32 @@ class _DetailMissionScreenState extends State<DetailMissionScreen> {
     
     // Si c'est un chemin local Windows avec "uploads", convertir en URL
     if (photoPath.contains('uploads')) {
-      final parts = photoPath.split('uploads');
-      if (parts.length > 1) {
-        String url = 'http://localhost:8080/uploads${parts[1]}';
-        // Remplacer les backslashes par des slashes pour l'URL
-        url = url.replaceAll('\\', '/');
+      String base = ApiConfig.baseUrl;
+      if (base.endsWith('/')) base = base.substring(0, base.length - 1);
+      
+      // Trouver l'index de "uploads" et extraire la partie après
+      final uploadsIndex = photoPath.indexOf('uploads');
+      if (uploadsIndex != -1) {
+        // Extraire la partie après "uploads" (incluant le slash ou backslash)
+        String relativePath = photoPath.substring(uploadsIndex + 'uploads'.length);
+        // Normaliser les séparateurs de chemin
+        relativePath = relativePath.replaceAll('\\', '/');
+        // S'assurer qu'on commence par un slash
+        if (!relativePath.startsWith('/')) {
+          relativePath = '/$relativePath';
+        }
+        // Construire l'URL complète
+        final url = '$base/uploads$relativePath';
+        print('🖼️ Conversion chemin: $photoPath -> $url');
         return url;
       }
     }
     
     // Si le chemin commence directement par "uploads", ajouter juste l'URL de base
     if (photoPath.startsWith('uploads')) {
-      String url = 'http://localhost:8080/$photoPath';
+      String base = ApiConfig.baseUrl;
+      if (base.endsWith('/')) base = base.substring(0, base.length - 1);
+      String url = '$base/$photoPath';
       url = url.replaceAll('\\', '/');
       return url;
     }
@@ -650,7 +636,10 @@ class _DetailMissionScreenState extends State<DetailMissionScreen> {
               onPressed: () {
                 Navigator.of(context).push(
                   MaterialPageRoute(
-                    builder: (context) => MotivationScreen(missionTitle: _missionData!.titre),
+                    builder: (context) => MotivationScreen(
+                      missionTitle: _missionData!.titre,
+                      missionId: widget.missionId,
+                    ),
                   ),
                 );
               },

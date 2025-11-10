@@ -7,6 +7,11 @@ import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart' as geocoding;
 import 'home_recruteur.dart';
 import 'detail_mission_recruteur.dart';
+import '../../services/mission_service.dart';
+import '../../config/api_config.dart';
+import 'package:intl/intl.dart';
+import '../../services/category_service.dart';
+import '../../models/category.dart';
 
 const Color primaryGreen = Color(0xFF10B981);
 const Color bodyBackgroundColor = Color(0xFFf6fcfc);
@@ -32,6 +37,9 @@ class _PublierMissionScreenState extends State<PublierMissionScreen> {
   TimeOfDay? _timeTo;
   String? _categorie;
   String? _validationBanner; // message d'avertissement (date/heure incohérentes)
+  bool _isSubmitting = false;
+  bool _isLoadingCategories = true;
+  List<Category> _categories = [];
 
   @override
   void initState() {
@@ -41,11 +49,26 @@ class _PublierMissionScreenState extends State<PublierMissionScreen> {
     _remunerationController.addListener(_onFieldChanged);
     _localisationController.addListener(_onFieldChanged);
     _competencesController.addListener(_onFieldChanged);
+    _loadCategories();
   }
 
-  final List<String> _categories = const [
-    'Ménage', 'Baby-sitting', 'Cuisine', 'Livraison', 'Événementiel', 'Autre'
-  ];
+  Future<void> _loadCategories() async {
+    try {
+      setState(() => _isLoadingCategories = true);
+      final cats = await CategoryService.getAllCategories();
+      setState(() {
+        _categories = cats;
+        _isLoadingCategories = false;
+      });
+    } catch (e) {
+      setState(() => _isLoadingCategories = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur chargement catégories: $e')),
+      );
+    }
+  }
+
+  List<String> get _categoryNames => _categories.map((c) => c.nom).toList();
 
   @override
   void dispose() {
@@ -207,7 +230,14 @@ class _PublierMissionScreenState extends State<PublierMissionScreen> {
                   ),
                 const SizedBox(height: 10),
 
-                _buildDropdownField(
+                _isLoadingCategories
+                    ? Center(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          child: SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: primaryGreen, strokeWidth: 2)),
+                        ),
+                      )
+                    : _buildDropdownField(
                   value: _categorie,
                   hint: 'Catégorie',
                   onChanged: (v) => setState(() => _categorie = v),
@@ -223,13 +253,15 @@ class _PublierMissionScreenState extends State<PublierMissionScreen> {
                 SizedBox(
                   height: 46,
                   child: ElevatedButton(
-                    onPressed: _submit,
+                    onPressed: _isSubmitting ? null : _submit,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: isValid ? primaryGreen : Colors.grey,
+                      backgroundColor: isValid && !_isSubmitting ? primaryGreen : Colors.grey,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
                       elevation: 3,
                     ),
-                    child: Text(
+                    child: _isSubmitting
+                        ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                        : Text(
                       'Publier la mission',
                       style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600),
                     ),
@@ -437,7 +469,7 @@ class _PublierMissionScreenState extends State<PublierMissionScreen> {
           isExpanded: true,
           value: value,
           hint: Text(hint, style: GoogleFonts.poppins(color: Colors.black54)),
-          items: _categories.map((c) => DropdownMenuItem(value: c, child: Text(c, style: GoogleFonts.poppins()))).toList(),
+          items: _categoryNames.map((c) => DropdownMenuItem(value: c, child: Text(c, style: GoogleFonts.poppins()))).toList(),
           onChanged: onChanged,
           icon: const Icon(Icons.expand_more),
         ),
@@ -446,9 +478,60 @@ class _PublierMissionScreenState extends State<PublierMissionScreen> {
   }
 
   void _submit() {
-    if (_validateFormAndShowErrors()) {
+    _publishMission();
+  }
+
+  Future<void> _publishMission() async {
+    if (!_validateFormAndShowErrors()) return;
+    try {
+      setState(() => _isSubmitting = true);
+
+      final payload = _buildApiPayload();
+      final result = await MissionService.createMission(payload);
+
+      if (result.success) {
       _showPublishSuccessDialog();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Publication échouée: ${result.message}')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur publication: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
     }
+  }
+
+  Map<String, dynamic> _buildApiPayload() {
+    final dateFmt = DateFormat('yyyy-MM-dd');
+    String? heureDebut;
+    String? heureFin;
+    if (_isSameDay(_dateDebut!, _dateFin!)) {
+      if (_timeFrom != null) {
+        heureDebut = _formatTime(_timeFrom!);
+      }
+      if (_timeTo != null) {
+        heureFin = _formatTime(_timeTo!);
+      }
+    }
+
+    return <String, dynamic>{
+      'titre': _titleController.text.trim(),
+      'description': _descriptionController.text.trim(),
+      'dateDebut': dateFmt.format(_dateDebut!),
+      'dateFin': dateFmt.format(_dateFin!),
+      'exigence': _competencesController.text.trim(),
+      'remuneration': double.tryParse(_remunerationController.text.trim()) ?? 0,
+      if (heureDebut != null) 'heureDebut': heureDebut,
+      if (heureFin != null) 'heureFin': heureFin,
+      'categorieNom': _categorie!,
+      if (_selectedLatLng != null) 'latitude': _selectedLatLng!.latitude,
+      if (_selectedLatLng != null) 'longitude': _selectedLatLng!.longitude,
+      if (_localisationController.text.trim().isNotEmpty) 'adresse': _localisationController.text.trim(),
+    };
   }
 
   void _resetForm() {

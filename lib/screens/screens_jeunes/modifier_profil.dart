@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
+import 'dart:typed_data';
+import '../../services/profile_service.dart';
+import '../../config/api_config.dart';
+import '../../services/token_service.dart';
 
 // Réutilise l'image de header et le style général des autres écrans
 const Color bodyBackgroundColor = Color(0xFFf6fcfc);
@@ -19,6 +24,7 @@ class ModifierProfilScreen extends StatefulWidget {
   final String initialCompetences;
   final String fullName;
   final String role;
+  final String initialPhotoUrl;
 
   const ModifierProfilScreen({
     super.key,
@@ -31,6 +37,7 @@ class ModifierProfilScreen extends StatefulWidget {
     required this.initialCompetences,
     required this.fullName,
     required this.role,
+    required this.initialPhotoUrl,
   });
 
   @override
@@ -47,9 +54,12 @@ class _ModifierProfilScreenState extends State<ModifierProfilScreen> {
   late final TextEditingController locationController;
   late final TextEditingController dateNaissanceController;
   late final TextEditingController competencesController;
-  late final List<String> _allCompetences;
+  List<String> _allCompetences = [];
   late final Set<String> _selectedCompetences;
   DateTime? _selectedDate;
+  bool _isSaving = false;
+  bool _isDirty = false;
+  late String _initialPhotoUrl;
 
   @override
   void initState() {
@@ -61,20 +71,16 @@ class _ModifierProfilScreenState extends State<ModifierProfilScreen> {
     locationController = TextEditingController(text: widget.initialLocation);
     dateNaissanceController = TextEditingController(text: widget.initialDateNaissance);
     competencesController = TextEditingController(text: widget.initialCompetences);
-    _allCompetences = const [
-      'Livraisons',
-      'Cuisine',
-      'Evenementiel',
-      'Serveuse',
-      'Baby-sitting',
-      'Ménage',
-      'Vente de Magasin',
-    ];
+    _allCompetences = [];
     _selectedCompetences = widget.initialCompetences
         .split(',')
         .map((e) => e.trim())
         .where((e) => e.isNotEmpty)
         .toSet();
+    _initialPhotoUrl = widget.initialPhotoUrl;
+
+    _loadCompetences();
+    _setupDirtyTracking();
   }
 
   @override
@@ -163,9 +169,9 @@ class _ModifierProfilScreenState extends State<ModifierProfilScreen> {
                         width: double.infinity,
                         height: 44,
                         child: ElevatedButton(
-                          onPressed: _onSave,
+                          onPressed: (_isDirty && !_isSaving) ? _onSave : null,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: primaryGreen,
+                            backgroundColor: (_isDirty && !_isSaving) ? primaryGreen : Colors.grey,
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
                             elevation: 0,
                           ),
@@ -250,9 +256,11 @@ class _ModifierProfilScreenState extends State<ModifierProfilScreen> {
                   children: [
                     CircleAvatar(
                       radius: 50,
-                      backgroundImage: _profileImage == null
-                          ? const AssetImage('assets/images/image_profil.png') as ImageProvider
-                          : FileImage(File(_profileImage!.path)),
+                      backgroundImage: _profileImage != null
+                          ? FileImage(File(_profileImage!.path))
+                          : (widget.initialPhotoUrl.isNotEmpty
+                              ? NetworkImage(widget.initialPhotoUrl)
+                              : const AssetImage('') as ImageProvider),
                     ),
                     Positioned(
                       right: 0,
@@ -489,8 +497,43 @@ class _ModifierProfilScreenState extends State<ModifierProfilScreen> {
           ..clear()
           ..addAll(result);
         competencesController.text = _selectedCompetences.join(', ');
+        _isDirty = true;
       });
     }
+  }
+
+  Future<void> _loadCompetences() async {
+    try {
+      final items = await ProfileService.getCompetences();
+      final names = <String>[];
+      for (final m in items) {
+        final nom = (m['nom'] ?? m['libelle'] ?? m['name'] ?? '').toString();
+        if (nom.trim().isNotEmpty) names.add(nom.trim());
+      }
+      if (mounted) {
+        setState(() {
+          _allCompetences = names;
+        });
+      }
+    } catch (_) {
+      // en cas d'erreur on laisse la liste vide
+    }
+  }
+
+  void _setupDirtyTracking() {
+    void markDirty() {
+      if (!_isDirty) {
+        setState(() {
+          _isDirty = true;
+        });
+      }
+    }
+    prenomController.addListener(markDirty);
+    nomController.addListener(markDirty);
+    emailController.addListener(markDirty);
+    phoneController.addListener(markDirty);
+    locationController.addListener(markDirty);
+    dateNaissanceController.addListener(markDirty);
   }
 
   Widget _dateField() {
@@ -555,14 +598,147 @@ class _ModifierProfilScreenState extends State<ModifierProfilScreen> {
     );
   }
 
-  void _onSave() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Profil mis à jour', style: GoogleFonts.poppins()),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-    Navigator.of(context).pop();
+  Future<void> _onSave() async {
+    if (_isSaving) return;
+    setState(() {
+      _isSaving = true;
+    });
+
+    try {
+      // Conversion date dd/MM/yyyy -> yyyy-MM-dd
+      String dobFormatted = '';
+      final rawDob = dateNaissanceController.text.trim();
+      if (rawDob.isNotEmpty) {
+        final parts = rawDob.split('/');
+        if (parts.length == 3) {
+          final d = parts[0].padLeft(2, '0');
+          final m = parts[1].padLeft(2, '0');
+          final y = parts[2];
+          dobFormatted = '$y-$m-$d';
+        } else {
+          dobFormatted = rawDob; // fallback
+        }
+      }
+
+      // Champs texte
+      final Map<String, String> fields = {
+        'prenom': prenomController.text.trim(),
+        'nom': nomController.text.trim(),
+        'email': emailController.text.trim(),
+        'telephone': phoneController.text.trim(),
+        'adresse': locationController.text.trim(),
+        if (dobFormatted.isNotEmpty) 'dateNaissance': dobFormatted,
+        if (_selectedCompetences.isNotEmpty) 'competences': _selectedCompetences.join(', '),
+      };
+
+      // Préparer l'upload photo (web/mobile)
+      Uint8List? photoBytes;
+      String? photoFilename;
+      File? photoFile;
+      if (_profileImage != null) {
+        photoFilename = _profileImage!.name;
+        if (kIsWeb) {
+          photoBytes = await _profileImage!.readAsBytes();
+        } else {
+          photoFile = File(_profileImage!.path);
+        }
+      }
+
+      await ProfileService.updateMonProfil(
+        fields: fields,
+        photoProfil: photoFile,
+        photoBytes: photoBytes,
+        photoFilename: photoFilename,
+      );
+      // Récupérer le profil mis à jour pour renvoyer les données sans recharger
+      Map<String, dynamic> updated = {};
+      try {
+        final resp = await ProfileService.getMonProfil();
+        final data = resp['data'] as Map<String, dynamic>?;
+        if (data != null) {
+          final prenom = (data['prenom'] ?? (data['user'] is Map ? data['user']['prenom'] : null))?.toString() ?? prenomController.text.trim();
+          final nom = (data['nom'] ?? (data['user'] is Map ? data['user']['nom'] : null))?.toString() ?? nomController.text.trim();
+          String newFullName = [prenom, nom].where((e) => e.toString().trim().isNotEmpty).join(' ').trim();
+          if (newFullName.isEmpty) {
+            newFullName = widget.fullName;
+          }
+          String newEmail = (data['email'] ?? (data['user'] is Map ? data['user']['email'] : null))?.toString() ?? emailController.text.trim();
+          String newPhone = (data['telephone'] ?? (data['user'] is Map ? (data['user']['telephone'] ?? data['user']['phone']) : null))?.toString() ?? phoneController.text.trim();
+          String newAdresse = data['adresse']?.toString() ?? locationController.text.trim();
+          String newDob = data['dateNaissance']?.toString() ?? dobFormatted;
+          if (newDob.contains('-')) {
+            final parts = newDob.split('-');
+            if (parts.length == 3) {
+              newDob = '${parts[2].padLeft(2, '0')}/${parts[1].padLeft(2, '0')}/${parts[0]}';
+            }
+          }
+          String newComp = '';
+          final rawComp = data['competences'];
+          if (rawComp is List) {
+            if (rawComp.isNotEmpty && rawComp.first is Map) {
+              final list = rawComp.map((e) {
+                final m = e as Map;
+                return (m['nom'] ?? m['libelle'] ?? m['name'] ?? '').toString();
+              }).where((s) => s.trim().isNotEmpty).toList();
+              newComp = list.join(' , ');
+            } else {
+              final list = rawComp.map((e) => e.toString()).toList();
+              newComp = list.join(' , ');
+            }
+          } else if (rawComp != null) {
+            newComp = rawComp.toString().replaceAll('[', '').replaceAll(']', '');
+          }
+          // Photo
+          final rawPhoto = data['photo'] ?? data['urlPhoto'];
+          String tempPhoto = '';
+          if (rawPhoto is Map) {
+            tempPhoto = (rawPhoto['url'] ?? rawPhoto['path'] ?? rawPhoto['value'] ?? '').toString();
+          } else if (rawPhoto != null) {
+            tempPhoto = rawPhoto.toString();
+          }
+          final newPhoto = _convertPhotoPathToUrl(tempPhoto) ?? tempPhoto;
+
+          updated = {
+            'prenom': prenom,
+            'nom': nom,
+            'fullName': newFullName,
+            'email': newEmail,
+            'telephone': newPhone,
+            'adresse': newAdresse,
+            'dateNaissance': newDob,
+            'competences': newComp,
+            'photoUrl': newPhoto,
+          };
+
+          // Persister le nom complet pour que Home l'affiche immédiatement
+          await TokenService.saveUserName(newFullName);
+        }
+      } catch (_) {}
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Profil mis à jour', style: GoogleFonts.poppins()),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      Navigator.of(context).pop(updated.isNotEmpty ? updated : true);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erreur lors de la mise à jour: $e', style: GoogleFonts.poppins()),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+        });
+      }
+    }
   }
 
   void _showImageSourceDialog() {
@@ -579,7 +755,10 @@ class _ModifierProfilScreenState extends State<ModifierProfilScreen> {
                   Navigator.of(ctx).pop();
                   final picked = await _picker.pickImage(source: ImageSource.camera);
                   if (picked != null) {
-                    setState(() => _profileImage = picked);
+                    setState(() {
+                      _profileImage = picked;
+                      _isDirty = true;
+                    });
                   }
                 },
               ),
@@ -590,7 +769,10 @@ class _ModifierProfilScreenState extends State<ModifierProfilScreen> {
                   Navigator.of(ctx).pop();
                   final picked = await _picker.pickImage(source: ImageSource.gallery);
                   if (picked != null) {
-                    setState(() => _profileImage = picked);
+                    setState(() {
+                      _profileImage = picked;
+                      _isDirty = true;
+                    });
                   }
                 },
               ),
@@ -599,6 +781,36 @@ class _ModifierProfilScreenState extends State<ModifierProfilScreen> {
         );
       },
     );
+  }
+
+  // Convertit un chemin local (ex: C:\\...\\uploads\\...) en URL HTTP complète
+  String? _convertPhotoPathToUrl(String? photoPath) {
+    if (photoPath == null || photoPath.isEmpty) return null;
+    if (photoPath.startsWith('http://') || photoPath.startsWith('https://')) {
+      return photoPath;
+    }
+    if (photoPath.contains('uploads')) {
+      String base = ApiConfig.baseUrl;
+      if (base.endsWith('/')) base = base.substring(0, base.length - 1);
+      final uploadsIndex = photoPath.indexOf('uploads');
+      if (uploadsIndex != -1) {
+        String relativePath = photoPath.substring(uploadsIndex + 'uploads'.length);
+        relativePath = relativePath.replaceAll('\\', '/');
+        if (!relativePath.startsWith('/')) {
+          relativePath = '/$relativePath';
+        }
+        final url = '$base/uploads$relativePath';
+        return url;
+      }
+    }
+    if (photoPath.startsWith('uploads')) {
+      String base = ApiConfig.baseUrl;
+      if (base.endsWith('/')) base = base.substring(0, base.length - 1);
+      String url = '$base/$photoPath';
+      url = url.replaceAll('\\', '/');
+      return url;
+    }
+    return null;
   }
 }
 

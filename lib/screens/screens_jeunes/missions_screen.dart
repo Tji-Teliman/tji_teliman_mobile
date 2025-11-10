@@ -126,10 +126,10 @@ class _MissionsScreenState extends State<MissionsScreen> {
     if (_selectedCategoryIndex > 0 && _categoryNames.isNotEmpty) {
       final selectedCategoryName = _categoryNames[_selectedCategoryIndex];
       // Filtrer par nom de catégorie (comparaison insensible à la casse)
-      filtered = filtered.where((mission) => 
+        filtered = filtered.where((mission) => 
         mission.categorieNom.toLowerCase() == selectedCategoryName.toLowerCase() ||
         mission.categorieNom.toLowerCase().contains(selectedCategoryName.toLowerCase())
-      ).toList();
+        ).toList();
     }
 
     // Filtre par recherche
@@ -215,7 +215,7 @@ class _MissionsScreenState extends State<MissionsScreen> {
       final aStart = _getMissionStartDateTime(a);
       final bStart = _getMissionStartDateTime(b);
       if (aStart == null || bStart == null) return 0;
-      return aStart.compareTo(bStart);
+        return aStart.compareTo(bStart);
     });
 
     return urgentMissions.take(3).toList();
@@ -227,7 +227,7 @@ class _MissionsScreenState extends State<MissionsScreen> {
 }
 
   // Obtenir le texte d'urgence selon le temps restant avec "RESTANTE"
-  String _getUrgencyText(Mission mission) {
+ String _getUrgencyText(Mission mission) {
     final startDateTime = _getMissionStartDateTime(mission);
     if (startDateTime == null) {
       return 'DATE INVALIDE';
@@ -247,7 +247,7 @@ class _MissionsScreenState extends State<MissionsScreen> {
     } else {
       return 'MAINTENANT';
     }
-  }
+}
 
 
   // Fonction pour naviguer vers la page de détail d'une mission
@@ -390,21 +390,21 @@ class _MissionsScreenState extends State<MissionsScreen> {
                               ),
                             )
                           : SingleChildScrollView(
-                              scrollDirection: Axis.horizontal,
-                              child: Row(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
                                 children: List.generate(_categoryNames.length, (index) {
-                                  final bool isSelected = index == _selectedCategoryIndex;
-                                  return Padding(
-                                    padding: const EdgeInsets.only(right: 8.0),
-                                    child: _TagButton(
+                            final bool isSelected = index == _selectedCategoryIndex;
+                            return Padding(
+                              padding: const EdgeInsets.only(right: 8.0),
+                              child: _TagButton(
                                       label: _categoryNames[index],
-                                      color: isSelected ? primaryGreen : darkGrey,
-                                      onTap: () => _selectCategory(index),
-                                    ),
-                                  );
-                                }),
+                                color: isSelected ? primaryGreen : darkGrey,
+                                onTap: () => _selectCategory(index),
                               ),
-                            ),
+                            );
+                          }),
+                        ),
+                      ),
                       
                       const SizedBox(height: 20),
                       
@@ -638,16 +638,16 @@ class _DefaultMissionCard extends StatelessWidget {
         const SizedBox(width: 5),
         useExpanded
             ? Expanded(
-                child: Text(
-                  text,
-                  style: GoogleFonts.poppins(
-                    fontSize: 13,
-                    color: isPrice ? primaryBlue : darkGrey,
-                    fontWeight: isPrice ? FontWeight.bold : FontWeight.normal,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                  maxLines: 1,
-                ),
+          child: Text(
+          text,
+          style: GoogleFonts.poppins(
+              fontSize: 13,
+            color: isPrice ? primaryBlue : darkGrey,
+            fontWeight: isPrice ? FontWeight.bold : FontWeight.normal,
+            ),
+            overflow: TextOverflow.ellipsis,
+            maxLines: 1,
+          ),
               )
             : Text(
                 text,
@@ -658,7 +658,7 @@ class _DefaultMissionCard extends StatelessWidget {
                 ),
                 overflow: TextOverflow.ellipsis,
                 maxLines: 1,
-              ),
+        ),
       ],
     );
   }
@@ -726,8 +726,8 @@ Widget build(BuildContext context) {
             ),
             // Durée: Icône de temps remplie (droite)
             _buildInfoRow(
-              icon: Icons.access_time_filled, 
-              text: mission.formattedDuree, 
+                icon: Icons.access_time_filled, 
+                text: mission.formattedDuree, 
               isPrice: false,
               useExpanded: false,
             ),
@@ -751,8 +751,8 @@ Widget build(BuildContext context) {
             ),
             // Date Fin: Icône Calendrier (droite)
             _buildInfoRow(
-              icon: Icons.calendar_today_outlined, 
-              text: 'Au ${mission.formattedDateFin}', 
+                icon: Icons.calendar_today_outlined, 
+                text: 'Au ${mission.formattedDateFin}', 
               isPrice: false,
               useExpanded: false,
             ),

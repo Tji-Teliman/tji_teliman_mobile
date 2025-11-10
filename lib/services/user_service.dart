@@ -15,6 +15,8 @@ class UserService {
   
   // Endpoint commun pour la notation
   static const String _moyenneNotationEndpoint = '/api/notations/moyenne';
+  // Endpoint pour les candidatures du jeune
+  static const String _mesCandidaturesEndpoint = '/api/candidatures/mes-candidatures';
 
   // =============================================
   // MÉTHODES POUR LES JEUNES
@@ -49,6 +51,148 @@ class UserService {
       }
     } else {
       throw Exception('Erreur lors de la récupération des missions accomplies: ${response.statusCode}');
+    }
+  }
+
+  // Pour les RECRUTEURS : Récupérer le profil d'une candidature
+  static Future<Map<String, dynamic>> getProfilCandidature(int candidatureId) async {
+    final token = await TokenService.getToken();
+    final url = Uri.parse('${ApiConfig.baseUrl}/api/candidatures/$candidatureId/profil');
+
+    final response = await http.get(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        if (token != null) 'Authorization': 'Bearer $token',
+      },
+    );
+
+    print('🧾 RECRUTEUR - Profil candidature $candidatureId');
+    print('📥 Status: ${response.statusCode}');
+    print('📥 Body: ${response.body}');
+
+    try {
+      final decoded = json.decode(response.body);
+      if (response.statusCode == 200) {
+        if (decoded is Map<String, dynamic> && decoded['success'] == true) {
+          final data = decoded['data'];
+          if (data is Map<String, dynamic>) return data;
+          return <String, dynamic>{};
+        }
+        String msg = 'Erreur lors de la récupération du profil';
+        if (decoded is Map<String, dynamic>) {
+          if (decoded['message'] is String) msg = decoded['message'];
+          else if (decoded['error'] is String) msg = decoded['error'];
+        }
+        throw Exception(msg);
+      } else {
+        String msg = 'Erreur ${response.statusCode}';
+        if (decoded is Map<String, dynamic>) {
+          if (decoded['message'] is String && (decoded['message'] as String).trim().isNotEmpty) {
+            msg = decoded['message'];
+          } else if (decoded['error'] is String && (decoded['error'] as String).trim().isNotEmpty) {
+            msg = decoded['error'];
+          }
+        }
+        throw Exception(msg);
+      }
+    } catch (e) {
+      if (e is Exception) rethrow;
+      throw Exception('Erreur lors du traitement du profil: $e');
+    }
+  }
+
+  // Pour les JEUNES : Récupérer les candidatures du jeune connecté
+  static Future<List<Map<String, dynamic>>> getMesCandidatures() async {
+    final token = await TokenService.getToken();
+
+    final response = await http.get(
+      Uri.parse('${ApiConfig.baseUrl}$_mesCandidaturesEndpoint'),
+      headers: {
+        'Content-Type': 'application/json',
+        if (token != null) 'Authorization': 'Bearer $token',
+      },
+    );
+
+    print('🎯 JEUNE - Récupération de mes candidatures');
+    print('📥 Status: ${response.statusCode}');
+    print('📥 Body: ${response.body}');
+
+    try {
+      final decoded = json.decode(response.body);
+      if (response.statusCode == 200) {
+        if (decoded is Map<String, dynamic> && decoded['success'] == true) {
+          final data = decoded['data'];
+          if (data is List) {
+            return data.cast<Map<String, dynamic>>();
+          }
+          return <Map<String, dynamic>>[];
+        }
+        // Si success=false, tenter d'extraire le message
+        String msg = 'Erreur lors de la récupération des candidatures';
+        if (decoded is Map<String, dynamic>) {
+          if (decoded['message'] is String) msg = decoded['message'];
+          else if (decoded['error'] is String) msg = decoded['error'];
+        }
+        throw Exception(msg);
+      } else {
+        String msg = 'Erreur ${response.statusCode}';
+        if (decoded is Map<String, dynamic>) {
+          if (decoded['message'] is String && (decoded['message'] as String).trim().isNotEmpty) {
+            msg = decoded['message'];
+          } else if (decoded['error'] is String && (decoded['error'] as String).trim().isNotEmpty) {
+            msg = decoded['error'];
+          }
+        }
+        throw Exception(msg);
+      }
+    } catch (e) {
+      if (e is Exception) rethrow;
+      throw Exception('Erreur lors du traitement des candidatures: $e');
+    }
+  }
+
+  // Pour les RECRUTEURS : Récupérer les candidatures d'une mission donnée
+  static Future<List<Map<String, dynamic>>> getCandidaturesParMission(int missionId) async {
+    final token = await TokenService.getToken();
+    final url = Uri.parse('${ApiConfig.baseUrl}/api/candidatures/mission/$missionId');
+
+    final response = await http.get(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        if (token != null) 'Authorization': 'Bearer $token',
+      },
+    );
+
+    print('🎯 RECRUTEUR - Candidatures pour mission $missionId');
+    print('📥 Status: ${response.statusCode}');
+    print('📥 Body: ${response.body}');
+
+    try {
+      final decoded = json.decode(response.body);
+      if (response.statusCode == 200) {
+        if (decoded is List) {
+          return decoded.cast<Map<String, dynamic>>();
+        }
+        if (decoded is Map<String, dynamic> && decoded['data'] is List) {
+          return (decoded['data'] as List).cast<Map<String, dynamic>>();
+        }
+        return <Map<String, dynamic>>[];
+      } else {
+        String msg = 'Erreur ${response.statusCode}';
+        if (decoded is Map<String, dynamic>) {
+          if (decoded['message'] is String && (decoded['message'] as String).trim().isNotEmpty) {
+            msg = decoded['message'];
+          } else if (decoded['error'] is String && (decoded['error'] as String).trim().isNotEmpty) {
+            msg = decoded['error'];
+          }
+        }
+        throw Exception(msg);
+      }
+    } catch (e) {
+      if (e is Exception) rethrow;
+      throw Exception('Erreur lors du traitement des candidatures: $e');
     }
   }
 
@@ -133,6 +277,69 @@ class UserService {
     } else {
       throw Exception('Erreur lors de la récupération de la moyenne: ${response.statusCode}');
     }
+  }
+
+  // Candidature à une mission (JEUNE)
+  static Future<bool> postulerMission({required int missionId, String? motivation}) async {
+    final token = await TokenService.getToken();
+    final url = Uri.parse('${ApiConfig.baseUrl}/api/candidatures/mission/$missionId');
+
+    final headers = <String, String>{
+      'Content-Type': 'application/json',
+      if (token != null) 'Authorization': 'Bearer $token',
+    };
+
+    final Map<String, dynamic> payload = {};
+    if (motivation != null && motivation.trim().isNotEmpty) {
+      payload['motivationContenu'] = motivation.trim();
+    }
+
+    final response = await http.post(
+      url,
+      headers: headers,
+      body: json.encode(payload),
+    );
+
+    print('📨 Candidature mission $missionId envoyée');
+    print('📥 Status: ${response.statusCode}');
+    print('📥 Body: ${response.body}');
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return true;
+    }
+    // Tenter d'extraire un message d'erreur pertinent depuis le backend
+    String errorMessage = 'Erreur lors de la candidature: ${response.statusCode}';
+    try {
+      final decoded = json.decode(response.body);
+      // Cas communs: { message: "..." } ou { error: "..." } ou { errors: [...] / {field: [msg]} }
+      if (decoded is Map<String, dynamic>) {
+        if (decoded['message'] is String && (decoded['message'] as String).trim().isNotEmpty) {
+          errorMessage = decoded['message'];
+        } else if (decoded['error'] is String && (decoded['error'] as String).trim().isNotEmpty) {
+          errorMessage = decoded['error'];
+        } else if (decoded['errors'] != null) {
+          final errs = decoded['errors'];
+          if (errs is List) {
+            // Joindre les erreurs de type liste
+            errorMessage = errs.map((e) => e.toString()).join('\n');
+          } else if (errs is Map) {
+            // Concaténer les messages par champ
+            final parts = <String>[];
+            errs.forEach((key, val) {
+              if (val is List) {
+                parts.add('$key: ' + val.map((e) => e.toString()).join(', '));
+              } else {
+                parts.add('$key: ${val.toString()}');
+              }
+            });
+            if (parts.isNotEmpty) errorMessage = parts.join('\n');
+          }
+        }
+      }
+    } catch (_) {
+      // Si parsing échoue, conserver le message par défaut
+    }
+    throw Exception(errorMessage);
   }
 
   // Récupérer les informations de l'utilisateur connecté

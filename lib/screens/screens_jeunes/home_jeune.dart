@@ -21,6 +21,7 @@ import 'profil_jeune.dart';
 // Import des services
 import '../../../services/user_service.dart';
 import '../../../services/token_service.dart';
+import '../../../services/profile_service.dart';
 
 // --- COULEURS UTILISÉES DANS LE DESIGN ---
 const Color primaryGreen = Color(0xFF10B981); // Vert principal du logo/home
@@ -56,6 +57,11 @@ class _HomeJeuneScreenState extends State<HomeJeuneScreen> {
   void initState() {
     super.initState();
     _loadUserData();
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
   }
 
   // Charger les données de l'utilisateur depuis le backend
@@ -95,10 +101,36 @@ if (missionsResponse.success) {
         note = "0.0/5";
       }
 
-      print('✅ Données chargées avec succès');
-      print('   👤 Nom: $userName');
-      print('   📊 Missions: $missionsAccomplies');
-      print('   ⭐ Note: $note');
+      // Vérifier la complétion du profil côté backend
+      try {
+        final profil = await ProfileService.getMonProfil();
+        final data = profil['data'] as Map<String, dynamic>?;
+        bool complete = false;
+        if (data != null) {
+          // Photo (String ou Map avec url/path)
+          final rawPhoto = data['photo'] ?? data['urlPhoto'];
+          String photoStr = '';
+          if (rawPhoto is Map) {
+            photoStr = (rawPhoto['url'] ?? rawPhoto['path'] ?? rawPhoto['value'] ?? '').toString();
+          } else if (rawPhoto != null) {
+            photoStr = rawPhoto.toString();
+          }
+          final hasPhoto = photoStr.trim().isNotEmpty;
+
+          // Date de naissance
+          final hasDob = data['dateNaissance']?.toString().isNotEmpty == true;
+
+          // Adresse
+          final hasAdresse = data['adresse']?.toString().isNotEmpty == true;
+
+          // Alerte disparaît si AU MOINS l'un des deux est présent: photo OU dateNaissance
+          complete = hasPhoto || hasDob;
+        }
+        _showProfileAlert = !complete;
+      } catch (e) {
+        // En cas d'erreur backend, on laisse l'alerte affichée
+        _showProfileAlert = true;
+      }
 
     } catch (e) {
       print('❌ Erreur lors du chargement des données: $e');
@@ -291,8 +323,8 @@ if (missionsResponse.success) {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    // Alerte FIXE (hors zone scrollable)
-                    if (_showProfileAlert)
+                    // Alerte FIXE (hors zone scrollable) — masquée pendant le chargement
+                    if (_showProfileAlert && !_isLoading)
                       Padding(
                         padding: const EdgeInsets.only(bottom: 10.0),
                         child: _buildProfileAlert(),

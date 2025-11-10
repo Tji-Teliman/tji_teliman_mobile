@@ -3,9 +3,11 @@ import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
 import '../models/mission.dart';
 import '../models/mission_detail_response.dart';
+import 'token_service.dart';
 
 class MissionService {
   static const String _allMissionsEndpoint = '/api/missions/en-attente';
+  static const String _createMissionEndpoint = '/api/missions/creer';
 
   // Récupérer toutes les missions en attente
   static Future<List<Mission>> getAllMissions() async {
@@ -75,6 +77,37 @@ class MissionService {
       }
     } catch (e) {
       print('❌ Erreur lors de la récupération de la mission: $e');
+      rethrow;
+    }
+  }
+
+  // Créer une mission (recruteur)
+  static Future<MissionDetailResponse> createMission(Map<String, dynamic> payload) async {
+    try {
+      print('📡 Publication de la mission...');
+      print('📤 Payload: $payload');
+
+      final token = await TokenService.getToken();
+      final response = await http.post(
+        Uri.parse('${ApiConfig.baseUrl}$_createMissionEndpoint'),
+        headers: {
+          'Content-Type': 'application/json',
+          if (token != null) 'Authorization': 'Bearer $token',
+        },
+        body: json.encode(payload),
+      );
+
+      print('📥 Réponse création - Status: ${response.statusCode}');
+      print('📥 Body création: ${response.body}');
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final jsonResponse = json.decode(response.body);
+        return MissionDetailResponse.fromJson(jsonResponse);
+      } else {
+        throw Exception('Erreur lors de la création: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('❌ Erreur publication mission: $e');
       rethrow;
     }
   }

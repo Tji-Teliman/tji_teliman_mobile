@@ -6,6 +6,10 @@ import 'message_conversation_recruteur.dart';
 import 'home_recruteur.dart';
 import 'missions_recruteur.dart';
 import 'modifier_profil_recruteur.dart';
+import '../../services/profile_service.dart';
+import '../../services/user_service.dart';
+import '../../services/token_service.dart';
+import '../../config/api_config.dart';
 
 // Couleurs utilisées
 const Color primaryBlue = Color(0xFF2563EB);
@@ -25,16 +29,124 @@ class _ProfilRecruteurScreenState extends State<ProfilRecruteurScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   int _selectedIndex = 2; // Onglet Profil
 
-  // Données fictives conformes à la maquette
-  final String fullName = 'Amadou Bakagoyo !';
-  final String role = 'Recruteur';
-  final String email = 'amadou.bakagoyo@gmail.com';
-  final String phone = '+223 72 70 66 47';
-  final String location = 'Bamako, Garantibougou';
-  final String profession = 'Entrepreneur';
-  final String dateNaissance = '15/06/1985';
-  final int missionsPubliees = 12;
-  final String note = '4.8/5';
+  // Données dynamiques
+  String fullName = '';
+  String role = 'Recruteur';
+  String email = '';
+  String phone = '';
+  String location = '';
+  String profession = '';
+  String dateNaissance = '';
+  String prenom = '';
+  String nom = '';
+  int missionsPubliees = 0;
+  String note = '0.0/5';
+  String photoUrl = '';
+  bool _isEntreprise = false;
+  String nomEntreprise = '';
+  String secteurActivite = '';
+  String emailEntreprise = '';
+  String siteWeb = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfil();
+  }
+
+  Future<void> _loadProfil() async {
+    try {
+      final storedName = await TokenService.getUserName();
+      if (storedName != null && storedName.isNotEmpty) {
+        fullName = storedName;
+      }
+
+      final profil = await ProfileService.getMonProfil();
+      final data = profil['data'] as Map<String, dynamic>?;
+      if (data != null) {
+        final type = (data['typeRecruteur'] ?? '').toString().toUpperCase().trim();
+        _isEntreprise = type == 'ENTREPRISE';
+
+        final p = data['prenom']?.toString();
+        final n = data['nom']?.toString();
+        prenom = (p ?? '').trim();
+        nom = (n ?? '').trim();
+        final combined = [prenom, nom].where((e) => (e).toString().trim().isNotEmpty).join(' ').trim();
+        if (_isEntreprise) {
+          nomEntreprise = data['nomEntreprise']?.toString() ?? nomEntreprise;
+          if ((nomEntreprise).trim().isNotEmpty) {
+            fullName = nomEntreprise;
+            role = 'Entreprise';
+          } else if (combined.isNotEmpty) {
+            fullName = combined;
+          }
+        } else {
+          if (combined.isNotEmpty) fullName = combined;
+          role = 'Recruteur';
+        }
+
+        // Photo (urlPhoto ou photo Map)
+        final rawPhoto = data['photo'] ?? data['urlPhoto'];
+        String tempPhoto = '';
+        if (rawPhoto is Map) {
+          tempPhoto = (rawPhoto['url'] ?? rawPhoto['path'] ?? rawPhoto['value'] ?? '').toString();
+        } else if (rawPhoto != null) {
+          tempPhoto = rawPhoto.toString();
+        }
+        final converted = _convertPhotoPathToUrl(tempPhoto);
+        photoUrl = _isEntreprise ? '' : (converted ?? tempPhoto);
+
+        emailEntreprise = data['emailEntreprise']?.toString() ?? emailEntreprise;
+        siteWeb = data['siteWeb']?.toString() ?? siteWeb;
+        secteurActivite = data['secteurActivite']?.toString() ?? secteurActivite;
+
+        email = _isEntreprise
+            ? (emailEntreprise.isNotEmpty ? emailEntreprise : (data['email'] ?? data['userEmail'])?.toString() ?? email)
+            : (data['email'] ?? data['userEmail'])?.toString() ?? email;
+        phone = (data['telephone'] ?? data['userPhone'])?.toString() ?? phone;
+        location = data['adresse']?.toString() ?? location;
+
+        // dateNaissance backend yyyy-MM-dd -> dd/MM/yyyy
+        final dob = data['dateNaissance']?.toString();
+        if (dob != null && dob.contains('-')) {
+          final parts = dob.split('-');
+          if (parts.length == 3) {
+            dateNaissance = '${parts[2].padLeft(2, '0')}/${parts[1].padLeft(2, '0')}/${parts[0]}';
+          } else {
+            dateNaissance = dob;
+          }
+        } else {
+          dateNaissance = dob ?? dateNaissance;
+        }
+        if (!_isEntreprise) {
+          profession = data['profession']?.toString() ?? profession;
+        }
+      }
+
+      // Statistiques
+      try {
+        final missionsResponse = await UserService.getMesMissions();
+        if (missionsResponse.success) {
+          missionsPubliees = missionsResponse.data.length;
+        }
+      } catch (_) {}
+      try {
+        final notationResponse = await UserService.getMoyenneNotation();
+        if (notationResponse.success && notationResponse.data != null) {
+          final moyenne = notationResponse.data!.moyenne;
+          note = "${moyenne.toStringAsFixed(1)}/5";
+        } else {
+          note = "0.0/5";
+        }
+      } catch (_) {
+        note = "0.0/5";
+      }
+    } catch (_) {
+      // ignorer erreurs et conserver défauts
+    } finally {
+      if (mounted) setState(() {});
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -211,7 +323,7 @@ class _ProfilRecruteurScreenState extends State<ProfilRecruteurScreen> {
               ),
             ),
           ),
-          // Avatar centré + nom + rôle
+          // Avatar centré + nom + rôle (toujours un avatar; pas d'édition si Entreprise)
           Positioned(
             top: height * 0.28,
             left: 0,
@@ -221,10 +333,23 @@ class _ProfilRecruteurScreenState extends State<ProfilRecruteurScreen> {
               children: [
                 Stack(
                   children: [
-                    const CircleAvatar(
-                      radius: 50,
-                      backgroundImage: AssetImage('assets/images/profil_recruteur.png'),
-                    ),
+                    if (_isEntreprise)
+                      CircleAvatar(
+                        radius: 50,
+                        backgroundColor: Colors.white.withOpacity(0.25),
+                        child: const Icon(
+                          Icons.person,
+                          size: 50,
+                          color: Colors.white,
+                        ),
+                      )
+                    else
+                      CircleAvatar(
+                        radius: 50,
+                        backgroundImage: photoUrl.isNotEmpty
+                            ? NetworkImage(photoUrl)
+                            : const AssetImage('') as ImageProvider,
+                      ),
                     Positioned(
                       right: 0,
                       bottom: 0,
@@ -244,19 +369,71 @@ class _ProfilRecruteurScreenState extends State<ProfilRecruteurScreen> {
                         ),
                         child: InkWell(
                           onTap: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (context) => ModifierProfilRecruteurScreen(
-                                  initialEmail: email,
-                                  initialPhone: phone,
-                                  initialLocation: location,
-                                  initialProfession: profession,
-                                  initialDateNaissance: dateNaissance,
-                                  fullName: fullName,
-                                  role: role,
-                                ),
-                              ),
-                            );
+                            Navigator.of(context)
+                                .push(
+                                  MaterialPageRoute(
+                                    builder: (context) => ModifierProfilRecruteurScreen(
+                                      initialEmail: email,
+                                      initialPhone: phone,
+                                      initialLocation: location,
+                                      initialProfession: profession,
+                                      initialDateNaissance: dateNaissance,
+                                      fullName: fullName,
+                                      role: role,
+                                      initialPhotoUrl: photoUrl,
+                                      initialEmailEntreprise: _isEntreprise ? emailEntreprise : null,
+                                      initialSecteurActivite: _isEntreprise ? secteurActivite : null,
+                                      initialSiteWeb: _isEntreprise ? siteWeb : null,
+                                      initialPrenom: !_isEntreprise ? prenom : null,
+                                      initialNom: !_isEntreprise ? nom : null,
+                                      initialNomEntreprise: _isEntreprise ? nomEntreprise : null,
+                                    ),
+                                  ),
+                                )
+                                .then((result) {
+                              if (!mounted) return;
+                              if (result is Map<String, dynamic>) {
+                                String? newFullName;
+                                setState(() {
+                                  // Commun
+                                  email = result['email']?.toString() ?? email;
+                                  phone = result['telephone']?.toString() ?? phone;
+                                  location = result['adresse']?.toString() ?? location;
+                                  final p = result['photoUrl']?.toString() ?? '';
+                                  if (p.isNotEmpty) photoUrl = p;
+
+                                  // Type
+                                  final type = (result['typeRecruteur']?.toString() ?? '').toUpperCase();
+                                  _isEntreprise = type == 'ENTREPRISE' ? true : _isEntreprise;
+
+                                  if (_isEntreprise) {
+                                    emailEntreprise = result['emailEntreprise']?.toString() ?? emailEntreprise;
+                                    secteurActivite = result['secteurActivite']?.toString() ?? secteurActivite;
+                                    siteWeb = result['siteWeb']?.toString() ?? siteWeb;
+                                    nomEntreprise = result['nomEntreprise']?.toString() ?? nomEntreprise;
+                                    if (nomEntreprise.trim().isNotEmpty) {
+                                      fullName = nomEntreprise;
+                                      newFullName = fullName;
+                                      role = 'Entreprise';
+                                    }
+                                  } else {
+                                    prenom = result['prenom']?.toString() ?? prenom;
+                                    nom = result['nom']?.toString() ?? nom;
+                                    profession = result['profession']?.toString() ?? profession;
+                                    dateNaissance = result['dateNaissance']?.toString() ?? dateNaissance;
+                                    final combined = [prenom, nom].where((e) => e.trim().isNotEmpty).join(' ').trim();
+                                    if (combined.isNotEmpty) {
+                                      fullName = combined;
+                                      newFullName = fullName;
+                                    }
+                                    role = 'Recruteur';
+                                  }
+                                });
+                                if (newFullName != null && newFullName!.trim().isNotEmpty) {
+                                  TokenService.saveUserName(newFullName!);
+                                }
+                              }
+                            });
                           },
                           child: const Center(
                             child: Icon(Icons.edit, size: 14, color: Colors.black),
@@ -268,7 +445,7 @@ class _ProfilRecruteurScreenState extends State<ProfilRecruteurScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  fullName,
+                  fullName.isNotEmpty ? fullName : 'Mon Profil',
                   style: GoogleFonts.poppins(
                     color: Colors.white,
                     fontSize: 16,
@@ -303,6 +480,57 @@ class _ProfilRecruteurScreenState extends State<ProfilRecruteurScreen> {
   }
 
   Widget _buildPersonalInfoCard() {
+    if (_isEntreprise) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _infoTile(
+            icon: Icons.email_outlined,
+            label: 'Email Entreprise',
+            value: emailEntreprise.isNotEmpty ? emailEntreprise : email,
+            tileColor: Colors.white,
+            iconBg: orangeBrand.withOpacity(0.12),
+            iconColor: orangeBrand,
+          ),
+          const SizedBox(height: 10),
+          _infoTile(
+            icon: Icons.call_outlined,
+            label: 'Téléphone',
+            value: phone,
+            tileColor: Colors.white,
+            iconBg: orangeBrand.withOpacity(0.12),
+            iconColor: orangeBrand,
+          ),
+          const SizedBox(height: 10),
+          _infoTile(
+            icon: Icons.location_on_outlined,
+            label: 'Adresse',
+            value: location,
+            tileColor: Colors.white,
+            iconBg: orangeBrand.withOpacity(0.12),
+            iconColor: orangeBrand,
+          ),
+          const SizedBox(height: 10),
+          _infoTile(
+            icon: Icons.apartment_outlined,
+            label: "Secteur d'activité",
+            value: secteurActivite,
+            tileColor: Colors.white,
+            iconBg: orangeBrand.withOpacity(0.12),
+            iconColor: orangeBrand,
+          ),
+          const SizedBox(height: 10),
+          _infoTile(
+            icon: Icons.public_outlined,
+            label: 'Site Web',
+            value: siteWeb,
+            tileColor: Colors.white,
+            iconBg: orangeBrand.withOpacity(0.12),
+            iconColor: orangeBrand,
+          ),
+        ],
+      );
+    }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -479,6 +707,36 @@ class _ProfilRecruteurScreenState extends State<ProfilRecruteurScreen> {
         ],
       ),
     );
+  }
+
+  // Convertit un chemin local (ex: C:\\...\\uploads\\...) en URL HTTP complète
+  String? _convertPhotoPathToUrl(String? photoPath) {
+    if (photoPath == null || photoPath.isEmpty) return null;
+    if (photoPath.startsWith('http://') || photoPath.startsWith('https://')) {
+      return photoPath;
+    }
+    if (photoPath.contains('uploads')) {
+      String base = ApiConfig.baseUrl;
+      if (base.endsWith('/')) base = base.substring(0, base.length - 1);
+      final uploadsIndex = photoPath.indexOf('uploads');
+      if (uploadsIndex != -1) {
+        String relativePath = photoPath.substring(uploadsIndex + 'uploads'.length);
+        relativePath = relativePath.replaceAll('\\', '/');
+        if (!relativePath.startsWith('/')) {
+          relativePath = '/$relativePath';
+        }
+        final url = '$base/uploads$relativePath';
+        return url;
+      }
+    }
+    if (photoPath.startsWith('uploads')) {
+      String base = ApiConfig.baseUrl;
+      if (base.endsWith('/')) base = base.substring(0, base.length - 1);
+      String url = '$base/$photoPath';
+      url = url.replaceAll('\\', '/');
+      return url;
+    }
+    return null;
   }
 }
 

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../widgets/custom_header.dart';
+import '../../config/api_config.dart';
+import '../../services/user_service.dart';
 import 'profil_candidat.dart';
 import 'signaler_candidat_placeholder.dart';
 
@@ -9,8 +11,9 @@ const Color bodyBackgroundColor = Color(0xFFf6fcfc);
 
 class CandidatureMissionsScreen extends StatefulWidget {
   final String missionTitle;
+  final int? missionId;
 
-  const CandidatureMissionsScreen({super.key, required this.missionTitle});
+  const CandidatureMissionsScreen({super.key, required this.missionTitle, this.missionId});
 
   @override
   State<CandidatureMissionsScreen> createState() => _CandidatureMissionsScreenState();
@@ -19,13 +22,94 @@ class CandidatureMissionsScreen extends StatefulWidget {
 class _CandidatureMissionsScreenState extends State<CandidatureMissionsScreen> {
   int _selectedTabIndex = 0; // 0: tout, 1: valider, 2: rejeter
 
-  final List<_Candidate> _allCandidates = [
-    _Candidate(name: 'Ramatou Konaré', motivation: 'Je suis très motivée par cette mission...', status: _CandidateStatus.validated),
-    _Candidate(name: 'Jean Dupont', motivation: 'Disponible le matin et l’après-midi.', status: _CandidateStatus.pending),
-    _Candidate(name: 'Awa Traoré', motivation: 'Expérience en aide ménagère.', status: _CandidateStatus.pending),
-    _Candidate(name: 'Moussa Keita', motivation: 'Bonne condition physique.', status: _CandidateStatus.rejected),
-    _Candidate(name: 'Fatoumata D.', motivation: 'Je peux commencer dès demain.', status: _CandidateStatus.pending),
-  ];
+  final List<_Candidate> _allCandidates = [];
+  bool _isLoading = true;
+  String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchCandidatures();
+  }
+
+  String? _toHttpUrl(String raw) {
+    if (raw.isEmpty) return null;
+    // Normalise les backslashes et isole le segment /uploads/...
+    final normalised = raw.replaceAll('\\', '/');
+    final idx = normalised.toLowerCase().indexOf('/uploads/');
+    final path = idx >= 0 ? normalised.substring(idx) : normalised;
+    // Si c'est déjà une URL http(s), retourner tel quel
+    if (path.startsWith('http://') || path.startsWith('https://')) return path;
+    // Concaténer avec la baseUrl (qui inclut déjà l’hôte)
+    final base = ApiConfig.baseUrl.endsWith('/') ? ApiConfig.baseUrl.substring(0, ApiConfig.baseUrl.length - 1) : ApiConfig.baseUrl;
+    final p = path.startsWith('/') ? path : '/$path';
+    return '$base$p';
+  }
+
+  Future<void> _fetchCandidatures() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+    if (widget.missionId == null) {
+      setState(() {
+        _isLoading = false;
+        _errorMessage = "Identifiant de mission manquant";
+      });
+      return;
+    }
+    try {
+      final data = await UserService.getCandidaturesParMission(widget.missionId!);
+      final mapped = data.map((e) {
+        final int? candidatureId = (e['id'] is int)
+            ? e['id'] as int
+            : (e['id'] is String ? int.tryParse(e['id']) : null);
+        final prenom = (e['jeunePrestateurPrenom'] ?? '').toString();
+        final nom = (e['jeunePrestateurNom'] ?? '').toString();
+        final photo = e['jeunePrestateurUrlPhoto'];
+        final motivation = (e['motivationContenu'] ?? '').toString();
+        final statut = (e['statut'] ?? '').toString();
+        return _Candidate(
+          id: candidatureId,
+          name: [prenom, nom].where((s) => s.trim().isNotEmpty).join(' ').trim(),
+          motivation: motivation.isEmpty ? 'Aucune motivation fournie' : motivation,
+          status: _mapBackendStatus(statut),
+          photoUrl: (photo is String) ? _toHttpUrl(photo) : null,
+        );
+      }).toList();
+      if (!mounted) return;
+      setState(() {
+        _allCandidates
+          ..clear()
+          ..addAll(mapped);
+        _isLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+        _errorMessage = e.toString().replaceFirst(RegExp(r'^Exception:\s*'), '');
+      });
+    }
+  }
+
+  _CandidateStatus _mapBackendStatus(String statut) {
+    switch (statut.toUpperCase()) {
+      case 'ACCEPTEE':
+      case 'ACCEPTÉE':
+      case 'ACCEPTE':
+      case 'ACCEPTÉ':
+        return _CandidateStatus.validated;
+      case 'REFUSEE':
+      case 'REFUSÉE':
+      case 'REFUSE':
+      case 'REFUSÉ':
+        return _CandidateStatus.rejected;
+      case 'EN_ATTENTE':
+      default:
+        return _CandidateStatus.pending;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -47,11 +131,24 @@ class _CandidatureMissionsScreenState extends State<CandidatureMissionsScreen> {
             _buildTabs(counts),
             const SizedBox(height: 12),
             Expanded(
-              child: ListView.separated(
-                itemCount: filtered.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 10),
-                itemBuilder: (context, index) => _buildCandidateCard(filtered[index]),
-              ),
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : (_errorMessage != null)
+                      ? Center(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                            child: Text(
+                              _errorMessage!,
+                              textAlign: TextAlign.center,
+                              style: GoogleFonts.poppins(color: Colors.redAccent),
+                            ),
+                          ),
+                        )
+                      : ListView.separated(
+                          itemCount: filtered.length,
+                          separatorBuilder: (_, __) => const SizedBox(height: 10),
+                          itemBuilder: (context, index) => _buildCandidateCard(filtered[index]),
+                        ),
             ),
           ],
         ),
@@ -131,13 +228,9 @@ class _CandidatureMissionsScreenState extends State<CandidatureMissionsScreen> {
         Navigator.of(context).push(
           MaterialPageRoute(
             builder: (_) => ProfilCandidatScreen(
-              name: c.name,
-              motivation: c.motivation,
-              rating: 4.8,
-              competences: const ['Manutention', 'Livraison', 'Aide à Domicile', 'Menuisier', 'Vente'],
+              candidatureId: c.id!,
               missionTitle: widget.missionTitle,
-              isValidated: c.status == _CandidateStatus.validated,
-              isRejected: c.status == _CandidateStatus.rejected,
+              missionId: widget.missionId,
             ),
           ),
         );
@@ -162,7 +255,12 @@ class _CandidatureMissionsScreenState extends State<CandidatureMissionsScreen> {
             CircleAvatar(
               radius: 22,
               backgroundColor: primaryGreen.withOpacity(0.2),
-              backgroundImage: const AssetImage('assets/images/image_profil.png'),
+              backgroundImage: (c.photoUrl != null && c.photoUrl!.startsWith('http'))
+                  ? NetworkImage(c.photoUrl!)
+                  : null,
+              child: (c.photoUrl == null || !c.photoUrl!.startsWith('http'))
+                  ? const Icon(Icons.person, color: Colors.white)
+                  : null,
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -199,13 +297,9 @@ class _CandidatureMissionsScreenState extends State<CandidatureMissionsScreen> {
                             Navigator.of(context).push(
                               MaterialPageRoute(
                                 builder: (_) => ProfilCandidatScreen(
-                                  name: c.name,
-                                  motivation: c.motivation,
-                                  rating: 4.8,
-                                  competences: const ['Manutention', 'Livraison', 'Aide à Domicile', 'Menuisier', 'Vente'],
+                                  candidatureId: c.id!,
                                   missionTitle: widget.missionTitle,
-                                  isValidated: c.status == _CandidateStatus.validated,
-                                  isRejected: c.status == _CandidateStatus.rejected,
+                                  missionId: widget.missionId,
                                 ),
                               ),
                             );
@@ -273,11 +367,13 @@ class _CandidatureMissionsScreenState extends State<CandidatureMissionsScreen> {
 enum _CandidateStatus { pending, validated, rejected }
 
 class _Candidate {
+  final int? id;
   final String name;
   final String motivation;
   final _CandidateStatus status;
+  final String? photoUrl;
 
-  _Candidate({required this.name, required this.motivation, required this.status});
+  _Candidate({required this.id, required this.name, required this.motivation, required this.status, this.photoUrl});
 }
 
 

@@ -7,6 +7,9 @@ import 'detail_mission_recruteur.dart';
 import 'message_conversation_recruteur.dart';
 import 'home_recruteur.dart';
 import 'profil_recruteur.dart';
+import '../../services/user_service.dart';
+import '../../models/mission_recruteur_response.dart' as mr;
+import '../../config/api_config.dart';
 
 const Color primaryGreen = Color(0xFF10B981);
 const Color primaryBlue = Color(0xFF2563EB);
@@ -14,22 +17,6 @@ const Color bodyBackgroundColor = Color(0xFFf6fcfc);
 const Color badgeOrange = Color(0xFFF59E0B);
 
 enum MissionStatus { pending, inProgress, finished }
-
-class Mission {
-  final String id;
-  final String title;
-  final int candidateCount;
-  final MissionStatus status;
-  final IconData icon;
-
-  Mission({
-    required this.id,
-    required this.title,
-    required this.candidateCount,
-    required this.status,
-    required this.icon,
-  });
-}
 
 class MissionsRecruteurScreen extends StatefulWidget {
   const MissionsRecruteurScreen({super.key});
@@ -41,58 +28,41 @@ class MissionsRecruteurScreen extends StatefulWidget {
 class _MissionsRecruteurScreenState extends State<MissionsRecruteurScreen> {
   int _selectedIndex = 1;
   String _searchQuery = '';
+  bool _isLoading = true;
+  bool _hasError = false;
+  List<mr.Mission> _allMissions = [];
 
-  final List<Mission> _allMissions = [
-    Mission(
-      id: '1',
-      title: 'Aide ménagère',
-      candidateCount: 0,
-      status: MissionStatus.pending,
-      icon: Icons.cleaning_services,
-    ),
-    Mission(
-      id: '2',
-      title: 'Livraison',
-      candidateCount: 12,
-      status: MissionStatus.inProgress,
-      icon: Icons.local_shipping,
-    ),
-    Mission(
-      id: '3',
-      title: 'Manutention',
-      candidateCount: 5,
-      status: MissionStatus.finished,
-      icon: Icons.work_outline,
-    ),
-    Mission(
-      id: '4',
-      title: 'Aide déménagement',
-      candidateCount: 3,
-      status: MissionStatus.pending,
-      icon: Icons.warehouse,
-    ),
-    Mission(
-      id: '5',
-      title: 'Livraison',
-      candidateCount: 8,
-      status: MissionStatus.inProgress,
-      icon: Icons.local_shipping,
-    ),
-    Mission(
-      id: '6',
-      title: 'Aide ménagère',
-      candidateCount: 15,
-      status: MissionStatus.finished,
-      icon: Icons.cleaning_services,
-    ),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _loadMissions();
+  }
 
-  List<Mission> get _filteredMissions {
+  Future<void> _loadMissions() async {
+    try {
+      setState(() {
+        _isLoading = true;
+        _hasError = false;
+      });
+      final response = await UserService.getMesMissions();
+      setState(() {
+        _allMissions = response.data;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _hasError = true;
+        _isLoading = false;
+      });
+    }
+  }
+
+  List<mr.Mission> get _filteredMissions {
     if (_searchQuery.isEmpty) {
       return _allMissions;
     }
     return _allMissions
-        .where((mission) => mission.title.toLowerCase().contains(_searchQuery.toLowerCase()))
+        .where((mission) => mission.titre.toLowerCase().contains(_searchQuery.toLowerCase()))
         .toList();
   }
 
@@ -118,6 +88,14 @@ class _MissionsRecruteurScreenState extends State<MissionsRecruteurScreen> {
     }
   }
 
+  MissionStatus _mapStatus(String statut) {
+    final s = statut.toUpperCase();
+    if (s.contains('EN_ATTENTE') || s.contains('PENDING')) return MissionStatus.pending;
+    if (s.contains('EN_COURS') || s.contains('IN_PROGRESS')) return MissionStatus.inProgress;
+    if (s.contains('TERMINE') || s.contains('FINISHED')) return MissionStatus.finished;
+    return MissionStatus.pending;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -139,7 +117,22 @@ class _MissionsRecruteurScreenState extends State<MissionsRecruteurScreen> {
             child: _buildSearchBar(),
           ),
           Expanded(
-            child: ListView.builder(
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator(color: primaryGreen))
+                : _hasError
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.error_outline, color: Colors.red, size: 48),
+                            const SizedBox(height: 8),
+                            Text('Erreur de chargement', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                            const SizedBox(height: 8),
+                            ElevatedButton(onPressed: _loadMissions, child: const Text('Réessayer')),
+                          ],
+                        ),
+                      )
+                    : ListView.builder(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               itemCount: _filteredMissions.length,
               itemBuilder: (context, index) {
@@ -213,16 +206,67 @@ class _MissionsRecruteurScreenState extends State<MissionsRecruteurScreen> {
     );
   }
 
-  Widget _buildMissionCard(Mission mission) {
+  String? _convertPhotoPathToUrl(String? photoPath) {
+    if (photoPath == null || photoPath.isEmpty) return null;
+    
+    // Si c'est déjà une URL HTTP, retourner tel quel
+    if (photoPath.startsWith('http://') || photoPath.startsWith('https://')) {
+      return photoPath;
+    }
+    
+    // Si c'est un chemin local Windows avec "uploads", convertir en URL
+    if (photoPath.contains('uploads')) {
+      String base = ApiConfig.baseUrl;
+      if (base.endsWith('/')) base = base.substring(0, base.length - 1);
+      
+      // Trouver l'index de "uploads" et extraire la partie après
+      final uploadsIndex = photoPath.indexOf('uploads');
+      if (uploadsIndex != -1) {
+        // Extraire la partie après "uploads" (incluant le slash ou backslash)
+        String relativePath = photoPath.substring(uploadsIndex + 'uploads'.length);
+        // Normaliser les séparateurs de chemin
+        relativePath = relativePath.replaceAll('\\', '/');
+        // S'assurer qu'on commence par un slash
+        if (!relativePath.startsWith('/')) {
+          relativePath = '/$relativePath';
+        }
+        // Construire l'URL complète
+        final url = '$base/uploads$relativePath';
+        print('🖼️ Conversion chemin: $photoPath -> $url');
+        return url;
+      }
+    }
+    
+    // Si le chemin commence directement par "uploads", ajouter juste l'URL de base
+    if (photoPath.startsWith('uploads')) {
+      String base = ApiConfig.baseUrl;
+      if (base.endsWith('/')) base = base.substring(0, base.length - 1);
+      String url = '$base/$photoPath';
+      url = url.replaceAll('\\', '/');
+      return url;
+    }
+    
+    return null;
+  }
+
+  Widget _buildMissionCard(mr.Mission mission) {
     return GestureDetector(
       onTap: () {
         Navigator.of(context).push(
           MaterialPageRoute(
             builder: (_) => DetailMissionRecruteurScreen(
               missionData: {
-                'title': mission.title,
-                'candidateCount': mission.candidateCount,
-                'status': mission.status,
+                'missionId': mission.id,
+                'missionTitle': mission.titre,
+                'description': mission.description,
+                'competences': mission.exigence,
+                'latitude': mission.latitude,
+                'longitude': mission.longitude,
+                'location': mission.adresse,
+                'dateDebut': mission.dateDebut, // yyyy-MM-dd
+                'dateFin': mission.dateFin, // yyyy-MM-dd
+                'timeFrom': mission.heureDebut,
+                'timeTo': mission.heureFin,
               },
             ),
           ),
@@ -244,17 +288,32 @@ class _MissionsRecruteurScreenState extends State<MissionsRecruteurScreen> {
         ),
         child: Row(
           children: [
-            Container(
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: SizedBox(
               width: 56,
               height: 56,
-              decoration: BoxDecoration(
-                color: primaryBlue.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(
-                mission.icon,
-                color: primaryBlue,
-                size: 28,
+                child: Image.network(
+                  _convertPhotoPathToUrl(mission.categorieUrlPhoto) ?? '',
+                  fit: BoxFit.cover,
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return Container(
+                      color: primaryBlue.withOpacity(0.08),
+                      child: const Center(
+                        child: CircularProgressIndicator(strokeWidth: 2, color: primaryBlue),
+                      ),
+                    );
+                  },
+                  errorBuilder: (c, e, s) {
+                    print('❌ Erreur chargement image: ${_convertPhotoPathToUrl(mission.categorieUrlPhoto)}');
+                    print('   Erreur: $e');
+                    return Container(
+                      color: primaryBlue.withOpacity(0.08),
+                      child: const Icon(Icons.image_not_supported, color: Colors.grey),
+                    );
+                  },
+                ),
               ),
             ),
             const SizedBox(width: 16),
@@ -263,7 +322,7 @@ class _MissionsRecruteurScreenState extends State<MissionsRecruteurScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    mission.title,
+                    mission.titre,
                     style: GoogleFonts.poppins(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -272,7 +331,7 @@ class _MissionsRecruteurScreenState extends State<MissionsRecruteurScreen> {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    '${mission.candidateCount} Candidatures',
+                    '${mission.nombreCandidatures} Candidatures',
                     style: GoogleFonts.poppins(
                       fontSize: 13,
                       color: Colors.grey.shade600,
@@ -282,18 +341,18 @@ class _MissionsRecruteurScreenState extends State<MissionsRecruteurScreen> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
-                      color: _getStatusColor(mission.status).withOpacity(0.1),
+                      color: _getStatusColor(_mapStatus(mission.statut)).withOpacity(0.1),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: _getStatusColor(mission.status).withOpacity(0.3),
+                        color: _getStatusColor(_mapStatus(mission.statut)).withOpacity(0.3),
                       ),
                     ),
                     child: Text(
-                      _getStatusLabel(mission.status),
+                      _getStatusLabel(_mapStatus(mission.statut)),
                       style: GoogleFonts.poppins(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
-                        color: _getStatusColor(mission.status),
+                        color: _getStatusColor(_mapStatus(mission.statut)),
                       ),
                     ),
                   ),
@@ -307,9 +366,17 @@ class _MissionsRecruteurScreenState extends State<MissionsRecruteurScreen> {
                   MaterialPageRoute(
                     builder: (_) => DetailMissionRecruteurScreen(
                       missionData: {
-                        'title': mission.title,
-                        'candidateCount': mission.candidateCount,
-                        'status': mission.status,
+                        'missionId': mission.id,
+                        'missionTitle': mission.titre,
+                        'description': mission.description,
+                        'competences': mission.exigence,
+                        'latitude': mission.latitude,
+                        'longitude': mission.longitude,
+                        'location': mission.adresse,
+                        'dateDebut': mission.dateDebut,
+                        'dateFin': mission.dateFin,
+                        'timeFrom': mission.heureDebut,
+                        'timeTo': mission.heureFin,
                       },
                     ),
                   ),

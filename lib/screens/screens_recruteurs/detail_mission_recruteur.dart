@@ -255,9 +255,16 @@ class DetailMissionRecruteurScreen extends StatelessWidget {
             child: ElevatedButton(
               onPressed: () {
                 final String title = (missionData['missionTitle'] as String?) ?? 'Mission';
+                final dynamic rawId = missionData['missionId'] ?? missionData['id'];
+                final int? missionId = (rawId is int)
+                    ? rawId
+                    : (rawId is String ? int.tryParse(rawId) : null);
                 Navigator.of(context).push(
                   MaterialPageRoute(
-                    builder: (context) => CandidatureMissionsScreen(missionTitle: title),
+                    builder: (context) => CandidatureMissionsScreen(
+                      missionTitle: title,
+                      missionId: missionId,
+                    ),
                   ),
                 );
               },

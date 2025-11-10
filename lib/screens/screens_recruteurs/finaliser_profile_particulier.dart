@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:flutter/foundation.dart';
+import 'dart:io';
+import 'dart:typed_data';
 import '../../widgets/custom_header.dart';
+import '../../services/profile_service.dart';
 
 const Color primaryGreen = Color(0xFF10B981);
 const Color primaryBlue = Color(0xFF2563EB);
@@ -21,6 +25,27 @@ class _FinaliserProfileParticulierState extends State<FinaliserProfileParticulie
   String? _selectedDateOfBirth;
   final TextEditingController _locationController = TextEditingController();
   final TextEditingController _professionController = TextEditingController();
+  XFile? _profilePhoto;
+  XFile? _idCard;
+
+  bool _isFormComplete() {
+    final hasPhoto = _profilePhoto != null;
+    final hasDob = _selectedDateOfBirth != null && _selectedDateOfBirth!.isNotEmpty;
+    final hasAdresse = _locationController.text.isNotEmpty;
+    final hasId = _idCard != null;
+    return hasPhoto && hasDob && hasAdresse && hasId;
+  }
+
+  double _computeProgress() {
+    // 4 critères requis: photo, dateNaissance, adresse, carteIdentite
+    int completed = 0;
+    if (_profilePhoto != null) completed++;
+    if (_selectedDateOfBirth != null && _selectedDateOfBirth!.isNotEmpty) completed++;
+    if (_locationController.text.isNotEmpty) completed++;
+    if (_idCard != null) completed++;
+    // Démarre à 50%. Répartir les 50% restants sur le nombre de critères requis
+    return 0.5 + (completed * (0.5 / 4));
+  }
 
   @override
   void dispose() {
@@ -29,13 +54,17 @@ class _FinaliserProfileParticulierState extends State<FinaliserProfileParticulie
     super.dispose();
   }
 
-  Future<void> _pickImage(ImageSource source) async {
+  Future<void> _pickImage(ImageSource source, {required String target}) async {
     try {
       final XFile? image = await _picker.pickImage(source: source);
       if (image != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Image sélectionnée: ${image.name}')),
-        );
+        setState(() {
+          if (target == 'profile') {
+            _profilePhoto = image;
+          } else if (target == 'id') {
+            _idCard = image;
+          }
+        });
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -56,7 +85,7 @@ class _FinaliserProfileParticulierState extends State<FinaliserProfileParticulie
                 title: const Text('Caméra'),
                 onTap: () {
                   Navigator.of(context).pop();
-                  _pickImage(ImageSource.camera);
+                  _pickImage(ImageSource.camera, target: type == "photo de profil" ? 'profile' : 'id');
                 },
               ),
               ListTile(
@@ -64,7 +93,7 @@ class _FinaliserProfileParticulierState extends State<FinaliserProfileParticulie
                 title: const Text('Galerie'),
                 onTap: () {
                   Navigator.of(context).pop();
-                  _pickImage(ImageSource.gallery);
+                  _pickImage(ImageSource.gallery, target: type == "photo de profil" ? 'profile' : 'id');
                 },
               ),
             ],
@@ -102,7 +131,7 @@ class _FinaliserProfileParticulierState extends State<FinaliserProfileParticulie
           crossAxisAlignment: CrossAxisAlignment.center,
           children: <Widget>[
             const SizedBox(height: 20),
-            _buildProgressBar(context, progress: 0.5),
+            _buildProgressBar(context, progress: _computeProgress()),
             const SizedBox(height: 10),
             Text(
               'Plus que quelques étapes pour débloquer toutes les missions !',
@@ -180,12 +209,22 @@ class _FinaliserProfileParticulierState extends State<FinaliserProfileParticulie
             shape: BoxShape.circle,
             color: primaryGreen.withOpacity(0.2),
             border: Border.all(color: primaryGreen, width: 2),
+            image: _profilePhoto != null
+                ? DecorationImage(
+                    image: kIsWeb
+                        ? NetworkImage(_profilePhoto!.path)
+                        : FileImage(File(_profilePhoto!.path)) as ImageProvider,
+                    fit: BoxFit.cover,
+                  )
+                : null,
           ),
-          child: Icon(
-            Icons.person,
-            size: 60,
-            color: primaryGreen,
-          ),
+          child: _profilePhoto == null
+              ? Icon(
+                  Icons.person,
+                  size: 60,
+                  color: primaryGreen,
+                )
+              : null,
         ),
         const SizedBox(height: 20),
         OutlinedButton(
@@ -264,6 +303,7 @@ class _FinaliserProfileParticulierState extends State<FinaliserProfileParticulie
       child: TextField(
         controller: controller,
         readOnly: readOnly,
+        onChanged: (_) => setState(() {}),
         decoration: InputDecoration(
           hintText: hint,
           hintStyle: GoogleFonts.poppins(color: Colors.black54),
@@ -322,7 +362,15 @@ class _FinaliserProfileParticulierState extends State<FinaliserProfileParticulie
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.cloud_upload_outlined, color: Colors.black, size: 40),
+            if (_idCard == null)
+              const Icon(Icons.cloud_upload_outlined, color: Colors.black, size: 40)
+            else
+              SizedBox(
+                height: 80,
+                child: kIsWeb
+                    ? Image.network(_idCard!.path, fit: BoxFit.cover)
+                    : Image.file(File(_idCard!.path), fit: BoxFit.cover),
+              ),
             const SizedBox(height: 10),
             Text(
               'Televerser la photo de votre carte d\'identité',
@@ -344,9 +392,64 @@ class _FinaliserProfileParticulierState extends State<FinaliserProfileParticulie
       width: double.infinity,
       height: 55,
       child: ElevatedButton(
-        onPressed: () {},
+        onPressed: _isFormComplete() ? () async {
+          try {
+            final fields = <String, String>{};
+            if (_selectedDateOfBirth != null) {
+              final parts = _selectedDateOfBirth!.split('/');
+              if (parts.length == 3) {
+                fields['dateNaissance'] = '${parts[2]}-${parts[1].padLeft(2, '0')}-${parts[0].padLeft(2, '0')}';
+              }
+            }
+            if (_locationController.text.isNotEmpty) fields['adresse'] = _locationController.text;
+            if (_professionController.text.isNotEmpty) fields['profession'] = _professionController.text;
+            Map<String, dynamic> result;
+            if (kIsWeb) {
+              // Web: envoyer bytes + filename
+              Uint8List? photoBytes;
+              String? photoFilename;
+              Uint8List? idBytes;
+              String? idFilename;
+              if (_profilePhoto != null) {
+                photoBytes = await _profilePhoto!.readAsBytes();
+                photoFilename = _profilePhoto!.name;
+              }
+              if (_idCard != null) {
+                idBytes = await _idCard!.readAsBytes();
+                idFilename = _idCard!.name;
+              }
+              result = await ProfileService.updateMonProfil(
+                fields: fields,
+                photoBytes: photoBytes,
+                photoFilename: photoFilename,
+                carteIdentiteBytes: idBytes,
+                carteIdentiteFilename: idFilename,
+              );
+            } else {
+              // Mobile/Desktop: envoyer File
+              result = await ProfileService.updateMonProfil(
+                fields: fields,
+                photoProfil: _profilePhoto != null ? File(_profilePhoto!.path) : null,
+                carteIdentite: _idCard != null ? File(_idCard!.path) : null,
+              );
+            }
+
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(result['message']?.toString() ?? 'Profil mis à jour')),
+              );
+              Navigator.of(context).pop(true);
+            }
+          } catch (e) {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Erreur de sauvegarde: $e')),
+              );
+            }
+          }
+        } : null,
         style: ElevatedButton.styleFrom(
-          backgroundColor: primaryGreen,
+          backgroundColor: _isFormComplete() ? primaryGreen : Colors.grey,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(30),
           ),

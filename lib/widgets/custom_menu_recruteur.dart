@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../services/token_service.dart';
+import '../screens/login_screen.dart';
 import '../screens/screens_recruteurs/missions_recruteur.dart';
 import '../screens/screens_recruteurs/historique_paiement_recruteur.dart';
 import '../screens/screens_recruteurs/message_conversation_recruteur.dart';
@@ -38,17 +40,41 @@ class CustomDrawerRecruteur extends StatelessWidget {
     this.userProfile = "Mon Profil",
   });
 
-  // Action de déconnexion simulée
-  void _logout(BuildContext context) {
-    // La navigation est gérée par le contexte de l'écran principal
-    Navigator.of(context).pop(); // Ferme le menu
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text("Déconnexion en cours..."),
-        duration: Duration(seconds: 1),
-      ),
+  // Action de déconnexion réelle
+  Future<void> _logout(BuildContext context) async {
+    // Demander confirmation
+    final bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          title: const Text('Déconnexion'),
+          content: const Text('Voulez-vous vraiment vous déconnecter ?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: const Text('Annuler'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: const Text('Déconnexion'),
+            ),
+          ],
+        );
+      },
     );
-    // Ajoutez ici la logique de déconnexion (navigation vers l'écran de connexion)
+
+    if (confirm != true) return;
+
+    Navigator.of(context).pop(); // Fermer le drawer
+    try {
+      await TokenService.logout();
+    } catch (_) {}
+    if (context.mounted) {
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+        (route) => false,
+      );
+    }
   }
 
   // Widget utilitaire pour les tuiles du menu
