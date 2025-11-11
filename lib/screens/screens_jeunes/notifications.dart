@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../services/user_service.dart';
 
 // Importation des widgets réutilisables (doit exister dans le chemin correct)
 import '../../widgets/custom_header.dart'; 
@@ -17,6 +18,8 @@ const Color actionBlue = Color(0xFF007AFF); // Bleu pour les actions (Noter/Acti
 const Color orangeSms = Color(0xFFFF9500); // Orange pour les SMS/Messages
 const Color starYellow = Color(0xFFFFCC00); // Jaune pour les notations
 const Color infoBlue = Color(0xFF5AC8FA); // Bleu clair pour l'information générale
+const Color amberAction = Color(0xFFF59E0B); // Couleur demandée pour paiement
+const Color greenAction = Color(0xFF10B981); // Couleur demandée pour discuter
 
 // Modèle de données pour les notifications
 class NotificationItem {
@@ -41,6 +44,14 @@ class NotificationItem {
   });
 }
 
+class _NotifStyle {
+  final IconData icon;
+  final Color color;
+  final bool showReply;
+  final String typeKey;
+  _NotifStyle(this.icon, this.color, this.showReply, this.typeKey);
+}
+
 // Converti en StatefulWidget pour gérer l'état de chargement
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -53,6 +64,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   // État de chargement initial
   bool _isLoading = true;
   List<NotificationItem> _notifications = [];
+  String? _errorMessage;
   
   // État pour la barre de navigation (simulé)
   // J'ai retiré le BottomNavigationBar, mais je garde _selectedIndex et _onItemTapped
@@ -148,32 +160,164 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     _fetchNotifications();
   }
 
-  // Fonction simulant l'appel au backend
+  // Appel réel au backend
   Future<void> _fetchNotifications() async {
     setState(() {
       _isLoading = true;
+      _errorMessage = null;
     });
+    try {
+      final data = await UserService.getMesNotifications();
+      final mapped = data.map<NotificationItem>((n) => _mapBackendToItem(n)).toList();
+      if (!mounted) return;
+      setState(() {
+        _notifications = mapped;
+        _isLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = e.toString().replaceFirst(RegExp(r'^Exception:\s*'), '');
+        _notifications = [];
+        _isLoading = false;
+      });
+    }
+  }
 
-    // Simuler un délai réseau de 1.5 seconde
-    await Future.delayed(const Duration(milliseconds: 1500)); 
+  NotificationItem _mapBackendToItem(Map<String, dynamic> n) {
+    final type = (n['type'] ?? n['notificationType'] ?? '').toString();
+    final title = (n['titre'] ?? n['title'] ?? n['subject'] ?? _defaultTitleForType(type)).toString();
+    final content = (n['contenu'] ?? n['content'] ?? n['message'] ?? n['description'] ?? '').toString();
+    final relative = n['dateCreationRelative']?.toString();
+    final createdAtRaw = n['dateCreation'] ?? n['createdAt'] ?? n['created_at'] ?? n['date'];
+    final timeAgo = (relative != null && relative.trim().isNotEmpty)
+        ? relative
+        : (_formatTimeAgoSafe(createdAtRaw) ?? (n['timeAgo']?.toString() ?? ''));
 
-    // Mettre à jour l'état avec les données factices
-    setState(() {
-      _notifications = _dummyNotifications;
-      _isLoading = false;
-    });
+    final style = _styleForType(type);
+
+    return NotificationItem(
+      title: title.isEmpty ? _defaultTitleForType(type) : title,
+      content: content.isEmpty ? _defaultContentForType(type) : content,
+      timeAgo: timeAgo.isEmpty ? '•' : timeAgo,
+      icon: style.icon,
+      iconColor: style.color,
+      backgroundColor: Colors.white,
+      showReplyButton: style.showReply,
+      type: style.typeKey,
+    );
+  }
+
+  String _defaultTitleForType(String type) {
+    switch (type.toUpperCase()) {
+      case 'CANDIDATURE_ACCEPTEE':
+        return 'Candidature Acceptée !';
+      case 'MISSION_TERMINEE':
+        return 'Mission Terminée';
+      case 'PAIEMENT_EFFECTUE':
+        return 'Paiement Reçu';
+      case 'DEMANDE_NOTATION_RECRUTEUR':
+        return 'Action Requise: Noter le Jeune';
+      case 'DEMANDE_NOTATION_JEUNE':
+        return 'Action Requise: Noter le Recruteur';
+      case 'NOTATION_RECUE':
+        return 'Nouvelle Notation Reçue';
+      default:
+        return 'Notification';
+    }
+  }
+
+  String _defaultContentForType(String type) {
+    switch (type.toUpperCase()) {
+      case 'CANDIDATURE_ACCEPTEE':
+        return 'Votre candidature a été acceptée.';
+      case 'MISSION_TERMINEE':
+        return 'Félicitations, mission marquée terminée.';
+      case 'PAIEMENT_EFFECTUE':
+        return 'Votre paiement est arrivé.';
+      case 'DEMANDE_NOTATION_RECRUTEUR':
+        return 'Veuillez noter le jeune.';
+      case 'DEMANDE_NOTATION_JEUNE':
+        return 'Veuillez noter le recruteur.';
+      case 'NOTATION_RECUE':
+        return 'Vous avez reçu une nouvelle notation.';
+      default:
+        return '';
+    }
+  }
+
+  _NotifStyle _styleForType(String type) {
+    final t = type.toUpperCase();
+    if (t == 'CANDIDATURE_ACCEPTEE') {
+      return _NotifStyle(Icons.check_circle_outline, successGreen, false, 'CANDIDATURE_ACCEPTEE');
+    }
+    if (t == 'MISSION_TERMINEE') {
+      return _NotifStyle(Icons.work_history, infoBlue, false, 'MISSION_TERMINEE');
+    }
+    if (t == 'PAIEMENT_EFFECTUE') {
+      return _NotifStyle(Icons.account_balance_wallet, successGreen, false, 'PAIEMENT_EFFECTUE');
+    }
+    if (t == 'DEMANDE_NOTATION_RECRUTEUR') {
+      return _NotifStyle(Icons.rate_review, actionBlue, true, 'DEMANDE_NOTATION_RECRUTEUR');
+    }
+    if (t == 'DEMANDE_NOTATION_JEUNE') {
+      return _NotifStyle(Icons.edit_note, actionBlue, true, 'DEMANDE_NOTATION_JEUNE');
+    }
+    if (t == 'NOTATION_RECUE') {
+      return _NotifStyle(Icons.star, starYellow, false, 'NOTATION_RECUE');
+    }
+    // Défaut
+    return _NotifStyle(Icons.notifications, customHeaderColor, false, t.isEmpty ? 'INFO' : t);
+  }
+
+  String? _formatTimeAgoSafe(dynamic raw) {
+    try {
+      if (raw == null) return null;
+      final s = raw.toString();
+      if (s.isEmpty) return null;
+      final dt = DateTime.tryParse(s);
+      if (dt == null) return null;
+      return _formatTimeAgo(dt);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  String _formatTimeAgo(DateTime date) {
+    final now = DateTime.now();
+    final diff = now.difference(date);
+    if (diff.inSeconds < 60) return 'Il y a ${diff.inSeconds}s';
+    if (diff.inMinutes < 60) return 'Il y a ${diff.inMinutes}m';
+    if (diff.inHours < 24) return 'Il y a ${diff.inHours}h';
+    if (diff.inDays < 7) return 'Il y a ${diff.inDays}j';
+    final weeks = (diff.inDays / 7).floor();
+    return weeks <= 1 ? 'Il y a 1 semaine' : 'Il y a ${weeks} semaines';
   }
 
   // Widget pour construire une carte de notification
   Widget _buildNotificationCard(BuildContext context, NotificationItem item) {
-    // Vérifie si le type nécessite l'affichage du bouton "Noter"
+    // Logique de visibilité/label/couleur du bouton selon le type
     final bool isRatingRequest = item.type == 'DEMANDE_NOTATION_RECRUTEUR' || item.type == 'DEMANDE_NOTATION_JEUNE';
-    
-    // Couleur du bouton : actionBlue (bleu) si c'est une demande de notation
-    final Color buttonColor = isRatingRequest ? actionBlue : successGreen;
-    
-    // Texte du bouton : "Noter" si c'est une demande de notation, sinon "Action"
-    final String buttonText = isRatingRequest ? 'Noter' : 'Action';
+    bool showAction = false;
+    String buttonText = 'Action';
+    Color buttonColor = successGreen;
+
+    if (isRatingRequest) {
+      showAction = true;
+      buttonText = 'Noter';
+      buttonColor = actionBlue;
+    } else if (item.type == 'CANDIDATURE_ACCEPTEE') {
+      showAction = true;
+      buttonText = 'Discuter avec le recruteur';
+      buttonColor = greenAction; // 10B981
+    } else if (item.type == 'MISSION_TERMINEE') {
+      showAction = true;
+      buttonText = 'Passer au Paiement';
+      buttonColor = amberAction; // F59E0B
+    } else if (item.showReplyButton) {
+      // Compatibilité avec l’ancien champ si déjà utilisé
+      showAction = true;
+    }
 
     return Container(
       // Marge extérieure pour espacer les cartes
@@ -237,8 +381,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             ),
           ),
           
-          // Colonne Heure et Bouton Action
-          Column(
+          // Colonne Heure et Bouton Action (largeur fixe pour ne pas impacter le contenu)
+          SizedBox(
+            width: 120,
+            child: Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: <Widget>[
               // Temps écoulé
@@ -253,29 +399,36 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               const SizedBox(height: 8),
               
               // Bouton Action (conditionnel)
-              if (item.showReplyButton)
+              if (showAction)
                 GestureDetector(
                   onTap: () {
-                    // Action à définir (Noter)
-                    print('Action pour : ${item.title}');
+                    // TODO: brancher les actions spécifiques (chat, paiement, noter)
+                    print('Action pour : ${item.type} - ${item.title}');
                   },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: buttonColor, // Couleur dynamique
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      buttonText,
-                      style: GoogleFonts.poppins(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 120),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: buttonColor, // Couleur dynamique
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Text(
+                        buttonText,
+                        style: GoogleFonts.poppins(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        maxLines: 3,
+                        softWrap: true,
+                        textAlign: TextAlign.center,
                       ),
                     ),
                   ),
                 ),
             ],
+          ),
           ),
         ],
       ),
@@ -300,11 +453,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             : _notifications.isEmpty
                 ? Center(
                     child: Text(
-                      'Aucune notification pour le moment.',
+                      _errorMessage == null ? 'Aucune notification pour le moment.' : _errorMessage!,
                       style: GoogleFonts.poppins(
                         fontSize: 16,
                         color: darkGrey,
                       ),
+                      textAlign: TextAlign.center,
                     ),
                   )
                 : ListView.builder(

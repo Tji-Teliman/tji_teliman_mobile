@@ -17,6 +17,8 @@ class UserService {
   static const String _moyenneNotationEndpoint = '/api/notations/moyenne';
   // Endpoint pour les candidatures du jeune
   static const String _mesCandidaturesEndpoint = '/api/candidatures/mes-candidatures';
+  // Endpoint pour les notifications
+  static const String _mesNotificationsEndpoint = '/api/notifications/mes-notifications';
 
   // =============================================
   // MÉTHODES POUR LES JEUNES
@@ -51,6 +53,54 @@ class UserService {
       }
     } else {
       throw Exception('Erreur lors de la récupération des missions accomplies: ${response.statusCode}');
+    }
+  }
+
+  // Notifications (JEUNES et RECRUTEURS)
+  static Future<List<Map<String, dynamic>>> getMesNotifications() async {
+    final token = await TokenService.getToken();
+    final response = await http.get(
+      Uri.parse('${ApiConfig.baseUrl}$_mesNotificationsEndpoint'),
+      headers: {
+        'Content-Type': 'application/json',
+        if (token != null) 'Authorization': 'Bearer $token',
+      },
+    );
+
+    print('🔔 Récupération des notifications');
+    print('📥 Status: ${response.statusCode}');
+    print('📥 Body: ${response.body}');
+
+    try {
+      final decoded = json.decode(response.body);
+      if (response.statusCode == 200) {
+        if (decoded is Map<String, dynamic> && decoded['success'] == true) {
+          final data = decoded['data'];
+          if (data is List) {
+            return data.cast<Map<String, dynamic>>();
+          }
+          return <Map<String, dynamic>>[];
+        }
+        String msg = 'Erreur lors de la récupération des notifications';
+        if (decoded is Map<String, dynamic>) {
+          if (decoded['message'] is String) msg = decoded['message'];
+          else if (decoded['error'] is String) msg = decoded['error'];
+        }
+        throw Exception(msg);
+      } else {
+        String msg = 'Erreur ${response.statusCode}';
+        if (decoded is Map<String, dynamic>) {
+          if (decoded['message'] is String && (decoded['message'] as String).trim().isNotEmpty) {
+            msg = decoded['message'];
+          } else if (decoded['error'] is String && (decoded['error'] as String).trim().isNotEmpty) {
+            msg = decoded['error'];
+          }
+        }
+        throw Exception(msg);
+      }
+    } catch (e) {
+      if (e is Exception) rethrow;
+      throw Exception('Erreur lors du traitement des notifications: $e');
     }
   }
 
