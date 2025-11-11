@@ -1,14 +1,25 @@
 import 'package:flutter/material.dart';
 import '../../widgets/custom_header.dart';
+import '../../services/notation_service.dart';
 
 
 
 class NoterRecruteur extends StatelessWidget {
-  const NoterRecruteur({super.key});
+  final int? candidatureId;
+  final String? missionTitle;
+  final String? endDate;
+  final String? amount;
+
+  const NoterRecruteur({super.key, this.candidatureId, this.missionTitle, this.endDate, this.amount});
 
   @override
   Widget build(BuildContext context) {
-    return const RecruiterEvaluationScreen();
+    return RecruiterEvaluationScreen(
+      candidatureId: candidatureId,
+      missionTitle: missionTitle,
+      endDate: endDate,
+      amount: amount,
+    );
   }
 }
 
@@ -18,7 +29,12 @@ const Color customBlue = Color(0xFF2563EB); // Couleur principale/Bouton Bleu
 const Color accentColor = Color(0xFF4DD0E1); // Pour le dégradé de l'AppBar
 
 class RecruiterEvaluationScreen extends StatelessWidget {
-  const RecruiterEvaluationScreen({super.key});
+  final int? candidatureId;
+  final String? missionTitle;
+  final String? endDate;
+  final String? amount;
+
+  const RecruiterEvaluationScreen({super.key, this.candidatureId, this.missionTitle, this.endDate, this.amount});
 
   @override
   Widget build(BuildContext context) {
@@ -29,9 +45,14 @@ class RecruiterEvaluationScreen extends StatelessWidget {
         onBack: () => Navigator.of(context).pop(),
       ),
       
-      body: const SingleChildScrollView(
-        padding: EdgeInsets.fromLTRB(20.0, 0.0, 20.0, 0.0),
-        child: EvaluationContent(),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(20.0, 0.0, 20.0, 0.0),
+        child: EvaluationContent(
+          candidatureId: candidatureId,
+          missionTitle: missionTitle,
+          endDate: endDate,
+          amount: amount,
+        ),
       ),
     );
   }
@@ -39,7 +60,12 @@ class RecruiterEvaluationScreen extends StatelessWidget {
 
 // Widget contenant le contenu du formulaire d'évaluation
 class EvaluationContent extends StatefulWidget {
-  const EvaluationContent({super.key});
+  final int? candidatureId;
+  final String? missionTitle;
+  final String? endDate;
+  final String? amount;
+
+  const EvaluationContent({super.key, this.candidatureId, this.missionTitle, this.endDate, this.amount});
 
   @override
   State<EvaluationContent> createState() => _EvaluationContentState();
@@ -47,6 +73,67 @@ class EvaluationContent extends StatefulWidget {
 
 class _EvaluationContentState extends State<EvaluationContent> {
   int _rating = 0; // Notation actuelle
+  final TextEditingController _commentController = TextEditingController();
+  bool _submitting = false;
+
+  @override
+  void dispose() {
+    _commentController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (_rating <= 0) return;
+    if (widget.candidatureId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Identifiant de candidature manquant')));
+      return;
+    }
+    setState(() {
+      _submitting = true;
+    });
+    try {
+      await NotationService.noterRecruteur(
+        candidatureId: widget.candidatureId!,
+        note: _rating,
+        commentaire: _commentController.text.trim().isEmpty ? null : _commentController.text.trim(),
+      );
+      await showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) {
+          return AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            title: const Text('Avis envoyé avec succès'),
+            content: const Text('Merci pour votre retour !'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('OK'),
+              ),
+            ],
+          );
+        },
+      );
+      Navigator.of(context).pop(true);
+    } catch (e) {
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Erreur'),
+          content: Text(e.toString()),
+          actions: [
+            TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Fermer')),
+          ],
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _submitting = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -66,9 +153,9 @@ class _EvaluationContentState extends State<EvaluationContent> {
 
         // --- Bloc Récapitulatif de Mission ---
         MissionSummaryCard(
-          missionName: 'Cours de Maths',
-          endDate: '06 Octobre 2025',
-          amount: '+ 5000 CFA',
+          missionName: (widget.missionTitle ?? 'Mission'),
+          endDate: (widget.endDate ?? '—'),
+          amount: (widget.amount ?? '+ 0 CFA'),
         ),
         const SizedBox(height: 30),
 
@@ -113,6 +200,7 @@ class _EvaluationContentState extends State<EvaluationContent> {
         ),
         const SizedBox(height: 8),
         TextFormField(
+          controller: _commentController,
           maxLines: 5,
           decoration: InputDecoration(
             hintText: 'Partaeger votre expérience ....',
@@ -145,9 +233,7 @@ class _EvaluationContentState extends State<EvaluationContent> {
                 child: SizedBox(
                   height: 50,
                   child: ElevatedButton(
-                    onPressed: _rating > 0 ? () {
-                      // Logique d'envoi de l'avis
-                    } : null, // Désactiver si aucune note n'est donnée
+                    onPressed: _rating > 0 && !_submitting ? _submit : null,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: customBlue,
                       shape: RoundedRectangleBorder(
@@ -155,14 +241,16 @@ class _EvaluationContentState extends State<EvaluationContent> {
                       ),
                       elevation: 3,
                     ),
-                    child: const Text(
-                      'Envoyer l\'avis',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                    child: _submitting
+                        ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                        : const Text(
+                            'Envoyer l\'avis',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                   ),
                 ),
               ),
@@ -263,7 +351,7 @@ class MissionSummaryCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          _buildDetailRow('Nom de la mission', missionName),
+          _buildDetailRow('Mission', missionName),
           _buildDetailRow('Date de fin', endDate),
           _buildDetailRow('Montant gagné', amount, isAmount: true),
         ],

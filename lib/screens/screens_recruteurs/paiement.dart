@@ -245,18 +245,17 @@ class _PaiementScreenState extends State<PaiementScreen> {
                           height: 50,
                           child: ElevatedButton(
                             onPressed: () {
-                              Navigator.of(context).pop(); // Close dialog
-                              Navigator.of(context).pop(true); // Close paiement screen and notify success
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (context) => JeuneEvaluationScreen(
-                                    jeuneName: widget.jeune,
-                                    mission: widget.mission,
-                                    montant: widget.montant,
-                                    dateFin: '06 Octobre 2025',
-                                  ),
-                                ),
-                              );
+                              // Close dialog and return a structured result to ModePaiementScreen
+                              Navigator.of(context).pop(); // Close success dialog
+                              Navigator.of(context).pop({
+                                'paid': true,
+                                'rate': true,
+                                'candidatureId': widget.candidatureId,
+                                'jeuneName': widget.jeune,
+                                'mission': widget.mission,
+                                'montant': widget.montant,
+                                'dateFin': '',
+                              });
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFFF59E0B), // Orange
@@ -278,17 +277,14 @@ class _PaiementScreenState extends State<PaiementScreen> {
                       ),
                       const SizedBox(width: 12),
                       
-                      // Return to home button
+                      // Return (laisser la navigation remonter avec succès)
                       Expanded(
                         child: SizedBox(
                           height: 50,
                           child: ElevatedButton(
                             onPressed: () {
                               Navigator.of(context).pop(); // Close dialog
-                              Navigator.of(context).pop(true); // Close paiement screen and notify success
-                              Navigator.of(context).pushReplacement(
-                                MaterialPageRoute(builder: (context) => const HomeRecruteurScreen()),
-                              );
+                              Navigator.of(context).pop(true); // Close paiement screen and notify success (ModePaiementScreen will then pop(true))
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: primaryGreen, // #10B981
@@ -298,7 +294,7 @@ class _PaiementScreenState extends State<PaiementScreen> {
                               elevation: 0,
                             ),
                             child: Text(
-                              'Retour à l\'accueil',
+                              'Retour',
                               style: GoogleFonts.poppins(
                                 fontSize: 14,
                                 fontWeight: FontWeight.bold,

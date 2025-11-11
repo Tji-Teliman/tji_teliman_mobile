@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../widgets/custom_header.dart';
 import 'home_recruteur.dart';
+import '../../services/notation_service.dart';
 
 class NoterJeune extends StatelessWidget {
   final String jeuneName;
   final String mission;
   final String montant;
   final String dateFin;
+  final int? candidatureId;
 
   const NoterJeune({
     super.key,
@@ -15,11 +17,18 @@ class NoterJeune extends StatelessWidget {
     required this.mission,
     required this.montant,
     required this.dateFin,
+    this.candidatureId,
   });
 
   @override
   Widget build(BuildContext context) {
-    return const JeuneEvaluationScreen();
+    return JeuneEvaluationScreen(
+      jeuneName: jeuneName,
+      mission: mission,
+      montant: montant,
+      dateFin: dateFin,
+      candidatureId: candidatureId,
+    );
   }
 }
 
@@ -33,6 +42,7 @@ class JeuneEvaluationScreen extends StatefulWidget {
   final String mission;
   final String montant;
   final String dateFin;
+  final int? candidatureId;
 
   const JeuneEvaluationScreen({
     super.key,
@@ -40,6 +50,7 @@ class JeuneEvaluationScreen extends StatefulWidget {
     this.mission = 'Aide Ménagere',
     this.montant = '5 000 CFA',
     this.dateFin = '06 Octobre 2025',
+    this.candidatureId,
   });
 
   @override
@@ -49,6 +60,7 @@ class JeuneEvaluationScreen extends StatefulWidget {
 class _JeuneEvaluationScreenState extends State<JeuneEvaluationScreen> {
   int _rating = 0; // Notation actuelle
   final TextEditingController _feedbackController = TextEditingController();
+  bool _submitting = false;
 
   @override
   void dispose() {
@@ -56,98 +68,45 @@ class _JeuneEvaluationScreenState extends State<JeuneEvaluationScreen> {
     super.dispose();
   }
 
-  void _handleSubmit() {
-    // Afficher le pop-up de confirmation
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) {
-        return Dialog(
-          backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: SingleChildScrollView(
-            child: Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  // Success Icon
-                  Container(
-                    width: 70,
-                    height: 70,
-                    decoration: BoxDecoration(
-                      color: Colors.green.withOpacity(0.2),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.check_circle,
-                      color: Colors.green,
-                      size: 40,
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  
-                  // Success message
-                  Text(
-                    'Avis envoyé avec succès',
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.poppins(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  
-                  Text(
-                    'Merci pour votre retour !',
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.poppins(
-                      fontSize: 14,
-                      color: Colors.grey.shade700,
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  
-                  // OK button
-                  SizedBox(
-                    width: double.infinity,
-                    height: 50,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.of(context).pop(); // Close dialog
-                        Navigator.of(context).pop(); // Close evaluation screen
-                        Navigator.of(context).pushReplacement(
-                          MaterialPageRoute(builder: (context) => const HomeRecruteurScreen()),
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: customBlue,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(25),
-                        ),
-                        elevation: 0,
-                      ),
-                      child: Text(
-                        'OK',
-                        style: GoogleFonts.poppins(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-    );
+  Future<void> _handleSubmit() async {
+    if (_rating <= 0) return;
+    if (widget.candidatureId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Identifiant de candidature manquant')),
+      );
+      return;
+    }
+    setState(() { _submitting = true; });
+    try {
+      await NotationService.noterJeune(
+        candidatureId: widget.candidatureId!,
+        note: _rating,
+        commentaire: _feedbackController.text.trim().isEmpty ? null : _feedbackController.text.trim(),
+      );
+      await showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Avis envoyé avec succès'),
+          content: const Text('Merci pour votre retour !'),
+          actions: [
+            TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('OK')),
+          ],
+        ),
+      );
+      Navigator.of(context).pop(true);
+    } catch (e) {
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Erreur'),
+          content: Text(e.toString()),
+          actions: [TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Fermer'))],
+        ),
+      );
+    } finally {
+      if (mounted) setState(() { _submitting = false; });
+    }
   }
 
   void _handleQuit() {
@@ -264,7 +223,7 @@ class _JeuneEvaluationScreenState extends State<JeuneEvaluationScreen> {
                     child: SizedBox(
                       height: 50,
                       child: ElevatedButton(
-                        onPressed: _rating > 0 ? _handleSubmit : null, // Désactiver si aucune note
+                        onPressed: _rating > 0 && !_submitting ? _handleSubmit : null, // Désactiver si aucune note ou en cours
                         style: ElevatedButton.styleFrom(
                           backgroundColor: _rating > 0 ? customBlue : Colors.grey.shade400,
                           shape: RoundedRectangleBorder(
@@ -272,14 +231,16 @@ class _JeuneEvaluationScreenState extends State<JeuneEvaluationScreen> {
                           ),
                           elevation: _rating > 0 ? 3 : 0,
                         ),
-                        child: Text(
-                          'Envoyer l\'avis',
-                          style: GoogleFonts.poppins(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                        child: _submitting
+                            ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                            : Text(
+                                'Envoyer l\'avis',
+                                style: GoogleFonts.poppins(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                       ),
                     ),
                   ),
@@ -379,7 +340,7 @@ class MissionSummaryCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          _buildDetailRow('Nom de la mission', missionName),
+          _buildDetailRow('Mission', missionName),
           _buildDetailRow('Date de fin', endDate),
           _buildDetailRow('Montant payé', amount, isAmount: true),
         ],

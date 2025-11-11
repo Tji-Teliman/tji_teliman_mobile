@@ -5,6 +5,7 @@ import 'paiement.dart';
 import '../../services/mission_service.dart';
 import '../../services/user_service.dart';
 import '../../services/payment_service.dart';
+import 'noter_jeune.dart';
 
 const Color bodyBackgroundColor = Color(0xFFf6fcfc);
 const Color primaryGreen = Color(0xFF10B981);
@@ -208,7 +209,7 @@ class _ModePaiementScreenState extends State<ModePaiementScreen> {
   }
   void _handleOrangeMoneyPayment() async {
     // Navigate to Orange Money payment confirmation
-    final paid = await Navigator.of(context).push(
+    final result = await Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => PaiementScreen(
           jeune: _jeuneName.isNotEmpty ? _jeuneName : '-',
@@ -219,9 +220,34 @@ class _ModePaiementScreenState extends State<ModePaiementScreen> {
         ),
       ),
     );
-    if (paid == true) {
-      if (!mounted) return;
+    if (!mounted) return;
+    if (result == true) {
       Navigator.of(context).pop(true);
+      return;
+    }
+    if (result is Map) {
+      final map = Map<String, dynamic>.from(result as Map);
+      final paid = map['paid'] == true;
+      final goRate = map['rate'] == true;
+      if (paid == true) {
+        if (goRate == true) {
+          // Navigate to rating screen with provided data first
+          await Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => NoterJeune(
+                candidatureId: map['candidatureId'] as int?,
+                jeuneName: (map['jeuneName'] ?? '-') as String,
+                mission: (map['mission'] ?? '-') as String,
+                montant: (map['montant'] ?? '-') as String,
+                dateFin: (map['dateFin'] ?? '') as String,
+              ),
+            ),
+          );
+        }
+        if (!mounted) return;
+        Navigator.of(context).pop(true);
+        return;
+      }
     }
   }
 

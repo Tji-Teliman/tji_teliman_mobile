@@ -3,6 +3,11 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../services/user_service.dart';
+import '../../services/payment_service.dart';
+
+import '../screens_recruteurs/noter_jeune.dart';
+import 'noter_recruteur.dart';
+import '../screens_recruteurs/mode_paiement.dart';
 
 // Importation des widgets réutilisables (doit exister dans le chemin correct)
 import '../../widgets/custom_header.dart'; 
@@ -31,6 +36,14 @@ class NotificationItem {
   final Color backgroundColor;
   final bool showReplyButton;
   final String type; 
+  // IDs et détails associés pour actions
+  final int? candidatureId;
+  final int? missionId;
+  final String? missionTitle;
+  final String? missionAmount;
+  final String? missionDateFin;
+  final String? jeuneFullName;
+  final String? recruteurFullName;
 
   const NotificationItem({
     required this.title,
@@ -41,6 +54,13 @@ class NotificationItem {
     this.backgroundColor = Colors.white,
     this.showReplyButton = false,
     required this.type,
+    this.candidatureId,
+    this.missionId,
+    this.missionTitle,
+    this.missionAmount,
+    this.missionDateFin,
+    this.jeuneFullName,
+    this.recruteurFullName,
   });
 }
 
@@ -65,6 +85,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   bool _isLoading = true;
   List<NotificationItem> _notifications = [];
   String? _errorMessage;
+  final Set<int> _disabledActionIndexes = <int>{};
+  final Set<int> _disabledMissionIds = <int>{};
+  final Set<int> _disabledCandidatureIds = <int>{};
+  final Set<int> _pendingPaymentMissionIds = <int>{};
   
   // État pour la barre de navigation (simulé)
   // J'ai retiré le BottomNavigationBar, mais je garde _selectedIndex et _onItemTapped
@@ -77,6 +101,79 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     // Logique de navigation à implémenter ici (ex: Navigator.push)
     print("Navigation vers l'index $index");
   }
+
+  Future<void> _showAlreadyDoneDialog({required String title, required String message, required Color accentColor, required IconData icon}) async {
+    if (!mounted) return;
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return Dialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          child: Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Container(
+                  width: 70,
+                  height: 70,
+                  decoration: BoxDecoration(
+                    color: accentColor.withOpacity(0.15),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(icon, color: accentColor, size: 40),
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  title,
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.poppins(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  message,
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                SizedBox(
+                  width: double.infinity,
+                  height: 44,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: accentColor,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      elevation: 0,
+                    ),
+                    child: Text(
+                      'OK',
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // Ancien résolveur d'ID par titre supprimé: on s'appuie désormais sur missionId fourni par le backend
 
 
   // Liste factice des notifications incluant uniquement les types demandés
@@ -167,8 +264,29 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       _errorMessage = null;
     });
     try {
+      // 1) Fetch notifications
       final data = await UserService.getMesNotifications();
       final mapped = data.map<NotificationItem>((n) => _mapBackendToItem(n)).toList();
+      // 2) Fetch pending payments to auto-disable payment actions already completed elsewhere
+      try {
+        _pendingPaymentMissionIds.clear();
+        final pending = await PaymentService.getPaiementsEnAttente();
+        for (final p in pending) {
+          final any = p['missionId'] ?? p['idMission'];
+          final mid = any is int ? any : int.tryParse(any?.toString() ?? '');
+          if (mid != null) _pendingPaymentMissionIds.add(mid);
+        }
+      } catch (_) {}
+      // 3) Auto-disable rating buttons if backend indicates notation already done
+      _disabledCandidatureIds.clear();
+      for (final n in data) {
+        final deja = (n['notationDejaFaite'] ?? n['alreadyRated'] ?? false);
+        if (deja == true) {
+          final cidAny = n['candidatureId'] ?? n['idCandidature'];
+          final cid = cidAny is int ? cidAny : int.tryParse(cidAny?.toString() ?? '');
+          if (cid != null) _disabledCandidatureIds.add(cid);
+        }
+      }
       if (!mounted) return;
       setState(() {
         _notifications = mapped;
@@ -196,6 +314,76 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
     final style = _styleForType(type);
 
+    // Extraire IDs et détails possibles venant du backend
+    int? candidatureId;
+    int? missionId;
+    String? missionTitre;
+    String? missionAmount;
+    String? missionDateFin;
+    String? jeuneFullName;
+    String? recruteurFullName;
+
+    // Helpers parse int
+    int? _toInt(dynamic v) {
+      if (v == null) return null;
+      if (v is int) return v;
+      return int.tryParse(v.toString());
+    }
+
+    candidatureId = _toInt(n['candidatureId'] ?? n['idCandidature']);
+    missionId = _toInt(n['missionId'] ?? n['idMission']);
+    missionTitre = (n['missionTitre'] ?? n['titreMission'] ?? '').toString();
+
+    // Chercher dans des objets imbriqués potentiels
+    Map<String, dynamic>? missionMap;
+    Map<String, dynamic>? dataMap;
+    Map<String, dynamic>? payloadMap;
+    if (n['mission'] is Map<String, dynamic>) missionMap = (n['mission'] as Map).cast<String, dynamic>();
+    if (n['data'] is Map<String, dynamic>) dataMap = (n['data'] as Map).cast<String, dynamic>();
+    if (n['payload'] is Map<String, dynamic>) payloadMap = (n['payload'] as Map).cast<String, dynamic>();
+
+    int? _extractIdFrom(dynamic m, List<String> keys) {
+      if (m is Map) {
+        final map = m.cast<String, dynamic>();
+        for (final k in keys) {
+          final v = map[k];
+          final parsed = _toInt(v);
+          if (parsed != null) return parsed;
+        }
+      }
+      return null;
+    }
+
+    missionId ??= _extractIdFrom(missionMap, ['id', 'missionId']);
+    missionId ??= _extractIdFrom(dataMap, ['missionId']);
+    missionId ??= _extractIdFrom(payloadMap, ['missionId']);
+
+    candidatureId ??= _extractIdFrom(dataMap, ['candidatureId']);
+    candidatureId ??= _extractIdFrom(payloadMap, ['candidatureId']);
+
+    // Titre mission imbriqué
+    if ((missionTitre == null || missionTitre.isEmpty) && missionMap != null) {
+      missionTitre = (missionMap['titre'] ?? missionMap['missionTitre'] ?? '').toString();
+    }
+    // Montant
+    final montantAny = n['missionRemuneration'] ?? n['montant'] ?? missionMap?['remuneration'] ?? dataMap?['missionRemuneration'] ?? payloadMap?['montant'];
+    if (montantAny != null) {
+      double? m;
+      if (montantAny is num) m = montantAny.toDouble();
+      else m = double.tryParse(montantAny.toString());
+      if (m != null) {
+        final s = m.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (mm) => '${mm[1]} ');
+        missionAmount = '$s CFA';
+      }
+    }
+    missionDateFin = (n['missionDateFin'] ?? n['dateFin'] ?? missionMap?['dateFin'] ?? dataMap?['missionDateFin'] ?? payloadMap?['dateFin'] ?? '').toString();
+    final jPrenom = (n['jeunePrestateurPrenom'] ?? n['prenomJeune'] ?? '').toString();
+    final jNom = (n['jeunePrestateurNom'] ?? n['nomJeune'] ?? '').toString();
+    jeuneFullName = ('$jPrenom $jNom').trim().isEmpty ? null : ('$jPrenom $jNom').trim();
+    final rPrenom = (n['recruteurPrenom'] ?? '').toString();
+    final rNom = (n['recruteurNom'] ?? '').toString();
+    recruteurFullName = ('$rPrenom $rNom').trim().isEmpty ? null : ('$rPrenom $rNom').trim();
+
     return NotificationItem(
       title: title.isEmpty ? _defaultTitleForType(type) : title,
       content: content.isEmpty ? _defaultContentForType(type) : content,
@@ -205,6 +393,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       backgroundColor: Colors.white,
       showReplyButton: style.showReply,
       type: style.typeKey,
+      candidatureId: candidatureId,
+      missionId: missionId,
+      missionTitle: missionTitre,
+      missionAmount: missionAmount,
+      missionDateFin: missionDateFin,
+      jeuneFullName: jeuneFullName,
+      recruteurFullName: recruteurFullName,
     );
   }
 
@@ -295,7 +490,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 
   // Widget pour construire une carte de notification
-  Widget _buildNotificationCard(BuildContext context, NotificationItem item) {
+  Widget _buildNotificationCard(BuildContext context, NotificationItem item, int index) {
     // Logique de visibilité/label/couleur du bouton selon le type
     final bool isRatingRequest = item.type == 'DEMANDE_NOTATION_RECRUTEUR' || item.type == 'DEMANDE_NOTATION_JEUNE';
     bool showAction = false;
@@ -319,6 +514,21 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       showAction = true;
     }
 
+    // Déterminer si l'action est déjà effectuée (pour afficher un popup au tap)
+    bool alreadyDone = false;
+    if (item.type == 'MISSION_TERMINEE') {
+      final mid = item.missionId;
+      if (mid != null) {
+        final alreadyPaidElsewhere = !_pendingPaymentMissionIds.contains(mid);
+        final locallyMarked = _disabledMissionIds.contains(mid);
+        alreadyDone = alreadyPaidElsewhere || locallyMarked;
+      }
+    } else if (isRatingRequest) {
+      final cid = item.candidatureId;
+      if (cid != null && _disabledCandidatureIds.contains(cid)) {
+        alreadyDone = true;
+      }
+    }
     return Container(
       // Marge extérieure pour espacer les cartes
       margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
@@ -401,16 +611,112 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               // Bouton Action (conditionnel)
               if (showAction)
                 GestureDetector(
-                  onTap: () {
-                    // TODO: brancher les actions spécifiques (chat, paiement, noter)
-                    print('Action pour : ${item.type} - ${item.title}');
+                  onTap: () async {
+                    // Navigation selon le type
+                    if (item.type == 'DEMANDE_NOTATION_RECRUTEUR') {
+                      // Recruteur doit noter le Jeune
+                      if (item.candidatureId == null) {
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Candidature introuvable')));
+                        return;
+                      }
+                      if (alreadyDone) {
+                        await _showAlreadyDoneDialog(
+                          title: 'Notation déjà effectuée',
+                          message: 'Vous avez déjà noté ce jeune pour cette mission.',
+                          accentColor: actionBlue,
+                          icon: Icons.check_circle,
+                        );
+                        return;
+                      }
+                      final result = await Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => NoterJeune(
+                            candidatureId: item.candidatureId,
+                            jeuneName: item.jeuneFullName ?? 'Jeune',
+                            mission: item.missionTitle ?? 'Mission',
+                            montant: item.missionAmount ?? '0 CFA',
+                            dateFin: item.missionDateFin ?? '',
+                          ),
+                        ),
+                      );
+                      if (result == true && mounted) {
+                        setState(() {
+                          if (item.candidatureId != null) _disabledCandidatureIds.add(item.candidatureId!);
+                        });
+                      }
+                      return;
+                    }
+
+                    if (item.type == 'DEMANDE_NOTATION_JEUNE') {
+                      // Jeune doit noter le Recruteur
+                      if (item.candidatureId == null) {
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Candidature introuvable')));
+                        return;
+                      }
+                      if (alreadyDone) {
+                        await _showAlreadyDoneDialog(
+                          title: 'Notation déjà effectuée',
+                          message: 'Vous avez déjà noté ce recruteur pour cette mission.',
+                          accentColor: actionBlue,
+                          icon: Icons.check_circle,
+                        );
+                        return;
+                      }
+                      final result = await Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => NoterRecruteur(
+                            candidatureId: item.candidatureId,
+                            missionTitle: item.missionTitle ?? 'Mission',
+                            endDate: item.missionDateFin ?? '',
+                            amount: item.missionAmount ?? '0 CFA',
+                          ),
+                        ),
+                      );
+                      if (result == true && mounted) {
+                        setState(() {
+                          if (item.candidatureId != null) _disabledCandidatureIds.add(item.candidatureId!);
+                        });
+                      }
+                      return;
+                    }
+
+                    if (item.type == 'MISSION_TERMINEE') {
+                      // Passer au paiement (recruteur) en utilisant uniquement l'ID fourni par le backend
+                      final missionId = item.missionId;
+                      if (missionId == null) {
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Mission introuvable')));
+                        return;
+                      }
+                      if (alreadyDone) {
+                        await _showAlreadyDoneDialog(
+                          title: 'Paiement déjà effectué',
+                          message: 'Le paiement pour cette mission a déjà été confirmé.',
+                          accentColor: amberAction,
+                          icon: Icons.check_circle,
+                        );
+                        return;
+                      }
+                      final result = await Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => ModePaiementScreen(missionId: missionId),
+                        ),
+                      );
+                      if (result == true && mounted) {
+                        setState(() {
+                          _disabledMissionIds.add(missionId);
+                        });
+                      }
+                      return;
+                    }
+
+                    // Sinon, aucune action spécifique
                   },
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 120),
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                       decoration: BoxDecoration(
-                        color: buttonColor, // Couleur dynamique
+                        color: buttonColor,
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Text(
@@ -465,7 +771,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                      padding: const EdgeInsets.fromLTRB(20.0, 0.0, 20.0, 0.0),
                     itemCount: _notifications.length,
                     itemBuilder: (context, index) {
-                      return _buildNotificationCard(context, _notifications[index]);
+                      return _buildNotificationCard(context, _notifications[index], index);
                     },
                   ),
       

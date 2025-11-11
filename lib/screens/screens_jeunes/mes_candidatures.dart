@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../services/user_service.dart';
+import '../../config/api_config.dart';
 
 // Importation des widgets existants (selon la demande de l'utilisateur)
 import '../../widgets/custom_bottom_nav_bar.dart';
@@ -39,12 +40,18 @@ class Candidature {
   final String location;
   final String datePostulee;
   final CandidatureStatus status;
+  final int? destinataireId; // recruteur/destinataire côté chat
+  final String? interlocutorName; // nom réel du recruteur si dispo
+  final String? interlocutorPhotoUrl; // url photo du recruteur si dispo
 
   Candidature({
     required this.title,
     required this.location,
     required this.datePostulee,
     required this.status,
+    this.destinataireId,
+    this.interlocutorName,
+    this.interlocutorPhotoUrl,
   });
 }
 
@@ -71,6 +78,66 @@ class _MesCandidaturesScreenState extends State<MesCandidaturesScreen> {
     _fetchCandidatures();
   }
 
+  int? _toInt(dynamic v) {
+    if (v == null) return null;
+    if (v is int) return v;
+    if (v is double) return v.toInt();
+    final s = v.toString();
+    if (s.isEmpty) return null;
+    return int.tryParse(s);
+  }
+
+  // Essaye plusieurs clés possibles pour l'id du recruteur/destinataire
+  int? _extractDestinataireId(Map<String, dynamic> e) {
+    final keys = [
+      'destinataireId',
+      'recruteurId',
+      'recruteurUserId',
+      'userIdRecruteur',
+      'recruteur_id',
+      'destinataire_id',
+    ];
+    for (final k in keys) {
+      if (e.containsKey(k)) {
+        final val = _toInt(e[k]);
+        if (val != null && val > 0) return val;
+      }
+    }
+    return null;
+  }
+
+  // Construit le nom du recruteur à partir de différentes clés possibles
+  String? _extractRecruiterName(Map<String, dynamic> e) {
+    String? nom = (e['recruteurNom'] ?? e['destinataireNom'])?.toString();
+    String? prenom = (e['recruteurPrenom'] ?? e['destinatairePrenom'])?.toString();
+    // cas alternatifs
+    nom ??= (e['nomRecruteur'] ?? e['lastNameRecruteur'])?.toString();
+    prenom ??= (e['prenomRecruteur'] ?? e['firstNameRecruteur'])?.toString();
+    nom = (nom ?? '').trim();
+    prenom = (prenom ?? '').trim();
+    if ((nom?.isEmpty ?? true) && (prenom?.isEmpty ?? true)) return null;
+    if (nom!.isEmpty) return prenom;
+    if (prenom!.isEmpty) return nom;
+    return '$prenom $nom';
+  }
+
+  String? _extractRecruiterPhotoUrl(Map<String, dynamic> e) {
+    String? raw = (e['recruteurPhoto'] ?? e['destinatairePhoto'])?.toString();
+    raw ??= (e['photoRecruteur'] ?? e['recruteurUrlPhoto'])?.toString();
+    if (raw == null) return null;
+    final s = raw.trim();
+    if (s.isEmpty) return null;
+    if (s.startsWith('http://') || s.startsWith('https://')) return s;
+    final normalized = s.replaceAll('\\', '/');
+    final idx = normalized.toLowerCase().indexOf('/uploads/');
+    if (idx != -1) {
+      final tail = normalized.substring(idx);
+      // éviter double slash
+      return (ApiConfig.baseUrl.endsWith('/') ? ApiConfig.baseUrl.substring(0, ApiConfig.baseUrl.length - 1) : ApiConfig.baseUrl) + tail;
+    }
+    return null;
+  }
+
   Future<void> _fetchCandidatures() async {
     setState(() {
       _isLoading = true;
@@ -85,11 +152,17 @@ class _MesCandidaturesScreenState extends State<MesCandidaturesScreen> {
         final String dateAffichee = _formatShortDate(dateIso);
         final String statutStr = (e['statut'] ?? '').toString();
         final CandidatureStatus st = _mapBackendStatus(statutStr);
+        final int? destId = _extractDestinataireId(e);
+        final String? recruiterName = _extractRecruiterName(e);
+        final String? recruiterPhoto = _extractRecruiterPhotoUrl(e);
         return Candidature(
           title: titre,
           location: lieu,
           datePostulee: dateAffichee,
           status: st,
+          destinataireId: destId,
+          interlocutorName: recruiterName,
+          interlocutorPhotoUrl: recruiterPhoto,
         );
       }).toList();
       if (!mounted) return;
@@ -320,10 +393,19 @@ class _MesCandidaturesScreenState extends State<MesCandidaturesScreen> {
               child: ElevatedButton(
                 onPressed: () {
                   // Navigation directe vers la page de chat avec le recruteur
+                  final destId = candidature.destinataireId;
+                  if (destId == null || destId <= 0) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("Impossible d'ouvrir le chat: ID du recruteur introuvable")),
+                    );
+                    return;
+                  }
                   Navigator.of(context).push(
                     MaterialPageRoute(
                       builder: (context) => ChatScreen(
-                        interlocutorName: _getRecruiterName(candidature), // Utilise le nom du recruteur simulé
+                        interlocutorName: candidature.interlocutorName ?? _getRecruiterName(candidature),
+                        destinataireId: destId,
+                        interlocutorPhotoUrl: candidature.interlocutorPhotoUrl,
                       ),
                     ),
                   );

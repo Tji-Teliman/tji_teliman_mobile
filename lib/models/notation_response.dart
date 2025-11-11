@@ -10,10 +10,19 @@ class NotationResponse {
   });
 
   factory NotationResponse.fromJson(Map<String, dynamic> json) {
+    final rawData = json['data'];
+    NotationData? parsedData;
+    if (rawData is num) {
+      parsedData = NotationData(moyenne: rawData.toDouble());
+    } else if (rawData is Map<String, dynamic>) {
+      parsedData = NotationData.fromJson(rawData);
+    } else {
+      parsedData = null;
+    }
     return NotationResponse(
       success: json['success'] ?? false,
       message: json['message'] ?? '',
-      data: json['data'] != null ? NotationData.fromJson(json['data']) : null,
+      data: parsedData,
     );
   }
 }

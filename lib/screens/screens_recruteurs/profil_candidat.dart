@@ -36,11 +36,39 @@ class _ProfilCandidatScreenState extends State<ProfilCandidatScreen> {
   bool _loading = true;
   String? _error;
   bool _acting = false;
+  int? _jeuneId; // destinataireId pour le chat
 
   @override
   void initState() {
     super.initState();
     _fetchProfil();
+  }
+
+  int? _toInt(dynamic v) {
+    if (v == null) return null;
+    if (v is int) return v;
+    if (v is double) return v.toInt();
+    final s = v.toString();
+    if (s.isEmpty) return null;
+    return int.tryParse(s);
+  }
+
+  int? _extractJeuneId(Map<String, dynamic> data) {
+    final keys = [
+      'jeuneId',
+      'jeuneUserId',
+      'userIdJeune',
+      'jeune_id',
+      'destinataireId',
+      'destinataire_id',
+    ];
+    for (final k in keys) {
+      if (data.containsKey(k)) {
+        final val = _toInt(data[k]);
+        if (val != null && val > 0) return val;
+      }
+    }
+    return null;
   }
 
   Future<void> _fetchProfil() async {
@@ -57,6 +85,7 @@ class _ProfilCandidatScreenState extends State<ProfilCandidatScreen> {
       final statut = (data['statutCandidature'] ?? '').toString();
       final moyenne = data['moyenneNotes'];
       final nbEval = data['nombreEvaluations'];
+      final jeuneId = _extractJeuneId(data);
       // Compétences: l'API renvoie 'competences' comme List<String>. Repli: 'jeuneCompetences' string "A, B, C"
       final compList = data['competences'];
       List<String> comps;
@@ -80,6 +109,7 @@ class _ProfilCandidatScreenState extends State<ProfilCandidatScreen> {
         _ratingsCount = (nbEval is num) ? nbEval.toInt() : 0;
         _competences = comps;
         _loading = false;
+        _jeuneId = jeuneId;
       });
     } catch (e) {
       if (!mounted) return;
@@ -354,9 +384,20 @@ class _ProfilCandidatScreenState extends State<ProfilCandidatScreen> {
         width: double.infinity,
         child: ElevatedButton.icon(
           onPressed: () {
+            final destId = _jeuneId;
+            if (destId == null || destId <= 0) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text("Impossible d'ouvrir le chat: ID du jeune introuvable")),
+              );
+              return;
+            }
             Navigator.of(context).push(
               MaterialPageRoute(
-                builder: (context) => ChatScreen(interlocutorName: _name ?? 'Jeune'),
+                builder: (context) => ChatScreen(
+                  interlocutorName: _name ?? 'Jeune',
+                  destinataireId: destId,
+                  interlocutorPhotoUrl: _photoUrl,
+                ),
               ),
             );
           },

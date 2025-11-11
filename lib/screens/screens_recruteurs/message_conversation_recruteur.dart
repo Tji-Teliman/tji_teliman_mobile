@@ -6,19 +6,14 @@ import 'home_recruteur.dart';
 import 'missions_recruteur.dart';
 import 'profil_recruteur.dart';
 import 'chat_screen_recruteur.dart';
+import '../../services/message_service.dart';
 
 const Color primaryBlue = Color(0xFF2563EB); 
 const Color lightGrey = Color(0xFFE0E0E0);
 const Color darkGrey = Colors.black54;
 const Color bodyBackgroundColor = Color(0xFFf6fcfc); 
 
-class Conversation {
-  final String name;
-  final String lastMessageTime;
-  final String imageUrl;
-
-  Conversation({required this.name, required this.lastMessageTime, required this.imageUrl});
-}
+// We will use ConversationSummary from MessageService
 
 class MessageConversationScreen extends StatefulWidget {
   const MessageConversationScreen({super.key});
@@ -30,15 +25,37 @@ class MessageConversationScreen extends StatefulWidget {
 class _MessageConversationScreenState extends State<MessageConversationScreen> {
   final int _selectedIndex = 3; 
   
-  final List<Conversation> _conversations = [
-    Conversation(name: 'Ramatou Konaré', lastMessageTime: '11:24', imageUrl: 'user1.png'),
-    Conversation(name: 'Jean Dupont', lastMessageTime: 'Samedi', imageUrl: 'user2.png'),
-    Conversation(name: 'Awa Traoré', lastMessageTime: 'Mercredi', imageUrl: 'user3.png'),
-    Conversation(name: 'Moussa Keita', lastMessageTime: '29/09/25', imageUrl: 'user4.png'),
-    Conversation(name: 'Fatoumata Diallo', lastMessageTime: '25/09/25', imageUrl: 'user5.png'),
-    Conversation(name: 'Ousmane Diarra', lastMessageTime: '15/09/25', imageUrl: 'user6.png'),
-    Conversation(name: 'Kadidja Coulibaly', lastMessageTime: '11/09/25', imageUrl: 'user7.png'),
-  ];
+  bool _isLoading = true;
+  String? _error;
+  List<ConversationSummary> _conversations = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadConversations();
+  }
+
+  Future<void> _loadConversations() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+    try {
+      final list = await MessageService.getConversations();
+      if (!mounted) return;
+      setState(() {
+        _conversations = list;
+        _isLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = e.toString().replaceFirst(RegExp(r'^Exception:\s*'), '');
+        _conversations = [];
+        _isLoading = false;
+      });
+    }
+  }
   
   Widget _buildSearchBar() {
     return Container(
@@ -67,51 +84,113 @@ class _MessageConversationScreenState extends State<MessageConversationScreen> {
     );
   }
 
-  Widget _buildConversationItem(BuildContext context, Conversation conversation) {
+  Widget _buildConversationItem(BuildContext context, ConversationSummary conversation) {
     return Column(
       children: [
         InkWell(
           onTap: () {
             Navigator.of(context).push(
               MaterialPageRoute(
-                builder: (context) => ChatScreen(interlocutorName: conversation.name),
+                builder: (context) => ChatScreen(
+                  interlocutorName: conversation.fullName,
+                  destinataireId: conversation.destinataireId,
+                  interlocutorPhotoUrl: conversation.resolvedPhotoUrl,
+                ),
               ),
             );
           },
           child: Container(
             padding: const EdgeInsets.symmetric(vertical: 15.0, horizontal: 10.0),
-            decoration: const BoxDecoration(),
+            decoration: BoxDecoration(
+              color: conversation.messagesNonLus > 0 ? primaryBlue.withOpacity(0.10) : Colors.transparent,
+              borderRadius: BorderRadius.circular(8),
+            ),
         child: Row(
           children: <Widget>[
-            CircleAvatar(
-              radius: 25,
-              backgroundColor: lightGrey,
-              child: Icon(Icons.person, color: Colors.white, size: 30),
-            ),
+            if (conversation.messagesNonLus > 0)
+              Container(
+                width: 3,
+                height: 50,
+                margin: const EdgeInsets.only(right: 10),
+                decoration: const BoxDecoration(color: primaryBlue, borderRadius: BorderRadius.all(Radius.circular(2))),
+              ),
+            Builder(builder: (_) {
+              final url = conversation.resolvedPhotoUrl;
+              if (url != null) {
+                return CircleAvatar(
+                  radius: 25,
+                  backgroundColor: lightGrey,
+                  foregroundImage: NetworkImage(url),
+                  child: const Icon(Icons.person, color: Colors.white, size: 30),
+                );
+              }
+              return const CircleAvatar(
+                radius: 25,
+                backgroundColor: lightGrey,
+                child: Icon(Icons.person, color: Colors.white, size: 30),
+              );
+            }),
             
             const SizedBox(width: 15),
             
             Expanded(
-              child: Text(
-                conversation.name,
-                style: GoogleFonts.poppins(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.black87,
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    conversation.fullName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.poppins(
+                      fontSize: 16,
+                      fontWeight: conversation.messagesNonLus > 0 ? FontWeight.w700 : FontWeight.w500,
+                      color: conversation.messagesNonLus > 0 ? primaryBlue : Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    conversation.dernierMessage.isEmpty ? '...' : conversation.dernierMessage,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.poppins(
+                      fontSize: 13,
+                      color: conversation.messagesNonLus > 0 ? Colors.black87 : darkGrey,
+                      fontWeight: conversation.messagesNonLus > 0 ? FontWeight.w600 : FontWeight.w400,
+                    ),
+                  ),
+                ],
               ),
             ),
             
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Text(
-                  conversation.lastMessageTime,
-                  style: GoogleFonts.poppins(
-                    fontSize: 13,
-                    color: darkGrey,
-                    fontWeight: FontWeight.w500,
-                  ),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      conversation.dateDernierMessage,
+                      style: GoogleFonts.poppins(
+                        fontSize: 13,
+                        color: darkGrey,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    if (conversation.messagesNonLus > 0) ...[
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: primaryBlue,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          conversation.messagesNonLus.toString(),
+                          style: GoogleFonts.poppins(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700),
+                        ),
+                      ),
+                    ]
+                  ],
                 ),
                 const SizedBox(height: 4),
                 const Icon(
@@ -149,36 +228,68 @@ class _MessageConversationScreenState extends State<MessageConversationScreen> {
         bottomWidget: _buildSearchBar(),
       ),
       
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20.0, 20.0, 20.0, 5.0),
-            child: Text(
-              'Conversations',
-              style: GoogleFonts.poppins(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
-              ),
-            ),
-          ),
-          
-          const Divider(height: 0, color: lightGrey),
-
-          Expanded(
-            child: Container(
-              child: ListView.builder(
-                padding: EdgeInsets.zero,
-                itemCount: _conversations.length,
-                itemBuilder: (context, index) {
-                  return _buildConversationItem(context, _conversations[index]);
-                },
-              ),
-            ),
-          ),
-        ],
-      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator(color: primaryBlue))
+          : _error != null
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.error_outline, color: Colors.redAccent, size: 48),
+                        const SizedBox(height: 12),
+                        Text(_error!, textAlign: TextAlign.center, style: GoogleFonts.poppins()),
+                        const SizedBox(height: 12),
+                        ElevatedButton(
+                          onPressed: _loadConversations,
+                          style: ElevatedButton.styleFrom(backgroundColor: primaryBlue),
+                          child: Text('Réessayer', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600)),
+                        )
+                      ],
+                    ),
+                  ),
+                )
+              : (_conversations.isEmpty
+                  ? Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(40.0),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.chat_bubble, size: 60, color: Colors.black),
+                            const SizedBox(height: 20),
+                            Text('Aucun message', style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black87)),
+                          ],
+                        ),
+                      ),
+                    )
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(20.0, 20.0, 20.0, 5.0),
+                          child: Text(
+                            'Conversations',
+                            style: GoogleFonts.poppins(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black87,
+                            ),
+                          ),
+                        ),
+                        const Divider(height: 0, color: lightGrey),
+                        Expanded(
+                          child: ListView.builder(
+                            padding: EdgeInsets.zero,
+                            itemCount: _conversations.length,
+                            itemBuilder: (context, index) {
+                              return _buildConversationItem(context, _conversations[index]);
+                            },
+                          ),
+                        ),
+                      ],
+                    )),
       
       bottomNavigationBar: CustomBottomNavBarRecruteur(
         initialIndex: _selectedIndex,

@@ -324,9 +324,41 @@ if (missionsResponse.success) {
   }
 
   void _confirmCashPayment() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Confirmation du paiement en espèces.')),
-    );
+    if (_pendingMissionIds.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Aucune mission à payer trouvée.')),
+      );
+      return;
+    }
+    if (_pendingMissionIds.length == 1) {
+      // Ouvrir le même écran de mode de paiement (l'utilisateur choisira l'option espèces)
+      Navigator.of(context)
+          .push(
+        MaterialPageRoute(
+          builder: (context) => ModePaiementScreen(
+            missionId: _pendingMissionIds.first,
+          ),
+        ),
+      )
+          .then((result) {
+        if (result == true) {
+          // UI optimiste: retirer immédiatement la mission de la liste en attente
+          setState(() {
+            if (_pendingMissionIds.isNotEmpty) {
+              _pendingMissionIds.remove(_pendingMissionIds.first);
+            }
+            _hasPendingPayment = _pendingMissionIds.isNotEmpty;
+            _pendingMissionId = _pendingMissionIds.isNotEmpty ? _pendingMissionIds.first : null;
+            _pendingPaymentsLoaded = true;
+          });
+          // Synchroniser en arrière-plan
+          _refreshPendingPayments();
+        }
+      });
+    } else {
+      // Plusieurs missions en attente: laisser l'utilisateur choisir
+      _chooseMissionToPay();
+    }
   }
 
   void _handleQuickAction(String action) {

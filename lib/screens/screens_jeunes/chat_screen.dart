@@ -2,6 +2,8 @@
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../config/api_config.dart';
+import '../../services/message_service.dart';
 
 // Importation du widget CustomHeader
 import '../../widgets/custom_header.dart';
@@ -22,8 +24,10 @@ class ChatMessage {
 
 class ChatScreen extends StatefulWidget {
   final String interlocutorName;
+  final int destinataireId;
+  final String? interlocutorPhotoUrl;
 
-  const ChatScreen({super.key, required this.interlocutorName});
+  const ChatScreen({super.key, required this.interlocutorName, required this.destinataireId, this.interlocutorPhotoUrl});
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
@@ -32,14 +36,72 @@ class ChatScreen extends StatefulWidget {
 class _ChatScreenState extends State<ChatScreen> {
   final TextEditingController _textController = TextEditingController();
   
-  // Liste de messages factices pour simuler la conversation de la maquette
-  final List<ChatMessage> _messages = [
-    ChatMessage(text: 'Salut , j\'aimerais avoir plus d\'informations !', time: '08h:04', isMe: true),
-    ChatMessage(text: 'Salut , Déménagement d\'un appartement situé au 2e étage sans ascenseur. Aide au transport de cartons et de quelques meubles démontés jusqu\'au camion de déménagement.', time: '08h:08', isMe: false),
-    ChatMessage(text: 'L\'heure est toujours 09h:00 ?', time: '08h:10', isMe: true),
-    ChatMessage(text: 'OUI!!!', time: '08h:11', isMe: false),
-  ];
-  
+  bool _loading = true;
+  String? _error;
+  final List<ChatMessage> _messages = [];
+  String? _photoUrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _photoUrl = widget.interlocutorPhotoUrl;
+    _loadMessages();
+  }
+
+  Future<void> _loadMessages() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final data = await MessageService.getConversationMessages(destinataireId: widget.destinataireId);
+      if (!mounted) return;
+      final list = data.map((m) {
+        final contenu = (m['contenu'] ?? '').toString();
+        final date = (m['dateMessage'] ?? '').toString();
+        final expNom = (m['expediteurNom'] ?? '').toString();
+        final expPrenom = (m['expediteurPrenom'] ?? '').toString();
+        final senderFull = (expPrenom + ' ' + expNom).trim();
+        final isFromInterlocutor = senderFull.isNotEmpty && senderFull.toLowerCase() == widget.interlocutorName.toLowerCase();
+        if (_photoUrl == null && isFromInterlocutor) {
+          final raw = m['expediteurPhoto'];
+          final p = raw == null ? null : raw.toString();
+          final r = _resolvePhotoUrl(p);
+          if (r != null) {
+            _photoUrl = r;
+          }
+        }
+        return ChatMessage(text: contenu, time: date.isEmpty ? '•' : date, isMe: !isFromInterlocutor);
+      }).toList();
+      setState(() {
+        _messages
+          ..clear()
+          ..addAll(list);
+        _loading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = e.toString().replaceFirst(RegExp(r'^Exception:\s*'), '');
+        _loading = false;
+      });
+    }
+  }
+
+  String? _resolvePhotoUrl(String? raw) {
+    if (raw == null) return null;
+    final s = raw.trim();
+    if (s.isEmpty) return null;
+    if (s.startsWith('http://') || s.startsWith('https://')) return s;
+    final normalized = s.replaceAll('\\', '/');
+    final idx = normalized.toLowerCase().indexOf('/uploads/');
+    if (idx != -1) {
+      final tail = normalized.substring(idx);
+      return ApiConfig.baseUrl + tail;
+    }
+    return null;
+  }
+
   // Fonction pour construire une bulle de message
   Widget _buildMessageBubble(ChatMessage message) {
     // Les messages de l'utilisateur sont à droite (couleur bleue)
@@ -113,22 +175,32 @@ class _ChatScreenState extends State<ChatScreen> {
       ),
     );
   }
-  
-  // Fonction pour envoyer un message (factice pour la démo)
+
+  // Envoi d'un message texte avec UI optimiste
   void _handleSubmitted(String text) {
-    if (text.isEmpty) return;
+    if (text.trim().isEmpty) return;
+    final contenu = text.trim();
     _textController.clear();
+    final optimistic = ChatMessage(text: contenu, time: 'Maintenant', isMe: true);
     setState(() {
-      _messages.add(
-        ChatMessage(
-          text: text, 
-          time: 'Maintenant', 
-          isMe: true,
-        ),
-      );
+      _messages.add(optimistic);
+    });
+    MessageService.sendTextMessage(destinataireId: widget.destinataireId, contenu: contenu).then((resp) {
+      // Optionally update time from server's dateMessage
+      final date = (resp['dateMessage'] ?? '').toString();
+      if (!mounted || date.isEmpty) return;
+      setState(() {
+        // Update last message time if needed
+        final idx = _messages.lastIndexOf(optimistic);
+        if (idx != -1) {
+          _messages[idx] = ChatMessage(text: optimistic.text, time: date, isMe: true);
+        }
+      });
+    }).catchError((e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString().replaceFirst(RegExp(r'^Exception:\s*'), ''), style: GoogleFonts.poppins())));
     });
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -140,16 +212,39 @@ class _ChatScreenState extends State<ChatScreen> {
         title: widget.interlocutorName,
         useCompactStyle: true,
         centerTitle: false,
-        leftWidget: const CircleAvatar(
+        leftWidget: CircleAvatar(
           radius: 18,
           backgroundColor: Colors.white,
-          child: Icon(Icons.person, color: darkBlueHeader, size: 20),
+          backgroundImage: (_photoUrl != null && _photoUrl!.startsWith('http')) ? NetworkImage(_photoUrl!) : null,
+          child: (_photoUrl == null || !_photoUrl!.startsWith('http')) ? const Icon(Icons.person, color: darkBlueHeader, size: 20) : null,
         ),
         onBack: () => Navigator.of(context).pop(),
       ),
       
       // 2. CORPS de la Page : Liste des messages
-      body: Column(
+      body: _loading
+          ? const Center(child: CircularProgressIndicator(color: darkBlueHeader))
+          : _error != null
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.error_outline, color: Colors.redAccent, size: 48),
+                        const SizedBox(height: 12),
+                        Text(_error!, textAlign: TextAlign.center, style: GoogleFonts.poppins()),
+                        const SizedBox(height: 12),
+                        ElevatedButton(
+                          onPressed: _loadMessages,
+                          style: ElevatedButton.styleFrom(backgroundColor: darkBlueHeader),
+                          child: Text('Réessayer', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600)),
+                        )
+                      ],
+                    ),
+                  ),
+                )
+              : Column(
         children: <Widget>[
           Expanded(
             child: ListView.builder(

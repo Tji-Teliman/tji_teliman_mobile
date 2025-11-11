@@ -7,6 +7,7 @@ import '../../widgets/custom_header.dart';
 import '../../widgets/custom_bottom_nav_bar.dart';
 import 'home_jeune.dart';
 import 'message_conversation.dart';
+import 'missions_screen.dart';
 
 // --- COULEURS ET CONSTANTES ---
 const Color primaryBlue = Color(0xFF2563EB); 
@@ -95,7 +96,7 @@ class _MotivationScreenState extends State<MotivationScreen> {
                     onPressed: () {
                       Navigator.of(ctx).pop();
                       Navigator.of(context).pushAndRemoveUntil(
-                        MaterialPageRoute(builder: (c) => const HomeJeuneScreen()),
+                        MaterialPageRoute(builder: (c) => const MissionsScreen()),
                         (route) => false,
                       );
                     },
@@ -104,7 +105,7 @@ class _MotivationScreenState extends State<MotivationScreen> {
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
                       elevation: 0,
                     ),
-                    child: Text("Retour à l'Accueil", style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600)),
+                    child: Text("Retour", style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600)),
                   ),
                 ),
               ],
