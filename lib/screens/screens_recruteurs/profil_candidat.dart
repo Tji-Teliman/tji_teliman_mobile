@@ -268,7 +268,7 @@ class _ProfilCandidatScreenState extends State<ProfilCandidatScreen> {
 
           // Avatar + name + rating
           Positioned(
-            top: height * 0.32,
+            top: height * 0.34,
             left: 0,
             right: 0,
             child: Column(

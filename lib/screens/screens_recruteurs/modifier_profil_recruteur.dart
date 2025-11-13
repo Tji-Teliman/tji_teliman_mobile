@@ -633,7 +633,12 @@ class _ModifierProfilRecruteurScreenState extends State<ModifierProfilRecruteurS
                 title: const Text('Caméra'),
                 onTap: () async {
                   Navigator.of(ctx).pop();
-                  final picked = await _picker.pickImage(source: ImageSource.camera);
+                  final picked = await _picker.pickImage(
+                    source: ImageSource.camera,
+                    maxWidth: 1080,
+                    maxHeight: 1080,
+                    imageQuality: 70,
+                  );
                   if (picked != null) {
                     Uint8List? bytes;
                     try { bytes = await picked.readAsBytes(); } catch (_) {}
@@ -650,7 +655,12 @@ class _ModifierProfilRecruteurScreenState extends State<ModifierProfilRecruteurS
                 title: const Text('Galerie'),
                 onTap: () async {
                   Navigator.of(ctx).pop();
-                  final picked = await _picker.pickImage(source: ImageSource.gallery);
+                  final picked = await _picker.pickImage(
+                    source: ImageSource.gallery,
+                    maxWidth: 1080,
+                    maxHeight: 1080,
+                    imageQuality: 70,
+                  );
                   if (picked != null) {
                     Uint8List? bytes;
                     try { bytes = await picked.readAsBytes(); } catch (_) {}

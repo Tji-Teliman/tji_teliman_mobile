@@ -179,6 +179,8 @@ class _RegistrationFormState extends State<RegistrationForm> {
   String? _selectedGenre;
   bool _isSubmitting = false;
   final _authService = AuthService();
+  bool _isPasswordVisible = false;
+  bool _isConfirmPasswordVisible = false;
 
   @override
   void dispose() {
@@ -192,7 +194,7 @@ class _RegistrationFormState extends State<RegistrationForm> {
   }
 
   // Style des champs de texte AVEC BORDURE
-  InputDecoration _inputDecoration(String hint) {
+  InputDecoration _inputDecoration(String hint, {IconData? suffixIcon, VoidCallback? suffixOnTap}) {
     return InputDecoration(
       hintText: hint,
       hintStyle: const TextStyle(color: Colors.black54, fontSize: 14),
@@ -212,6 +214,12 @@ class _RegistrationFormState extends State<RegistrationForm> {
         borderRadius: BorderRadius.circular(fieldBorderRadius), 
         borderSide: const BorderSide(color: primaryGreen, width: 2), 
       ),
+      suffixIcon: suffixIcon != null
+          ? GestureDetector(
+              onTap: suffixOnTap,
+              child: Icon(suffixIcon, color: headerGradientEndBlue, size: 20),
+            )
+          : null,
     );
   }
 
@@ -405,8 +413,16 @@ class _RegistrationFormState extends State<RegistrationForm> {
     formWidgets.addAll([
       TextFormField(
         controller: _passwordController,
-        obscureText: true,
-        decoration: _inputDecoration('Mot de Passe'),
+        obscureText: !_isPasswordVisible,
+        decoration: _inputDecoration(
+          'Mot de Passe',
+          suffixIcon: _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+          suffixOnTap: () {
+            setState(() {
+              _isPasswordVisible = !_isPasswordVisible;
+            });
+          },
+        ),
         validator: (value) {
           if (value == null || value.isEmpty) {
             return 'Le mot de passe est requis';
@@ -420,8 +436,16 @@ class _RegistrationFormState extends State<RegistrationForm> {
       const SizedBox(height: 15), 
       TextFormField(
         controller: _confirmPasswordController,
-        obscureText: true,
-        decoration: _inputDecoration('Confirmez Mot de Passe'),
+        obscureText: !_isConfirmPasswordVisible,
+        decoration: _inputDecoration(
+          'Confirmez Mot de Passe',
+          suffixIcon: _isConfirmPasswordVisible ? Icons.visibility : Icons.visibility_off,
+          suffixOnTap: () {
+            setState(() {
+              _isConfirmPasswordVisible = !_isConfirmPasswordVisible;
+            });
+          },
+        ),
         validator: (value) {
           if (value == null || value.isEmpty) {
             return 'Veuillez confirmer le mot de passe';

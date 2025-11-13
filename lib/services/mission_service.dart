@@ -81,6 +81,26 @@ class MissionService {
     }
   }
 
+  // Supprimer une mission
+  static Future<bool> deleteMission(int missionId) async {
+    try {
+      final token = await TokenService.getToken();
+      final response = await http.delete(
+        Uri.parse('${ApiConfig.baseUrl}/api/missions/$missionId'),
+        headers: {
+          'Content-Type': 'application/json',
+          if (token != null) 'Authorization': 'Bearer $token',
+        },
+      );
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        return true;
+      }
+      return false;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   // Créer une mission (recruteur)
   static Future<MissionDetailResponse> createMission(Map<String, dynamic> payload) async {
     try {

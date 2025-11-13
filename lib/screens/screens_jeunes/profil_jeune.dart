@@ -282,14 +282,9 @@ class _ProfilJeuneScreenState extends State<ProfilJeuneScreen> {
                      child: GestureDetector(
                        behavior: HitTestBehavior.translucent,
                        onTap: () {
-                         final navigator = Navigator.of(context);
-                         if (navigator.canPop()) {
-                           navigator.pop();
-                         } else {
-                           navigator.pushReplacement(
-                             MaterialPageRoute(builder: (context) => const HomeJeuneScreen()),
-                           );
-                         }
+                         Navigator.of(context).pushReplacement(
+                           MaterialPageRoute(builder: (context) => const HomeJeuneScreen()),
+                         );
                        },
                        child: const Padding(
                          padding: EdgeInsets.all(6.0),
@@ -316,7 +311,7 @@ class _ProfilJeuneScreenState extends State<ProfilJeuneScreen> {
           ),
           // Avatar centré + nom + rôle
           Positioned(
-            top: height * 0.28,
+            top: height * 0.34,
             left: 0,
             right: 0,
             child: Column(

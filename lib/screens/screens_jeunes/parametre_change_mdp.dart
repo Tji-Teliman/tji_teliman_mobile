@@ -1,5 +1,13 @@
 import 'package:flutter/material.dart';
 import '../../widgets/custom_header.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import '../../services/token_service.dart';
+import '../login_screen.dart';
+import '../../config/api_config.dart';
+import 'dart:io';
+import 'dart:async';
 
 // Définition des couleurs personnalisées
 const Color customBlue = Color(0xFF2563EB); // Couleur principale de la barre d'App et boutons
@@ -46,12 +54,19 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   // État de la validation du nouveau mot de passe
   String _newPassword = '';
 
+  // Soumission / erreurs backend
+  bool _submitting = false;
+  String? _backendError;
+
 
   @override
   void initState() {
     super.initState();
     // Écouter les changements du nouveau mot de passe pour la validation en temps réel
     _newPasswordController.addListener(_onNewPasswordChange);
+    // Écouter aussi les autres champs pour réévaluer l'état du bouton en direct
+    _currentPasswordController.addListener(_onAnyPasswordFieldChange);
+    _confirmPasswordController.addListener(_onAnyPasswordFieldChange);
   }
 
   void _onNewPasswordChange() {
@@ -60,9 +75,16 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     });
   }
 
+  void _onAnyPasswordFieldChange() {
+    // Force le rebuild pour recalculer _canSubmit à chaque frappe
+    if (mounted) setState(() {});
+  }
+
   @override
   void dispose() {
     _newPasswordController.removeListener(_onNewPasswordChange);
+    _currentPasswordController.removeListener(_onAnyPasswordFieldChange);
+    _confirmPasswordController.removeListener(_onAnyPasswordFieldChange);
     _currentPasswordController.dispose();
     _newPasswordController.dispose();
     _confirmPasswordController.dispose();
@@ -82,18 +104,30 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     return null;
   }
 
+  bool get _allRulesOk => passwordRegExp.hasMatch(_newPasswordController.text);
+
+  bool get _canSubmit {
+    return !_submitting &&
+        _currentPasswordController.text.isNotEmpty &&
+        _allRulesOk &&
+        _newPasswordController.text.isNotEmpty &&
+        _confirmPasswordController.text.isNotEmpty &&
+        _newPasswordController.text == _confirmPasswordController.text;
+  }
+
   // Fonction pour gérer la soumission
-  void _submitForm() {
+  Future<void> _submitForm() async {
     // Réinitialiser l'erreur de non-concordance
     setState(() {
         _passwordsDoNotMatch = false;
+        _backendError = null;
     });
     
     // 1. Valider le formulaire
     bool formIsValid = _formKey.currentState!.validate();
 
     // 2. Vérifier la complexité (car _validatePassword retourne null si l'erreur est gérée par le widget)
-    if (!passwordRegExp.hasMatch(_newPasswordController.text)) {
+    if (!_allRulesOk) {
       formIsValid = false;
     }
 
@@ -107,14 +141,182 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
 
     // Si tout est valide
     if (formIsValid) {
-      // Simuler l'enregistrement
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Modifications enregistrées avec succès!'),
-          backgroundColor: customGreen,
-          duration: const Duration(seconds: 2),
-        ),
+      if (!_canSubmit) return; // sécurité
+      // Demande de confirmation avant de procéder
+      final bool? confirm = await showDialog<bool>(
+        context: context,
+        builder: (ctx) {
+          return Dialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 22, 20, 16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 54,
+                    height: 54,
+                    decoration: BoxDecoration(color: customBlue.withOpacity(0.15), shape: BoxShape.circle),
+                    child: const Icon(Icons.lock_reset, color: customBlue, size: 30),
+                  ),
+                  const SizedBox(height: 12),
+                  Text('Confirmer la modification', style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w700)),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Voulez-vous vraiment modifier votre mot de passe ?\nVous serez automatiquement déconnecté après la réussite.',
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.poppins(fontSize: 12, color: Colors.black87),
+                  ),
+                  const SizedBox(height: 14),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => Navigator.of(ctx).pop(false),
+                          style: OutlinedButton.styleFrom(
+                            side: BorderSide(color: Colors.grey.shade300),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                          ),
+                          child: Text('Annuler', style: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: Colors.black87)),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () => Navigator.of(ctx).pop(true),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: customBlue,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                          ),
+                          child: Text('Modifier', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600)),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
       );
+      if (confirm != true) return;
+
+      setState(() {
+        _submitting = true;
+      });
+      try {
+        final uri = Uri.parse('${ApiConfig.baseUrl}/api/auth/change-password');
+
+        final token = await TokenService.getToken();
+        final headers = <String, String>{
+          'Content-Type': 'application/json',
+          if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
+        };
+        final body = jsonEncode({
+          'motDePasseActuel': _currentPasswordController.text,
+          'nouveauMotDePasse': _newPasswordController.text,
+          'confirmationMotDePasse': _confirmPasswordController.text,
+        });
+        final resp = await http
+            .post(uri, headers: headers, body: body)
+            .timeout(const Duration(seconds: 20));
+
+        if (!mounted) return;
+
+        if (resp.statusCode >= 200 && resp.statusCode < 300) {
+          // Succès -> popup stylé puis déconnexion
+          await showDialog(
+            context: context,
+            builder: (ctx) {
+              return Dialog(
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 22, 20, 16),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Container(
+                        width: 54,
+                        height: 54,
+                        decoration: BoxDecoration(color: customGreen.withOpacity(0.15), shape: BoxShape.circle),
+                        child: const Icon(Icons.check, color: customGreen, size: 30),
+                      ),
+                      const SizedBox(height: 12),
+                      Text('Mot de passe modifié', style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w700)),
+                      const SizedBox(height: 6),
+                      Text(
+                        'Votre mot de passe a été modifié avec succès. Vous allez être déconnecté.',
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.poppins(fontSize: 12, color: Colors.black87),
+                      ),
+                      const SizedBox(height: 14),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 42,
+                        child: ElevatedButton(
+                          onPressed: () => Navigator.of(ctx).pop(),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: customGreen,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          ),
+                          child: Text('OK', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600)),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          );
+
+          // Déconnexion automatique
+          try { await TokenService.logout(); } catch (_) {}
+          if (!mounted) return;
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (_) => const LoginScreen()),
+            (route) => false,
+          );
+        } else {
+          // Erreur backend
+          String message = 'Échec de la modification du mot de passe';
+          try {
+            final data = jsonDecode(resp.body);
+            if (data is Map && data['message'] is String) {
+              message = data['message'];
+            } else if (data is Map && data['error'] is String) {
+              message = data['error'];
+            }
+          } catch (_) {}
+          setState(() {
+            _backendError = message;
+          });
+        }
+      } on SocketException catch (e) {
+        if (!mounted) return;
+        setState(() {
+          _backendError = "Impossible de se connecter au serveur (${e.osError?.errorCode}). Vérifiez l'URL du backend (${ApiConfig.baseUrl}) et votre connexion réseau.";
+        });
+      } on TimeoutException {
+        if (!mounted) return;
+        setState(() {
+          _backendError = "La requête a expiré. Veuillez réessayer.";
+        });
+      } catch (e) {
+        if (!mounted) return;
+        setState(() {
+          _backendError = 'Erreur réseau: ${e.toString()}';
+        });
+      } finally {
+        if (mounted) {
+          setState(() {
+            _submitting = false;
+          });
+        }
+      }
     } else {
         // Afficher un message d'erreur si le formulaire n'est pas valide
         ScaffoldMessenger.of(context).showSnackBar(
@@ -253,12 +455,28 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                             ),
                           ),
                         ),
+                      if (_backendError != null) ...[
+                        const SizedBox(height: 8),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFFE5E5),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: const Color(0xFFFFB3B3)),
+                          ),
+                          child: Text(
+                            _backendError!,
+                            style: const TextStyle(color: customRed, fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: 10),
                       SizedBox(
                         width: double.infinity,
                         height: 50,
                         child: ElevatedButton(
-                          onPressed: _submitForm,
+                          onPressed: _canSubmit ? _submitForm : null,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: customGreen,
                             foregroundColor: Colors.white,
@@ -267,13 +485,19 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                             ),
                             elevation: 5,
                           ),
-                          child: const Text(
-                            'Enregistrer les modifications',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
+                          child: _submitting
+                              ? const SizedBox(
+                                  width: 22,
+                                  height: 22,
+                                  child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white),
+                                )
+                              : const Text(
+                                  'Enregistrer les modifications',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
                         ),
                       ),
                     ],

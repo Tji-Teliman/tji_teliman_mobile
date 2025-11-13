@@ -393,7 +393,12 @@ class _DetailMissionScreenState extends State<DetailMissionScreen> {
           onTap: () {
             // Navigation vers la page signaler mission
             Navigator.of(context).push(
-              MaterialPageRoute(builder: (context) => const SignalerMission()),
+              MaterialPageRoute(
+                builder: (context) => SignalerMission(
+                  missionId: widget.missionId,
+                  missionTitle: _missionData?.titre,
+                ),
+              ),
             );
           },
           child: const Icon(

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../widgets/custom_header.dart';
 import 'details_payement_especes.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class MoyenPaiementParametre extends StatelessWidget {
   const MoyenPaiementParametre({super.key});
@@ -46,21 +47,39 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
   final Color _appBarColor = const Color(0xFF46B3C8); 
   final Color _backgroundColor = const Color(0xFFf6fcfc);
 
-  // Liste des méthodes de paiement disponibles (sans Carte Bancaire)
-  final List<PaymentMethod> availableMethods = const [
-    PaymentMethod(
-      icon: Icons.smartphone,
-      title: "Mobile Money (Orange)",
-      description: "07 12 34 56 78 - Par défaut",
-      color: Color(0xFFFF6600), // Orange
-    ),
-    PaymentMethod(
-      icon: Icons.payments,
-      title: "Paiement en espèces",
-      description: "Payer directement le jeune sur place",
-      color: Color(0xFF374151), // Gris foncé
-    ),
-  ];
+  String _defaultPhone = '07 12 34 56 78';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDefaultPhone();
+  }
+
+  Future<void> _loadDefaultPhone() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final p = prefs.getString('user_phone');
+      if (p != null && p.trim().isNotEmpty) {
+        if (mounted) setState(() => _defaultPhone = p.trim());
+      }
+    } catch (_) {}
+  }
+
+  // Génère la liste des méthodes de paiement en fonction du numéro par défaut
+  List<PaymentMethod> get availableMethods => [
+        PaymentMethod(
+          icon: Icons.smartphone,
+          title: "Mobile Money (Orange)",
+          description: "${_defaultPhone} - Par défaut",
+          color: const Color(0xFFFF6600), // Orange
+        ),
+        const PaymentMethod(
+          icon: Icons.payments,
+          title: "Paiement en espèces",
+          description: "Payer directement le jeune sur place",
+          color: Color(0xFF374151), // Gris foncé
+        ),
+      ];
 
   @override
   Widget build(BuildContext context) {

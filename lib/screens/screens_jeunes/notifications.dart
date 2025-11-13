@@ -4,6 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../services/user_service.dart';
 import '../../services/payment_service.dart';
+import '../../services/notification_storage_service.dart';
+import '../../config/api_config.dart';
+import 'chat_screen.dart';
 
 import '../screens_recruteurs/noter_jeune.dart';
 import 'noter_recruteur.dart';
@@ -36,6 +39,7 @@ class NotificationItem {
   final Color backgroundColor;
   final bool showReplyButton;
   final String type; 
+  final bool isRead;
   // IDs et détails associés pour actions
   final int? candidatureId;
   final int? missionId;
@@ -44,6 +48,8 @@ class NotificationItem {
   final String? missionDateFin;
   final String? jeuneFullName;
   final String? recruteurFullName;
+  final int? interlocuteurId; // id du recruteur pour le chat
+  final String? recruteurPhoto; // raw backend value
 
   const NotificationItem({
     required this.title,
@@ -54,6 +60,7 @@ class NotificationItem {
     this.backgroundColor = Colors.white,
     this.showReplyButton = false,
     required this.type,
+    this.isRead = true,
     this.candidatureId,
     this.missionId,
     this.missionTitle,
@@ -61,6 +68,8 @@ class NotificationItem {
     this.missionDateFin,
     this.jeuneFullName,
     this.recruteurFullName,
+    this.interlocuteurId,
+    this.recruteurPhoto,
   });
 }
 
@@ -100,6 +109,25 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     });
     // Logique de navigation à implémenter ici (ex: Navigator.push)
     print("Navigation vers l'index $index");
+  }
+
+  // Convertit un chemin/valeur photo en URL HTTP complète si possible
+  String? _resolvePhotoUrl(String? raw) {
+    if (raw == null) return null;
+    final s = raw.trim();
+    if (s.isEmpty) return null;
+    if (s.startsWith('http://') || s.startsWith('https://')) return s;
+    // Normaliser et préfixer avec baseUrl s'il s'agit d'un chemin uploads
+    String base = ApiConfig.baseUrl;
+    if (base.endsWith('/')) base = base.substring(0, base.length - 1);
+    String path = s.replaceAll('\\', '/');
+    if (path.startsWith('/')) {
+      return '$base$path';
+    }
+    if (path.toLowerCase().startsWith('uploads')) {
+      return '$base/$path';
+    }
+    return s;
   }
 
   Future<void> _showAlreadyDoneDialog({required String title, required String message, required Color accentColor, required IconData icon}) async {
@@ -185,6 +213,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       timeAgo: 'Il y a 45m',
       icon: Icons.check_circle_outline,
       iconColor: successGreen,
+      isRead: false,
       type: 'CANDIDATURE_ACCEPTEE',
     ),
     
@@ -195,6 +224,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       timeAgo: 'Il y a 1h',
       icon: Icons.work_history, // Icône pour tâche terminée
       iconColor: infoBlue,
+      isRead: false,
       type: 'MISSION_TERMINEE',
     ),
     
@@ -205,6 +235,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       timeAgo: 'Il y a 50m',
       icon: Icons.account_balance_wallet, // Icône pour paiement/argent
       iconColor: successGreen,
+      isRead: true,
       type: 'PAIEMENT_EFFECTUE',
     ),
 
@@ -266,7 +297,18 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     try {
       // 1) Fetch notifications
       final data = await UserService.getMesNotifications();
-      final mapped = data.map<NotificationItem>((n) => _mapBackendToItem(n)).toList();
+      
+      // Mapper les notifications (async maintenant)
+      final mapped = <NotificationItem>[];
+      for (final n in data) {
+        final item = await _mapBackendToItem(n);
+        mapped.add(item);
+      }
+      
+      // Marquer toutes les notifications actuelles comme vues localement
+      // Cela permet de les considérer comme lues la prochaine fois qu'on récupère les données
+      // Mais elles s'afficheront comme non lues cette fois-ci si elles n'ont pas été vues avant
+      await NotificationStorageService.markAllCurrentNotificationsAsSeen(data);
       // 2) Fetch pending payments to auto-disable payment actions already completed elsewhere
       try {
         _pendingPaymentMissionIds.clear();
@@ -302,15 +344,16 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     }
   }
 
-  NotificationItem _mapBackendToItem(Map<String, dynamic> n) {
+  Future<NotificationItem> _mapBackendToItem(Map<String, dynamic> n) async {
     final type = (n['type'] ?? n['notificationType'] ?? '').toString();
     final title = (n['titre'] ?? n['title'] ?? n['subject'] ?? _defaultTitleForType(type)).toString();
     final content = (n['contenu'] ?? n['content'] ?? n['message'] ?? n['description'] ?? '').toString();
     final relative = n['dateCreationRelative']?.toString();
     final createdAtRaw = n['dateCreation'] ?? n['createdAt'] ?? n['created_at'] ?? n['date'];
-    final timeAgo = (relative != null && relative.trim().isNotEmpty)
+    final rawTime = (relative != null && relative.trim().isNotEmpty)
         ? relative
         : (_formatTimeAgoSafe(createdAtRaw) ?? (n['timeAgo']?.toString() ?? ''));
+    final timeAgo = _abbreviateTime(rawTime);
 
     final style = _styleForType(type);
 
@@ -322,6 +365,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     String? missionDateFin;
     String? jeuneFullName;
     String? recruteurFullName;
+    int? interlocuteurId;
+    String? recruteurPhoto;
 
     // Helpers parse int
     int? _toInt(dynamic v) {
@@ -383,6 +428,35 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     final rPrenom = (n['recruteurPrenom'] ?? '').toString();
     final rNom = (n['recruteurNom'] ?? '').toString();
     recruteurFullName = ('$rPrenom $rNom').trim().isEmpty ? null : ('$rPrenom $rNom').trim();
+    interlocuteurId = _toInt(n['interlocuteurId'] ?? n['recruteurId']);
+    recruteurPhoto = (n['recruteurPhoto'] ?? '').toString();
+
+    // Utiliser la méthode qui prend en compte le stockage local
+    final isReadBackend = UserService.isNotificationRead(n);
+    final estLueRaw = n['estLue'] ?? n['est_lue'] ?? n['lue'];
+    
+    // Vérifier si elle a été vue localement
+    final id = n['id'];
+    bool isRead = false; // Par défaut, non lue
+    
+    if (id != null) {
+      final idInt = id is int ? id : int.tryParse(id.toString());
+      if (idInt != null) {
+        final seenLocally = await NotificationStorageService.isNotificationSeenLocally(idInt);
+        // Logique : 
+        // - Si vue localement, elle est lue
+        // - Si backend dit non lue, elle est non lue
+        // - Si backend dit lue mais pas vue localement, elle est non lue (marquée automatiquement)
+        isRead = seenLocally;
+      }
+    }
+    
+    // Si le backend dit explicitement non lue, elle est non lue
+    if (!isReadBackend) {
+      isRead = false;
+    }
+    
+    print('🔔 Notification mapping: id=$id, estLue=$estLueRaw, isReadBackend=$isReadBackend, isRead=$isRead, type=${n['type']}');
 
     return NotificationItem(
       title: title.isEmpty ? _defaultTitleForType(type) : title,
@@ -393,6 +467,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       backgroundColor: Colors.white,
       showReplyButton: style.showReply,
       type: style.typeKey,
+      isRead: isRead,
       candidatureId: candidatureId,
       missionId: missionId,
       missionTitle: missionTitre,
@@ -400,6 +475,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       missionDateFin: missionDateFin,
       jeuneFullName: jeuneFullName,
       recruteurFullName: recruteurFullName,
+      interlocuteurId: interlocuteurId,
+      recruteurPhoto: recruteurPhoto,
     );
   }
 
@@ -489,10 +566,32 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     return weeks <= 1 ? 'Il y a 1 semaine' : 'Il y a ${weeks} semaines';
   }
 
+  // Abrège les unités de temps françaises dans les chaînes fournies par le backend
+  String _abbreviateTime(String s) {
+    if (s.isEmpty) return s;
+    String out = s;
+    // Normaliser espaces multiples
+    out = out.replaceAll(RegExp(r'\s+'), ' ');
+    // Remplacements ciblés (singulier/pluriel)
+    out = out.replaceAll(RegExp(r'\bsecondes?\b', caseSensitive: false), 's');
+    out = out.replaceAll(RegExp(r'\bminutes?\b', caseSensitive: false), 'm');
+    out = out.replaceAll(RegExp(r'\bheures?\b', caseSensitive: false), 'h');
+    out = out.replaceAll(RegExp(r'\bjours?\b', caseSensitive: false), 'j');
+    out = out.replaceAll(RegExp(r'\bsemaines?\b', caseSensitive: false), 'sem');
+    // Optionnel: supprimer l'espace avant l'unité abrégée si forme "Il y a 5 s" -> "Il y a 5s"
+    out = out.replaceAllMapped(RegExp(r'(\d+)\s*(s|m|h|j|sem)\b', caseSensitive: false), (Match m) => '${m[1]}${m[2]}');
+    return out;
+  }
+
   // Widget pour construire une carte de notification
   Widget _buildNotificationCard(BuildContext context, NotificationItem item, int index) {
     // Logique de visibilité/label/couleur du bouton selon le type
     final bool isRatingRequest = item.type == 'DEMANDE_NOTATION_RECRUTEUR' || item.type == 'DEMANDE_NOTATION_JEUNE';
+    final bool isUnread = !item.isRead;
+    // Debug pour voir l'état
+    if (isUnread) {
+      print('🔔 Carte notification non lue: ${item.title}, isRead=${item.isRead}');
+    }
     bool showAction = false;
     String buttonText = 'Action';
     Color buttonColor = successGreen;
@@ -529,13 +628,17 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         alreadyDone = true;
       }
     }
+    final Color cardBackground = isUnread ? actionBlue.withOpacity(0.12) : item.backgroundColor;
+    final BorderRadius cardRadius = BorderRadius.circular(15.0);
+
     return Container(
       // Marge extérieure pour espacer les cartes
       margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
       padding: const EdgeInsets.all(16.0),
       decoration: BoxDecoration(
-        color: item.backgroundColor,
-        borderRadius: BorderRadius.circular(15.0),
+        color: cardBackground,
+        borderRadius: cardRadius,
+        border: isUnread ? Border.all(color: actionBlue.withOpacity(0.5), width: 1.5) : null,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -551,7 +654,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           Container(
             padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
-              color: item.iconColor.withOpacity(0.1),
+              color: item.iconColor.withOpacity(isUnread ? 0.2 : 0.1),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(
@@ -572,8 +675,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   item.title,
                   style: GoogleFonts.poppins(
                     fontSize: 15,
-                    fontWeight: FontWeight.bold, // Plus gras que w600
-                    color: Colors.black87,
+                    fontWeight: isUnread ? FontWeight.w800 : FontWeight.bold, // Plus gras pour les non lues
+                    color: isUnread ? Colors.black : Colors.black87,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -597,16 +700,56 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             child: Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: <Widget>[
-              // Temps écoulé
-              Text(
-                item.timeAgo,
-                style: GoogleFonts.poppins(
-                  fontSize: 12,
-                  color: darkGrey,
-                  fontWeight: FontWeight.w500,
-                ),
+              // Temps écoulé + pastille
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  if (isUnread)
+                    Container(
+                      width: 10,
+                      height: 10,
+                      margin: const EdgeInsets.only(right: 6),
+                      decoration: BoxDecoration(
+                        color: actionBlue,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: actionBlue.withOpacity(0.4),
+                            blurRadius: 4,
+                            offset: const Offset(0, 1),
+                          ),
+                        ],
+                      ),
+                    ),
+                  Text(
+                    item.timeAgo,
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      color: darkGrey,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 8),
+
+              if (isUnread)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  margin: const EdgeInsets.only(bottom: 6),
+                  decoration: BoxDecoration(
+                    color: actionBlue.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    'Nouveau',
+                    style: GoogleFonts.poppins(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: actionBlue,
+                    ),
+                  ),
+                ),
               
               // Bouton Action (conditionnel)
               if (showAction)
@@ -644,6 +787,25 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                           if (item.candidatureId != null) _disabledCandidatureIds.add(item.candidatureId!);
                         });
                       }
+                      return;
+                    }
+
+                    if (item.type == 'CANDIDATURE_ACCEPTEE') {
+                      final destId = item.interlocuteurId;
+                      final name = item.recruteurFullName ?? 'Recruteur';
+                      if (destId == null || destId <= 0) {
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Identifiant recruteur introuvable pour la conversation')));
+                        return;
+                      }
+                      await Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => ChatScreen(
+                            interlocutorName: name,
+                            destinataireId: destId,
+                            interlocutorPhotoUrl: _resolvePhotoUrl(item.recruteurPhoto),
+                          ),
+                        ),
+                      );
                       return;
                     }
 

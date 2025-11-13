@@ -1,18 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+
+import '../services/message_service.dart';
 
 // Définition de la couleur verte pour les icônes sélectionnées
 const Color selectedIconColor = Color(0xFF27AE60); 
 const Color lightGreenBackground = Color(0xFFE8F5E9); // Vert très clair pour l'arrière-plan
+const Color messageBadgeColor = Color(0xFFE11D48); // Rouge pour les messages non lus
 
 // --- 1. CLASSE PRINCIPALE ---
 class CustomBottomNavBar extends StatefulWidget {
   final int initialIndex; 
-  final Function(int) onItemSelected; 
+  final Function(int) onItemSelected;
+  final int? unreadMessagesCount;
 
   const CustomBottomNavBar({
     super.key,
     this.initialIndex = 0, 
     required this.onItemSelected,
+    this.unreadMessagesCount,
   });
 
   @override
@@ -22,6 +28,8 @@ class CustomBottomNavBar extends StatefulWidget {
 // --- 2. GESTION DE L'ÉTAT ET DE LA LOGIQUE ---
 class _CustomBottomNavBarState extends State<CustomBottomNavBar> {
   late int _selectedIndex;
+  int _badgeCount = 0;
+  bool _isFetchingBadge = false;
 
   final List<Map<String, dynamic>> navItems = [
     {'icon': Icons.home, 'label': 'Accueil'}, 
@@ -34,6 +42,25 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar> {
   void initState() {
     super.initState();
     _selectedIndex = widget.initialIndex;
+    if (widget.unreadMessagesCount != null) {
+      _badgeCount = _normalizeCount(widget.unreadMessagesCount!);
+    } else {
+      _loadUnreadMessages();
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant CustomBottomNavBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.unreadMessagesCount != null) {
+      if (widget.unreadMessagesCount != oldWidget.unreadMessagesCount) {
+        setState(() {
+          _badgeCount = _normalizeCount(widget.unreadMessagesCount!);
+        });
+      }
+    } else if (oldWidget.unreadMessagesCount != null) {
+      _loadUnreadMessages();
+    }
   }
 
   void _onItemTapped(int index) {
@@ -42,13 +69,40 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar> {
     });
     widget.onItemSelected(index); 
   }
+
+  Future<void> _loadUnreadMessages() async {
+    if (_isFetchingBadge) return;
+    _isFetchingBadge = true;
+    try {
+      final total = await MessageService.getTotalUnreadMessagesCount();
+      if (!mounted) return;
+      setState(() {
+        _badgeCount = _normalizeCount(total);
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _badgeCount = 0;
+      });
+    } finally {
+      _isFetchingBadge = false;
+    }
+  }
+
+  int _normalizeCount(int value) {
+    if (value <= 0) return 0;
+    if (value > 9999) return 9999;
+    return value;
+  }
   
   // Crée l'élément avec label OU un espace vide si sélectionné
   Widget _buildItemWithLabelOrEmptySpace(int index) {
     final item = navItems[index];
     final isSelected = _selectedIndex == index;
     // COULEUR POUR LES ICÔNES ET TEXTES NON SÉLECTIONNÉS (MODIFIÉ)
-    final Color defaultColor = Colors.black; 
+    final Color defaultColor = Colors.black;
+    final bool isDiscussionIcon = index == 3;
+    final bool showBadge = _badgeCount > 0 && isDiscussionIcon;
 
     return Expanded(
       child: GestureDetector(
@@ -62,7 +116,40 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar> {
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
                     // Icône (couleur modifiée en noir)
-                    Icon(item['icon'], color: defaultColor, size: 24), 
+                    Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        Icon(item['icon'], color: defaultColor, size: 24),
+                        if (showBadge)
+                          Positioned(
+                            top: -6,
+                            right: -6,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                              decoration: BoxDecoration(
+                                color: messageBadgeColor,
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: Colors.white, width: 1.2),
+                              ),
+                              constraints: const BoxConstraints(
+                                minWidth: 16,
+                                minHeight: 16,
+                              ),
+                              child: Text(
+                                _badgeCount > 99
+                                    ? '99+'
+                                    : _badgeCount.toString(),
+                                style: GoogleFonts.poppins(
+                                  color: Colors.white,
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ), 
                     Padding(
                       padding: const EdgeInsets.only(top: 2.0),
                       child: Text(
@@ -92,37 +179,70 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar> {
       left: leftOffset,
       bottom: 25, // Positionne l'élément à la bonne hauteur (au-dessus de la courbe)
       child: IgnorePointer( // Ignore les taps sur le cercle pour ne pas bloquer l'écran
-        child: Container(
-          width: itemSize, 
-          height: itemSize,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: selectedIconColor.withOpacity(0.2),
-                blurRadius: 10,
-                spreadRadius: 2,
-              ),
-            ],
-          ),
-          child: Center(
-            child: Container(
-              width: 45, // Taille du cercle vert clair
-              height: 45,
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Container(
+              width: itemSize, 
+              height: itemSize,
               decoration: BoxDecoration(
-                color: lightGreenBackground.withOpacity(0.8), 
+                color: Colors.white,
                 shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: selectedIconColor.withOpacity(0.2),
+                    blurRadius: 10,
+                    spreadRadius: 2,
+                  ),
+                ],
               ),
               child: Center(
-                child: Icon(
-                  navItems[_selectedIndex]['icon'], 
-                  color: selectedIconColor,
-                  size: 30,
+                child: Container(
+                  width: 45, // Taille du cercle vert clair
+                  height: 45,
+                  decoration: BoxDecoration(
+                    color: lightGreenBackground.withOpacity(0.8), 
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: Icon(
+                      navItems[_selectedIndex]['icon'], 
+                      color: selectedIconColor,
+                      size: 30,
+                    ),
+                  ),
                 ),
               ),
             ),
-          ),
+            if (_selectedIndex == 3 && _badgeCount > 0)
+              Positioned(
+                top: -6,
+                right: -6,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                  decoration: BoxDecoration(
+                    color: messageBadgeColor,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.white, width: 1.2),
+                  ),
+                  constraints: const BoxConstraints(
+                    minWidth: 16,
+                    minHeight: 16,
+                  ),
+                  child: Text(
+                    _badgeCount > 99
+                        ? '99+'
+                        : _badgeCount.toString(),
+                    style: GoogleFonts.poppins(
+                      color: Colors.white,
+                      fontSize: 9,
+                      fontWeight: FontWeight.w700,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ),
+          ],
         ),
       ),
     );

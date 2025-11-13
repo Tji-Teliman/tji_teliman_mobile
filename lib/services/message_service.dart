@@ -104,6 +104,19 @@ class MessageService {
     throw Exception('Erreur lors de la récupération des conversations: ${response.statusCode}');
   }
 
+  static Future<int> getTotalUnreadMessagesCount() async {
+    try {
+      final conversations = await getConversations();
+      final total = conversations.fold<int>(
+        0,
+        (sum, conv) => sum + (conv.messagesNonLus > 0 ? conv.messagesNonLus : 0),
+      );
+      return total;
+    } catch (e) {
+      throw Exception('Erreur lors du calcul des messages non lus: $e');
+    }
+  }
+
   static String? _resolvePhotoUrl(String? raw) {
     if (raw == null || raw.trim().isEmpty) return null;
     final s = raw.trim();

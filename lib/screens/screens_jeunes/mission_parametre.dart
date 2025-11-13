@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../widgets/custom_header.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
+import 'package:google_fonts/google_fonts.dart';
 
 
 class MissionParametre extends StatelessWidget {
@@ -130,19 +133,88 @@ class _MissionPreferencesScreenState extends State<MissionPreferencesScreen> {
     'Week-ends': true,
   };
 
-  // Fonction pour enregistrer les préférences (simulation)
-  void _savePreferences() {
-    final selectedCategories = _missionCategories.entries.where((e) => e.value).map((e) => e.key).toList();
-    final selectedAvailability = _availability.entries.where((e) => e.value).map((e) => e.key).toList();
-    
-    String message = 'Catégories: ${selectedCategories.join(', ')} | Disponibilité: ${selectedAvailability.join(', ')} (Simulation)';
+  static const String _prefKeyCategories = 'mission_pref_categories';
+  static const String _prefKeyAvailability = 'mission_pref_availability';
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Préférences enregistrées : $message'),
-        backgroundColor: Colors.green,
-        duration: const Duration(seconds: 3),
-      ),
+  @override
+  void initState() {
+    super.initState();
+    _loadPreferences();
+  }
+
+  Future<void> _loadPreferences() async {
+    final prefs = await SharedPreferences.getInstance();
+    final catJson = prefs.getString(_prefKeyCategories);
+    final availJson = prefs.getString(_prefKeyAvailability);
+    if (catJson != null) {
+      try {
+        final Map<String, dynamic> map = jsonDecode(catJson);
+        setState(() {
+          _missionCategories = map.map((k, v) => MapEntry(k, v == true));
+        });
+      } catch (_) {}
+    }
+    if (availJson != null) {
+      try {
+        final Map<String, dynamic> map = jsonDecode(availJson);
+        setState(() {
+          _availability = map.map((k, v) => MapEntry(k, v == true));
+        });
+      } catch (_) {}
+    }
+  }
+
+  Future<void> _savePreferences() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_prefKeyCategories, jsonEncode(_missionCategories));
+    await prefs.setString(_prefKeyAvailability, jsonEncode(_availability));
+
+    await showDialog(
+      context: context,
+      builder: (ctx) {
+        return Dialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 22, 20, 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Container(
+                  width: 54,
+                  height: 54,
+                  decoration: BoxDecoration(color: _primaryBlue.withOpacity(0.15), shape: BoxShape.circle),
+                  child: Icon(Icons.check, color: _primaryBlue, size: 30),
+                ),
+                const SizedBox(height: 12),
+                Text('Préférences enregistrées', style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w700)),
+                const SizedBox(height: 6),
+                Text(
+                  'Vos préférences de missions ont bien été sauvegardées.',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.poppins(fontSize: 12, color: Colors.black87),
+                ),
+                const SizedBox(height: 14),
+                SizedBox(
+                  width: double.infinity,
+                  height: 42,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.of(ctx).pop();
+                      Navigator.of(context).pop();
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _primaryBlue,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                    child: Text('OK', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 

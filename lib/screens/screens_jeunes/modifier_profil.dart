@@ -254,14 +254,22 @@ class _ModifierProfilScreenState extends State<ModifierProfilScreen> {
               children: [
                 Stack(
                   children: [
-                    CircleAvatar(
-                      radius: 50,
-                      backgroundImage: _profileImage != null
-                          ? FileImage(File(_profileImage!.path))
-                          : (widget.initialPhotoUrl.isNotEmpty
-                              ? NetworkImage(widget.initialPhotoUrl)
-                              : const AssetImage('') as ImageProvider),
-                    ),
+                    if (_profileImage != null)
+                      CircleAvatar(
+                        radius: 50,
+                        backgroundImage: FileImage(File(_profileImage!.path)),
+                      )
+                    else if (widget.initialPhotoUrl.isNotEmpty)
+                      CircleAvatar(
+                        radius: 50,
+                        backgroundImage: NetworkImage(widget.initialPhotoUrl),
+                      )
+                    else
+                      CircleAvatar(
+                        radius: 50,
+                        backgroundColor: Colors.white.withOpacity(0.25),
+                        child: const Icon(Icons.person, size: 50, color: Colors.white),
+                      ),
                     Positioned(
                       right: 0,
                       bottom: 0,
@@ -753,7 +761,12 @@ class _ModifierProfilScreenState extends State<ModifierProfilScreen> {
                 title: const Text('Caméra'),
                 onTap: () async {
                   Navigator.of(ctx).pop();
-                  final picked = await _picker.pickImage(source: ImageSource.camera);
+                  final picked = await _picker.pickImage(
+                    source: ImageSource.camera,
+                    maxWidth: 1080,
+                    maxHeight: 1080,
+                    imageQuality: 70,
+                  );
                   if (picked != null) {
                     setState(() {
                       _profileImage = picked;
@@ -767,7 +780,12 @@ class _ModifierProfilScreenState extends State<ModifierProfilScreen> {
                 title: const Text('Galerie'),
                 onTap: () async {
                   Navigator.of(ctx).pop();
-                  final picked = await _picker.pickImage(source: ImageSource.gallery);
+                  final picked = await _picker.pickImage(
+                    source: ImageSource.gallery,
+                    maxWidth: 1080,
+                    maxHeight: 1080,
+                    imageQuality: 70,
+                  );
                   if (picked != null) {
                     setState(() {
                       _profileImage = picked;

@@ -38,6 +38,7 @@ class _MessageConversationScreenState extends State<MessageConversationScreen> {
   bool _isLoading = true;
   String? _error;
   List<ConversationSummary> _conversations = [];
+  int _totalUnreadMessages = 0;
 
   @override
   void initState() {
@@ -55,6 +56,10 @@ class _MessageConversationScreenState extends State<MessageConversationScreen> {
       if (!mounted) return;
       setState(() {
         _conversations = list;
+        _totalUnreadMessages = list.fold<int>(
+          0,
+          (sum, conv) => sum + (conv.messagesNonLus > 0 ? conv.messagesNonLus : 0),
+        );
         _isLoading = false;
       });
     } catch (e) {
@@ -101,8 +106,8 @@ class _MessageConversationScreenState extends State<MessageConversationScreen> {
     return Column(
       children: [
         InkWell(
-          onTap: () {
-            Navigator.of(context).push(
+          onTap: () async {
+            await Navigator.of(context).push(
               MaterialPageRoute(
                 builder: (context) => ChatScreen(
                   interlocutorName: conversation.fullName,
@@ -110,12 +115,19 @@ class _MessageConversationScreenState extends State<MessageConversationScreen> {
                 ),
               ),
             );
+            if (mounted) {
+              // Recharger la liste afin de mettre à jour les messages non lus
+              _loadConversations();
+            }
           },
           child: Container(
             padding: const EdgeInsets.symmetric(vertical: 15.0, horizontal: 10.0),
             decoration: BoxDecoration(
-              color: conversation.messagesNonLus > 0 ? primaryBlue.withOpacity(0.12) : Colors.transparent,
+              color: conversation.messagesNonLus > 0 ? primaryBlue.withOpacity(0.15) : Colors.transparent,
               borderRadius: BorderRadius.circular(8),
+              border: conversation.messagesNonLus > 0
+                  ? Border.all(color: primaryBlue.withOpacity(0.35), width: 1)
+                  : null,
             ),
         child: Row(
           children: <Widget>[
@@ -360,6 +372,7 @@ class _MessageConversationScreenState extends State<MessageConversationScreen> {
       // 3. FOOTER : Barre de Navigation Personnalisée
       bottomNavigationBar: CustomBottomNavBar(
         initialIndex: _selectedIndex,
+        unreadMessagesCount: _totalUnreadMessages,
         onItemSelected: (index) {
           if (index == 0) {
             // Aller vers Accueil

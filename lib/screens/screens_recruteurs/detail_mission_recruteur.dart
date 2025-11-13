@@ -4,6 +4,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import '../../widgets/custom_header.dart';
 import 'candidature_missions.dart';
+import '../../services/mission_service.dart';
 
 const Color primaryGreen = Color(0xFF10B981);
 const Color primaryBlue = Color(0xFF2563EB);
@@ -107,6 +108,11 @@ class DetailMissionRecruteurScreen extends StatelessWidget {
 
     final String missionTitle = missionData['missionTitle'] ?? 'Aide Déménagement';
     final bool isLongTitle = missionTitle.length > 24;
+    final String status = (missionData['statut'] ?? missionData['status'] ?? '').toString().toLowerCase().trim();
+    final String normalized = status.replaceAll(' ', '').replaceAll('_', '');
+    final bool canDelete = normalized.contains('attente') || normalized.contains('pending') || normalized == 'enattente';
+    final dynamic rawId = missionData['missionId'] ?? missionData['id'];
+    final int? missionId = (rawId is int) ? rawId : (rawId is String ? int.tryParse(rawId) : null);
 
     return Scaffold(
       backgroundColor: bodyBackgroundColor,
@@ -114,6 +120,134 @@ class DetailMissionRecruteurScreen extends StatelessWidget {
         title: missionTitle,
         useCompactStyle: isLongTitle,
         onBack: () => Navigator.of(context).pop(),
+        customRightWidget: canDelete && missionId != null
+            ? GestureDetector(
+                onTap: () async {
+                  final confirmed = await showDialog<bool>(
+                    context: context,
+                    builder: (ctx) {
+                      return Dialog(
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(20, 22, 20, 16),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Container(
+                                width: 54,
+                                height: 54,
+                                decoration: BoxDecoration(color: Colors.red.withOpacity(0.12), shape: BoxShape.circle),
+                                child: const Icon(Icons.delete_outline, color: Colors.red, size: 30),
+                              ),
+                              const SizedBox(height: 12),
+                              Text('Confirmer la suppression', style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w700)),
+                              const SizedBox(height: 6),
+                              Text(
+                                'Voulez-vous supprimer cette mission ?',
+                                textAlign: TextAlign.center,
+                                style: GoogleFonts.poppins(fontSize: 12, color: Colors.black87),
+                              ),
+                              const SizedBox(height: 14),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: OutlinedButton(
+                                      onPressed: () => Navigator.of(ctx).pop(false),
+                                      style: OutlinedButton.styleFrom(
+                                        side: BorderSide(color: Colors.grey.shade300),
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                        padding: const EdgeInsets.symmetric(vertical: 12),
+                                      ),
+                                      child: Text('Annuler', style: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: Colors.black87)),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: ElevatedButton(
+                                      onPressed: () => Navigator.of(ctx).pop(true),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.red,
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                        padding: const EdgeInsets.symmetric(vertical: 12),
+                                      ),
+                                      child: Text('Supprimer', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600)),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  );
+                  if (confirmed == true) {
+                    try {
+                      final ok = await MissionService.deleteMission(missionId);
+                      if (!context.mounted) return;
+                      if (ok) {
+                        await showDialog(
+                          context: context,
+                          builder: (ctx) {
+                            return Dialog(
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                              child: Padding(
+                                padding: const EdgeInsets.fromLTRB(20, 22, 20, 16),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    Container(
+                                      width: 54,
+                                      height: 54,
+                                      decoration: BoxDecoration(color: primaryGreen.withOpacity(0.15), shape: BoxShape.circle),
+                                      child: const Icon(Icons.check, color: primaryGreen, size: 30),
+                                    ),
+                                    const SizedBox(height: 12),
+                                    Text('Mission supprimée', style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w700)),
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      'La mission a été supprimée avec succès.',
+                                      textAlign: TextAlign.center,
+                                      style: GoogleFonts.poppins(fontSize: 12, color: Colors.black87),
+                                    ),
+                                    const SizedBox(height: 14),
+                                    SizedBox(
+                                      width: double.infinity,
+                                      height: 42,
+                                      child: ElevatedButton(
+                                        onPressed: () => Navigator.of(ctx).pop(),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: primaryGreen,
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                        ),
+                                        child: Text('OK', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600)),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        );
+                        Navigator.of(context).pop(true);
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Échec de la suppression de la mission')),
+                        );
+                      }
+                    } catch (e) {
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Erreur: ${e.toString()}')),
+                      );
+                    }
+                  }
+                },
+                child: const Icon(Icons.delete_outline, color: Colors.white, size: 24),
+              )
+            : null,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(20.0, 0.0, 20.0, 0.0),

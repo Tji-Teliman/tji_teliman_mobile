@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -23,6 +25,7 @@ import '../../services/user_service.dart';
 import '../../services/payment_service.dart';
 import '../../services/token_service.dart';
 import '../../services/profile_service.dart';
+import '../../services/message_service.dart';
 import '../../models/mission_recruteur_response.dart' as MR;
 
 // --- COULEURS ---
@@ -59,11 +62,26 @@ class _HomeRecruteurScreenState extends State<HomeRecruteurScreen> {
   int? _pendingMissionId;
   final List<int> _pendingMissionIds = [];
   List<MR.Mission> _missions = [];
+  int _unreadMessagesCount = 0;
+  bool _isFetchingUnreadMessages = false;
+  int _unreadNotificationsCount = 0;
+  Timer? _notificationBadgeTimer;
+  bool _isFetchingUnreadNotifications = false;
 
   @override
   void initState() {
     super.initState();
     _loadUserData();
+    _loadUnreadNotificationsCount();
+    _notificationBadgeTimer = Timer.periodic(const Duration(seconds: 45), (_) {
+      _loadUnreadNotificationsCount();
+    });
+  }
+
+  @override
+  void dispose() {
+    _notificationBadgeTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> _refreshPendingPayments() async {
@@ -172,6 +190,8 @@ class _HomeRecruteurScreenState extends State<HomeRecruteurScreen> {
         _hasError = false;
       });
 
+      await _loadUnreadMessagesCountSafe();
+
       print('🔄 Chargement des données recruteur...');
 
       // Récupérer le nom depuis le stockage local
@@ -274,6 +294,38 @@ if (missionsResponse.success) {
       setState(() {
         _isLoading = false;
       });
+    }
+  }
+
+  Future<void> _loadUnreadNotificationsCount() async {
+    if (_isFetchingUnreadNotifications) return;
+    _isFetchingUnreadNotifications = true;
+    try {
+      final count = await UserService.getUnreadNotificationsCount();
+      if (!mounted) return;
+      setState(() {
+        _unreadNotificationsCount = count;
+      });
+    } catch (e) {
+      debugPrint('Erreur chargement notifications non lues: $e');
+    } finally {
+      _isFetchingUnreadNotifications = false;
+    }
+  }
+
+  Future<void> _loadUnreadMessagesCountSafe() async {
+    if (_isFetchingUnreadMessages) return;
+    _isFetchingUnreadMessages = true;
+    try {
+      final count = await MessageService.getTotalUnreadMessagesCount();
+      if (!mounted) return;
+      setState(() {
+        _unreadMessagesCount = count;
+      });
+    } catch (e) {
+      debugPrint('Erreur chargement messages non lus: $e');
+    } finally {
+      _isFetchingUnreadMessages = false;
     }
   }
 
@@ -637,6 +689,7 @@ if (missionsResponse.success) {
             bottom: 0,
             child: CustomBottomNavBarRecruteur(
               initialIndex: _selectedIndex,
+              unreadMessagesCount: _unreadMessagesCount,
               onItemSelected: (index) {
                 if (index == 0) {
                   return; // Déjà sur Accueil
@@ -747,14 +800,42 @@ if (missionsResponse.success) {
                     child: Row(
                       children: [
                         GestureDetector(
-                          onTap: () {
-                            Navigator.of(context).push(
+                          onTap: () async {
+                            await Navigator.of(context).push(
                               MaterialPageRoute(
                                 builder: (context) => const NotificationsScreen(),
                               ),
                             );
+                            if (!mounted) return;
+                            _loadUnreadNotificationsCount();
                           },
-                          child: const Icon(Icons.notifications_none, color: Colors.white, size: 28),
+                          child: Stack(
+                            clipBehavior: Clip.none,
+                            children: [
+                              const Icon(Icons.notifications_none, color: Colors.white, size: 28),
+                              if (_unreadNotificationsCount > 0)
+                                Positioned(
+                                  top: -6,
+                                  right: -6,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFE11D48),
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(color: Colors.white, width: 1.2),
+                                    ),
+                                    child: Text(
+                                      _unreadNotificationsCount > 99 ? '99+' : _unreadNotificationsCount.toString(),
+                                      style: GoogleFonts.poppins(
+                                        color: Colors.white,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
                         ),
                         const SizedBox(width: 15),
                         GestureDetector(

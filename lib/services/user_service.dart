@@ -5,6 +5,7 @@ import '../models/mission_accomplie_response.dart';
 import '../models/mission_recruteur_response.dart';
 import '../models/notation_response.dart';
 import 'token_service.dart';
+import 'notification_storage_service.dart';
 
 class UserService {
   // Endpoints pour les JEUNES
@@ -57,6 +58,48 @@ class UserService {
   }
 
   // Notifications (JEUNES et RECRUTEURS)
+  static bool _parseNotificationReadFlag(dynamic value) {
+    if (value == null) return false;
+    if (value is bool) return value;
+    if (value is num) return value != 0;
+    final normalized = value.toString().trim().toLowerCase();
+    if (normalized.isEmpty) return false;
+    return normalized == 'true' ||
+        normalized == '1' ||
+        normalized == 'oui' ||
+        normalized == 'yes';
+  }
+
+  static bool isNotificationRead(Map<String, dynamic> notification) {
+    final raw = notification['estLue'] ??
+        notification['est_lue'] ??
+        notification['lue'] ??
+        notification['isRead'] ??
+        notification['read'];
+    return _parseNotificationReadFlag(raw);
+  }
+
+  static Future<int> getUnreadNotificationsCount() async {
+    final notifications = await getMesNotifications();
+    int unread = 0;
+    for (final notif in notifications) {
+      final backendRead = isNotificationRead(notif);
+      bool seenLocally = false;
+      final idAny = notif['id'];
+      if (idAny != null) {
+        final id = idAny is int ? idAny : int.tryParse(idAny.toString());
+        if (id != null) {
+          seenLocally = await NotificationStorageService.isNotificationSeenLocally(id);
+        }
+      }
+      final isUnread = !backendRead || !seenLocally;
+      if (isUnread) {
+        unread++;
+      }
+    }
+    return unread;
+  }
+
   static Future<List<Map<String, dynamic>>> getMesNotifications() async {
     final token = await TokenService.getToken();
     final response = await http.get(

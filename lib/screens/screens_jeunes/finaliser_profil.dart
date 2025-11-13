@@ -82,7 +82,12 @@ class _FinaliserProfilScreenState extends State<FinaliserProfilScreen> {
   // Fonction pour sélectionner une image (caméra ou galerie)
   Future<void> _pickImage(ImageSource source, {required String target}) async {
     try {
-      final XFile? image = await _picker.pickImage(source: source);
+      final XFile? image = await _picker.pickImage(
+        source: source,
+        maxWidth: 1080,
+        maxHeight: 1080,
+        imageQuality: 70,
+      );
       if (image != null) {
         setState(() {
           if (target == 'profile') {

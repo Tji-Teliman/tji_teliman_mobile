@@ -99,77 +99,81 @@ class _MissionsRecruteurScreenState extends State<MissionsRecruteurScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: bodyBackgroundColor,
-      appBar: CustomHeader(
-        title: 'Toutes les Missions',
-        rightIcon: Icons.add,
-        onBack: () => Navigator.of(context).pop(),
-        onRightIconTap: () {
-          Navigator.of(context).push(
-            MaterialPageRoute(builder: (context) => const PublierMissionScreen()),
-          );
-        },
-      ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
-            child: _buildSearchBar(),
-          ),
-          Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator(color: primaryGreen))
-                : _hasError
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(Icons.error_outline, color: Colors.red, size: 48),
-                            const SizedBox(height: 8),
-                            Text('Erreur de chargement', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-                            const SizedBox(height: 8),
-                            ElevatedButton(onPressed: _loadMissions, child: const Text('Réessayer')),
-                          ],
-                        ),
-                      )
-                    : ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              itemCount: _filteredMissions.length,
-              itemBuilder: (context, index) {
-                final mission = _filteredMissions[index];
-                return _buildMissionCard(mission);
-              },
-            ),
-          ),
-        ],
-      ),
-      bottomNavigationBar: CustomBottomNavBarRecruteur(
-        initialIndex: _selectedIndex,
-        onItemSelected: (index) {
-          if (index == 0) {
+        backgroundColor: bodyBackgroundColor,
+        appBar: CustomHeader(
+          title: 'Toutes les Missions',
+          rightIcon: Icons.add,
+          onBack: () {
             Navigator.of(context).pushReplacement(
               MaterialPageRoute(builder: (context) => const HomeRecruteurScreen()),
             );
-            return;
-          }
-          if (index == 1) {
-            // Déjà sur Missions
-            return;
-          }
-          if (index == 2) {
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (context) => const ProfilRecruteurScreen()),
+          },
+          onRightIconTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(builder: (context) => const PublierMissionScreen()),
             );
-            return;
-          }
-          if (index == 3) {
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (context) => const MessageConversationScreen()),
-            );
-            return;
-          }
-        },
-      ),
+          },
+        ),
+        body: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+              child: _buildSearchBar(),
+            ),
+            Expanded(
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator(color: primaryGreen))
+                  : _hasError
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.error_outline, color: Colors.red, size: 48),
+                              const SizedBox(height: 8),
+                              Text('Erreur de chargement', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                              const SizedBox(height: 8),
+                              ElevatedButton(onPressed: _loadMissions, child: const Text('Réessayer')),
+                            ],
+                          ),
+                        )
+                      : ListView.builder(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          itemCount: _filteredMissions.length,
+                          itemBuilder: (context, index) {
+                            final mission = _filteredMissions[index];
+                            return _buildMissionCard(mission);
+                          },
+                        ),
+            ),
+          ],
+        ),
+        bottomNavigationBar: CustomBottomNavBarRecruteur(
+          initialIndex: _selectedIndex,
+          onItemSelected: (index) {
+            if (index == 0) {
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(builder: (context) => const HomeRecruteurScreen()),
+              );
+              return;
+            }
+            if (index == 1) {
+              // Déjà sur Missions
+              return;
+            }
+            if (index == 2) {
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(builder: (context) => const ProfilRecruteurScreen()),
+              );
+              return;
+            }
+            if (index == 3) {
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(builder: (context) => const MessageConversationScreen()),
+              );
+              return;
+            }
+          },
+        ),
     );
   }
 
@@ -251,8 +255,8 @@ class _MissionsRecruteurScreenState extends State<MissionsRecruteurScreen> {
 
   Widget _buildMissionCard(mr.Mission mission) {
     return GestureDetector(
-      onTap: () {
-        Navigator.of(context).push(
+      onTap: () async {
+        final deleted = await Navigator.of(context).push<bool>(
           MaterialPageRoute(
             builder: (_) => DetailMissionRecruteurScreen(
               missionData: {
@@ -267,10 +271,14 @@ class _MissionsRecruteurScreenState extends State<MissionsRecruteurScreen> {
                 'dateFin': mission.dateFin, // yyyy-MM-dd
                 'timeFrom': mission.heureDebut,
                 'timeTo': mission.heureFin,
+                'statut': mission.statut,
               },
             ),
           ),
         );
+        if (deleted == true) {
+          _loadMissions();
+        }
       },
       child: Container(
         margin: const EdgeInsets.only(bottom: 10),
@@ -361,8 +369,8 @@ class _MissionsRecruteurScreenState extends State<MissionsRecruteurScreen> {
             ),
             const SizedBox(width: 12),
             GestureDetector(
-              onTap: () {
-                Navigator.of(context).push(
+              onTap: () async {
+                final deleted = await Navigator.of(context).push<bool>(
                   MaterialPageRoute(
                     builder: (_) => DetailMissionRecruteurScreen(
                       missionData: {
@@ -381,6 +389,9 @@ class _MissionsRecruteurScreenState extends State<MissionsRecruteurScreen> {
                     ),
                   ),
                 );
+                if (deleted == true) {
+                  _loadMissions();
+                }
               },
               child: Container(
                 padding: const EdgeInsets.all(8),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../widgets/custom_header.dart';
 import 'profil_jeune.dart';
+import '../screens_recruteurs/profil_recruteur.dart';
 import 'securite_parametre.dart';
 import 'competences_parametre.dart';
 import 'mission_parametre.dart';
@@ -9,6 +10,9 @@ import 'home_jeune.dart';
 import 'centre_aide.dart';
 import 'conditions_generales.dart';
 import 'politique_et_confidenlite.dart';
+import 'package:google_fonts/google_fonts.dart';
+import '../../services/token_service.dart';
+import '../login_screen.dart';
 
 // --- 1. Gestionnaire d'état pour le thème ---
 class ThemeManager with ChangeNotifier {
@@ -87,6 +91,7 @@ class _MyAppState extends State<Parametre> {
 const Color customBlue = Color(0xFF2563EB); // Bleu foncé de la barre d'App
 const Color customRed = Color(0xFFEF4444); // Rouge pour la déconnexion
 const Color customGreen = Color(0xFF10B981); // Vert pour l'activation
+const Color badgeOrange = Color(0xFFF59E0B); // Couleur de marque (déconnexion)
 
 // Modèle pour les éléments de la liste de paramètres
 class SettingItem {
@@ -119,12 +124,93 @@ class SettingsScreen extends StatelessWidget {
     required this.notificationManager,
   });
 
+  Future<void> _confirmAndLogout(BuildContext context) async {
+    final bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) {
+        return Dialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 22, 20, 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Container(
+                  width: 54,
+                  height: 54,
+                  decoration: BoxDecoration(color: badgeOrange.withOpacity(0.15), shape: BoxShape.circle),
+                  child: const Icon(Icons.logout, color: badgeOrange, size: 30),
+                ),
+                const SizedBox(height: 12),
+                Text('Déconnexion', style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w700)),
+                const SizedBox(height: 6),
+                Text(
+                  'Voulez-vous vraiment vous déconnecter ?',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.poppins(fontSize: 12, color: Colors.black87),
+                ),
+                const SizedBox(height: 14),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.of(ctx).pop(false),
+                        style: OutlinedButton.styleFrom(
+                          side: BorderSide(color: Colors.grey.shade300),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                        child: Text('Annuler', style: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: Colors.black87)),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () => Navigator.of(ctx).pop(true),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: badgeOrange,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                        child: Text('Déconnexion', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600)),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    if (confirm == true) {
+      try {
+        await TokenService.logout();
+      } catch (_) {}
+      if (context.mounted) {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const LoginScreen()),
+          (route) => false,
+        );
+      }
+    }
+  }
+
   // Navigation fiable basée sur la clé (item.key) et non le titre affiché
-  void _handleTap(BuildContext context, String key) {
+  Future<void> _handleTap(BuildContext context, String key) async {
     switch (key) {
       case 'infoPerso':
+        final role = await TokenService.getUserRole();
+        final r = role?.toLowerCase();
+        final bool isRecruiter = r == 'recruteur' || r == 'recruiter';
         Navigator.of(context).push(
-          MaterialPageRoute(builder: (context) => const ProfilJeuneScreen()),
+          MaterialPageRoute(
+            builder: (context) => isRecruiter
+                ? const ProfilRecruteurScreen()
+                : const ProfilJeuneScreen(),
+          ),
         );
         return;
       case 'securite':
@@ -368,22 +454,27 @@ class SettingsScreen extends StatelessWidget {
                         borderRadius: BorderRadius.circular(10.0),
                       ),
                       child: TextButton(
-                        onPressed: () {
-                          _handleTap(context, "Déconnexion");
-                        },
+                        onPressed: () => _confirmAndLogout(context),
                         style: TextButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 10),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10.0),
                           ),
                         ),
-                        child: const Text(
-                          '[-> Déconnexion',
-                          style: TextStyle(
-                            color: customRed,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.logout, color: customRed, size: 20),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Déconnexion',
+                              style: GoogleFonts.poppins(
+                                color: customRed,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),

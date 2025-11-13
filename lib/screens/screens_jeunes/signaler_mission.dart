@@ -1,13 +1,21 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import '../../widgets/custom_header.dart';
+import '../../config/api_config.dart';
+import '../../services/token_service.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 
 class SignalerMission extends StatelessWidget {
-  const SignalerMission({super.key});
+  final int missionId;
+  final String? missionTitle;
+
+  const SignalerMission({super.key, required this.missionId, this.missionTitle});
 
   @override
   Widget build(BuildContext context) {
-    return const SignalMissionScreen();
+    return SignalMissionScreen(missionId: missionId, missionTitle: missionTitle);
   }
 }
 
@@ -18,7 +26,10 @@ const Color accentColor = Color(0xFF4DD0E1); // Bleu/Cyan pour le dégradé (mai
 const Color lightBlueButton = Color(0xFFE3F2FD); // Couleur de fond des options
 
 class SignalMissionScreen extends StatefulWidget {
-  const SignalMissionScreen({super.key});
+  final int missionId;
+  final String? missionTitle;
+
+  const SignalMissionScreen({super.key, required this.missionId, this.missionTitle});
 
   @override
   State<SignalMissionScreen> createState() => _SignalMissionScreenState();
@@ -29,15 +40,17 @@ class _SignalMissionScreenState extends State<SignalMissionScreen> {
   String? _selectedReason;
   // Contrôleur pour le champ de texte 'Précisions'
   final TextEditingController _precisionController = TextEditingController();
+  bool _submitting = false;
+  String? _errorMsg;
 
   // Liste des raisons de signalement
   final List<String> reasons = [
-    "Contenu inapproprié / Mission illégale",
-    "Arnaque ou Fraude potentielle",
-    "Demande d'informations personnelles",
-    "Non-respect des conditions d'utilisation",
-    "Prix irréaliste ou incohérent",
-    "Autre",
+    "CONTENU_INAPPROPRIE_OU_MISSION_ILLEGAL",
+    "ARNAQUE_OU_FRAUDE_POTENTIELLE",
+    "DEMANDE_D_INFORMATIONS_PERSONNELLES",
+    "NON_RESPECT_DES_CONDITIONS_D_UTILISATION",
+    "PRIX_IRREALISTE_OU_INCOHERENT",
+    "AUTRE",
   ];
 
   @override
@@ -46,16 +59,106 @@ class _SignalMissionScreenState extends State<SignalMissionScreen> {
     super.dispose();
   }
 
-  void _sendReport() {
-    // Logique de signalement
-    String precisionText = _precisionController.text;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Signalement envoyé. Raison: ${_selectedReason ?? "Non spécifiée"}. Précisions: $precisionText',
-        ),
-      ),
-    );
+  String _mapReasonToType(String reason) {
+    // If already an enum-like value, return as is
+    if (RegExp(r'^[A-Z_]+$').hasMatch(reason)) return reason;
+    final r = reason.toLowerCase();
+    if (r.contains('inappropri') || r.contains('illégal') || r.contains('illegale')) {
+      return 'CONTENU_INAPPROPRIE_OU_MISSION_ILLEGAL';
+    }
+    if (r.contains('arnaque') || r.contains('fraude')) return 'ARNAQUE_OU_FRAUDE_POTENTIELLE';
+    if (r.contains("informations personnelles")) return 'DEMANDE_D_INFORMATIONS_PERSONNELLES';
+    if (r.contains('conditions')) return 'NON_RESPECT_DES_CONDITIONS_D_UTILISATION';
+    if (r.contains('prix')) return 'PRIX_IRREALISTE_OU_INCOHERENT';
+    return 'AUTRE';
+  }
+
+  Future<void> _sendReport() async {
+    if (_selectedReason == null) return;
+    setState(() {
+      _submitting = true;
+      _errorMsg = null;
+    });
+    try {
+      final String type = _mapReasonToType(_selectedReason!);
+      final uri = Uri.parse('${ApiConfig.baseUrl}/api/signalements/missions/${widget.missionId}');
+      final token = await TokenService.getToken();
+      final body = <String, dynamic>{'type': type};
+      final precision = _precisionController.text.trim();
+      if (precision.isNotEmpty) body['description'] = precision;
+      final resp = await http.post(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+          if (token != null) 'Authorization': 'Bearer $token',
+        },
+        body: json.encode(body),
+      );
+      if (!mounted) return;
+      if (resp.statusCode == 200 || resp.statusCode == 201) {
+        await showDialog(
+          context: context,
+          builder: (ctx) {
+            return Dialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 22, 20, 16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Container(
+                      width: 54,
+                      height: 54,
+                      decoration: BoxDecoration(color: customBlue.withOpacity(0.15), shape: BoxShape.circle),
+                      child: Icon(Icons.check, color: customBlue, size: 30),
+                    ),
+                    const SizedBox(height: 12),
+                    Text('Signalement envoyé', style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w700)),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Merci, votre signalement a bien été transmis.',
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.poppins(fontSize: 12, color: Colors.black87),
+                    ),
+                    const SizedBox(height: 14),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 42,
+                      child: ElevatedButton(
+                        onPressed: () => Navigator.of(ctx).pop(),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: customBlue,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                        child: Text('OK', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600)),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+        Navigator.of(context).pop(true);
+      } else {
+        String msg = 'Erreur ${resp.statusCode}';
+        try {
+          final jsonErr = json.decode(resp.body);
+          msg = jsonErr['message']?.toString() ?? msg;
+        } catch (_) {}
+        setState(() {
+          _errorMsg = msg;
+        });
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _errorMsg = e.toString();
+      });
+    } finally {
+      if (mounted) setState(() => _submitting = false);
+    }
   }
 
   @override
@@ -73,8 +176,8 @@ class _SignalMissionScreenState extends State<SignalMissionScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             // --- Mission Info ---
-            const Text(
-              'Mission: Aide Déménagement',
+            Text(
+              'Mission: ${widget.missionTitle ?? 'Aide Déménagement'}',
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 18,
@@ -82,6 +185,32 @@ class _SignalMissionScreenState extends State<SignalMissionScreen> {
               ),
             ),
             const SizedBox(height: 15),
+
+            if (_errorMsg != null) ...[
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                margin: const EdgeInsets.only(bottom: 12),
+                decoration: BoxDecoration(
+                  color: Colors.red.withOpacity(0.08),
+                  border: Border.all(color: Colors.red.withOpacity(0.3)),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(Icons.error_outline, color: Colors.red),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        _errorMsg!,
+                        style: const TextStyle(color: Colors.red, fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
 
             // --- Titre Raison du signalement ---
             const Text(
@@ -171,17 +300,19 @@ class _SignalMissionScreenState extends State<SignalMissionScreen> {
                 // Bouton Envoyer (Bleu foncé plein)
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: _selectedReason == null ? null : _sendReport, // Désactivé si aucune raison n'est sélectionnée
+                    onPressed: _selectedReason == null || _submitting ? null : _sendReport,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: customBlue,
                       padding: const EdgeInsets.symmetric(vertical: 15),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       elevation: 2,
                     ),
-                    child: const Text(
-                      'ENVOYER',
-                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                    ),
+                    child: _submitting
+                        ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                        : const Text(
+                            'ENVOYER',
+                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                          ),
                   ),
                 ),
               ],

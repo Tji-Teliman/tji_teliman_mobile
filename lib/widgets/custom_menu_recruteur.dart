@@ -46,19 +46,59 @@ class CustomDrawerRecruteur extends StatelessWidget {
     final bool? confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) {
-        return AlertDialog(
-          title: const Text('Déconnexion'),
-          content: const Text('Voulez-vous vraiment vous déconnecter ?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(false),
-              child: const Text('Annuler'),
+        return Dialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 22, 20, 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Container(
+                  width: 54,
+                  height: 54,
+                  decoration: BoxDecoration(color: badgeOrange.withOpacity(0.15), shape: BoxShape.circle),
+                  child: const Icon(Icons.logout, color: badgeOrange, size: 30),
+                ),
+                const SizedBox(height: 12),
+                Text('Déconnexion', style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w700)),
+                const SizedBox(height: 6),
+                Text(
+                  'Voulez-vous vraiment vous déconnecter ?',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.poppins(fontSize: 12, color: Colors.black87),
+                ),
+                const SizedBox(height: 14),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.of(ctx).pop(false),
+                        style: OutlinedButton.styleFrom(
+                          side: BorderSide(color: Colors.grey.shade300),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                        child: Text('Annuler', style: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: Colors.black87)),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () => Navigator.of(ctx).pop(true),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: badgeOrange,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                        child: Text('Déconnexion', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600)),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(true),
-              child: const Text('Déconnexion'),
-            ),
-          ],
+          ),
         );
       },
     );

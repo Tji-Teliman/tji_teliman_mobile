@@ -65,7 +65,11 @@ class _ChatScreenState extends State<ChatScreen> {
             _photoUrl = r;
           }
         }
-        return ChatMessage(text: contenu, time: date.isEmpty ? '•' : date, isMe: !isFromInterlocutor);
+        return ChatMessage(
+          text: contenu,
+          time: date.isEmpty ? '•' : date,
+          isMe: !isFromInterlocutor,
+        );
       }).toList();
       setState(() {
         _messages
