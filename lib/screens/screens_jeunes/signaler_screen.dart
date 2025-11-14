@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import '../../widgets/custom_header.dart';
+import '../../services/user_service.dart';
 
 class SignalerScreen extends StatelessWidget {
   const SignalerScreen({super.key});
@@ -45,13 +46,23 @@ class DisputeFormContent extends StatefulWidget {
   State<DisputeFormContent> createState() => _DisputeFormContentState();
 }
 
+class _MissionOption {
+  final int id;
+  final String title;
+  const _MissionOption({required this.id, required this.title});
+}
+
 class _DisputeFormContentState extends State<DisputeFormContent> {
   // Contrôleurs pour les champs obligatoires
   final TextEditingController _problemController = TextEditingController();
   
   // État pour la validation
-  String? _selectedDisputeType;
+  String? _selectedDisputeType; // valeurs backend
   XFile? _selectedImage;
+  int? _selectedMissionId;
+  bool _loadingMissions = true;
+  String? _missionsError;
+  List<_MissionOption> _missions = [];
   
   // Style commun pour les labels
   final TextStyle labelStyle = const TextStyle(
@@ -72,10 +83,82 @@ class _DisputeFormContentState extends State<DisputeFormContent> {
     super.dispose();
   }
 
+  @override
+  void initState() {
+    super.initState();
+    _loadMissionsForUser();
+  }
+
   // Vérifier si le formulaire est valide
   bool get _isFormValid {
-    return _selectedDisputeType != null && 
-           _problemController.text.trim().isNotEmpty;
+    return _selectedDisputeType != null &&
+        _selectedMissionId != null &&
+        _problemController.text.trim().isNotEmpty;
+  }
+
+  Future<void> _loadMissionsForUser() async {
+    setState(() {
+      _loadingMissions = true;
+      _missionsError = null;
+      _missions = [];
+      _selectedMissionId = null;
+    });
+    try {
+      final info = await UserService.getUserInfo();
+      final role = (info['role'] ?? '').toString().toUpperCase();
+      if (role.contains('JEUNE')) {
+        final resp = await UserService.getMesMissionsAccomplies();
+        final list = resp.data.missions;
+        final options = <_MissionOption>[];
+        for (final m in list) {
+          if (m is Map<String, dynamic>) {
+            // Préférer l'ID de la mission imbriquée si présent
+            dynamic nested = m['mission'] ?? m['Mission'] ?? m['missionObjet'];
+            dynamic idAny;
+            dynamic titleAny;
+            if (nested is Map<String, dynamic>) {
+              idAny = nested['id'] ?? nested['missionId'] ?? nested['mission_id'];
+              titleAny = nested['titre'] ?? nested['title'] ?? nested['nom'];
+            }
+            idAny = idAny ?? m['missionId'] ?? m['mission_id'] ?? m['id'];
+            titleAny = titleAny ?? m['missionTitre'] ?? m['titre'] ?? m['title'] ?? m['nom'];
+
+            final id = idAny is int ? idAny : int.tryParse(idAny?.toString() ?? '');
+            final title = (titleAny?.toString() ?? '').trim();
+            if (id != null && id > 0 && title.isNotEmpty) {
+              options.add(_MissionOption(id: id, title: title));
+            }
+          }
+        }
+        // Logs de diagnostic
+        // ignore: avoid_print
+        print('🧭 JEUNE missions accomplies total: ' + list.length.toString());
+        // ignore: avoid_print
+        print('🧭 Options construites: ' + options.map((o) => '[id=' + o.id.toString() + ', title=' + o.title + ']').join(', '));
+        setState(() {
+          _missions = options;
+        });
+      } else {
+        final resp = await UserService.getMesMissions();
+        // Filtrer uniquement les missions TERMINÉES pour le recruteur
+        final filtered = resp.data.where((m) =>
+            (m.statut ?? '').toString().toUpperCase() == 'TERMINEE');
+        // ignore: avoid_print
+        print('🧭 RECRUTEUR missions publiées total: ' + resp.data.length.toString() +
+            ', TERMINÉES: ' + filtered.length.toString());
+        setState(() {
+          _missions = filtered
+              .map((m) => _MissionOption(id: m.id, title: m.titre))
+              .toList();
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _missionsError = e.toString().replaceFirst(RegExp(r'^Exception:\s*'), '');
+      });
+    } finally {
+      if (mounted) setState(() => _loadingMissions = false);
+    }
   }
 
   // Fonction pour ouvrir le sélecteur d'images
@@ -132,24 +215,73 @@ class _DisputeFormContentState extends State<DisputeFormContent> {
     }
   }
 
-  void _submitForm() {
-    if (_isFormValid) {
-      // Ici, vous ajouterez la logique de soumission
+  Future<void> _submitForm() async {
+    if (!_isFormValid) return;
+    final type = _selectedDisputeType!;
+    final description = _problemController.text.trim();
+    final missionId = _selectedMissionId!;
+    String? docPath = _selectedImage?.path;
+
+    // Logs de diagnostic côté UI
+    // ignore: avoid_print
+    print('🧭 UI submit -> type=' + type + ', missionId=' + missionId.toString() + ', hasFile=' + (docPath != null).toString());
+
+    try {
+      final resp = await UserService.creerLitige(
+        type: type,
+        description: description,
+        missionId: missionId,
+        documentPath: docPath,
+      );
+      if (!mounted) return;
       showDialog(
         context: context,
+        barrierDismissible: false,
         builder: (context) => AlertDialog(
-          title: const Text('Signalement envoyé'),
-          content: const Text('Votre signalement a été envoyé avec succès.'),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          backgroundColor: Colors.white,
+          titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+          contentPadding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
+          actionsPadding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
+          title: Row(
+            children: const [
+              Icon(Icons.check_circle_rounded, color: Color(0xFF10B981), size: 26),
+              SizedBox(width: 8),
+              Text('Litige créé', style: TextStyle(fontWeight: FontWeight.w700)),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 4),
+              Text(
+                'Votre litige a été enregistré avec succès.',
+                style: TextStyle(color: Colors.grey.shade700, height: 1.3),
+              ),
+            ],
+          ),
           actions: [
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop();
                 Navigator.of(context).pop();
               },
-              child: const Text('OK'),
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.white,
+                backgroundColor: const Color(0xFF10B981),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              child: const Text('OK', style: TextStyle(fontWeight: FontWeight.w600)),
             ),
           ],
         ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString().replaceFirst(RegExp(r'^Exception:\\s*'), ''))),
       );
     }
   }
@@ -190,9 +322,11 @@ class _DisputeFormContentState extends State<DisputeFormContent> {
             filled: true,
           ),
           items: const [
-            DropdownMenuItem(value: 'paiement', child: Text('Litige de paiement')),
-            DropdownMenuItem(value: 'qualite', child: Text('Litige de qualité')),
-            DropdownMenuItem(value: 'conduite', child: Text('Problème de conduite')),
+            DropdownMenuItem(value: 'MISSION_NON_PAYEE', child: Text('Mission non payée')),
+            DropdownMenuItem(value: 'TRAVAIL_NON_CONFORME', child: Text('Travail non conforme')),
+            DropdownMenuItem(value: 'COMPORTEMENT_INAPPROPRIE', child: Text('Comportement inapproprié')),
+            DropdownMenuItem(value: 'ANNULATION_TARDIVE', child: Text('Annulation tardive')),
+            DropdownMenuItem(value: 'AUTRE', child: Text('Autre')),
           ],
           onChanged: (String? newValue) {
             setState(() {
@@ -284,24 +418,37 @@ class _DisputeFormContentState extends State<DisputeFormContent> {
         // Sélectionner la mission
         Text('Sélectionnez la mission', style: labelStyle),
         const SizedBox(height: 8),
-        DropdownButtonFormField<String>(
-          decoration: InputDecoration(
-            hintText: 'Sélectionnez une mission',
-            contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 5),
-            border: borderStyle,
-            enabledBorder: borderStyle,
-            focusedBorder: borderStyle.copyWith(
-              borderSide: const BorderSide(color: Colors.blue, width: 2.0),
-            ),
-            fillColor: Colors.white,
-            filled: true,
-          ),
-          items: const [
-            DropdownMenuItem(value: 'mission_1', child: Text('Mission #456 - Cuisine')),
-            DropdownMenuItem(value: 'mission_2', child: Text('Mission #789 - Livraison')),
-          ],
-          onChanged: (String? newValue) {
-            // Logique de sélection
+        Builder(
+          builder: (_) {
+            if (_loadingMissions) {
+              return const Center(child: Padding(padding: EdgeInsets.all(8), child: CircularProgressIndicator()));
+            }
+            if (_missionsError != null) {
+              return Text(_missionsError!, style: const TextStyle(color: Colors.red));
+            }
+            return DropdownButtonFormField<int>(
+              value: _selectedMissionId,
+              decoration: InputDecoration(
+                hintText: 'Sélectionnez une mission',
+                contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 5),
+                border: borderStyle,
+                enabledBorder: borderStyle,
+                focusedBorder: borderStyle.copyWith(
+                  borderSide: const BorderSide(color: Colors.blue, width: 2.0),
+                ),
+                fillColor: Colors.white,
+                filled: true,
+              ),
+              items: _missions
+                  .map((m) => DropdownMenuItem<int>(
+                        value: m.id,
+                        child: Text(m.title, overflow: TextOverflow.ellipsis),
+                      ))
+                  .toList(),
+              onChanged: (int? newValue) {
+                setState(() => _selectedMissionId = newValue);
+              },
+            );
           },
         ),
         const SizedBox(height: 40),

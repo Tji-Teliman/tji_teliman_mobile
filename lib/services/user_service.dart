@@ -40,12 +40,14 @@ class UserService {
     print('🎯 JEUNE - Récupération missions accomplies');
     print('📥 Status: ${response.statusCode}');
     print('📥 Body: ${response.body}');
+    if (response.statusCode >= 400 && response.body.isEmpty) {
+      print('⚠️ Réponse vide: possible noms de champs différents côté backend.');
+    }
 
     if (response.statusCode == 200) {
       try {
         final jsonResponse = json.decode(response.body);
         final missionResponse = MissionAccomplieResponse.fromJson(jsonResponse);
-        
         print('✅ Missions accomplies récupérées: ${missionResponse.data.nombreMissions}');
         return missionResponse;
       } catch (e) {
@@ -54,6 +56,127 @@ class UserService {
       }
     } else {
       throw Exception('Erreur lors de la récupération des missions accomplies: ${response.statusCode}');
+    }
+  }
+
+  // Créer un litige (multipart/form-data)
+  static Future<Map<String, dynamic>> creerLitige({
+    required String type,
+    required String description,
+    required int missionId,
+    String? documentPath,
+  }) async {
+    final token = await TokenService.getToken();
+    final uri = Uri.parse('${ApiConfig.baseUrl}/api/litiges');
+
+    // Si aucun fichier, utiliser JSON (certains backends n'acceptent pas multipart sans fichier)
+    if (documentPath == null || documentPath.trim().isEmpty) {
+      final headers = <String, String>{'Content-Type': 'application/json'};
+      if (token != null) headers['Authorization'] = 'Bearer $token';
+
+      final payload = {
+        'type': type,
+        'description': description,
+        'missionId': missionId,
+        // Alias possibles côté backend
+        'mission_id': missionId,
+        'mission': missionId,
+        // Variante imbriquée courante: mission: { id: <id> }
+        'mission': { 'id': missionId },
+        // Structure imbriquée possible: mission: { id: <id> }
+        'missionObjet': { 'id': missionId },
+        'typeLitige': type,
+        'litigeType': type,
+        'descriptionLitige': description,
+        'motif': description,
+      };
+      print('🧪 Litige JSON payload -> ' + payload.toString());
+      final response = await http.post(uri, headers: headers, body: json.encode(payload));
+
+      print('📨 Création de litige (JSON)');
+      print('📥 Status: ${response.statusCode}');
+      print('📥 Body: ${response.body}');
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        try {
+          final decoded = json.decode(response.body);
+          return decoded is Map<String, dynamic> ? decoded : {'success': true, 'data': decoded};
+        } catch (_) {
+          return {'success': true};
+        }
+      }
+      try {
+        final decoded = json.decode(response.body);
+        String msg = 'Erreur ${response.statusCode}';
+        if (decoded is Map<String, dynamic>) {
+          if (decoded['message'] is String && (decoded['message'] as String).trim().isNotEmpty) msg = decoded['message'];
+          else if (decoded['error'] is String && (decoded['error'] as String).trim().isNotEmpty) msg = decoded['error'];
+        }
+        throw Exception(msg);
+      } catch (e) {
+        if (e is Exception) rethrow;
+        throw Exception('Erreur lors de la création du litige (JSON): $e');
+      }
+    }
+
+    // Sinon, multipart avec fichier joint
+    final request = http.MultipartRequest('POST', uri);
+    if (token != null) {
+      request.headers['Authorization'] = 'Bearer $token';
+    }
+    request.fields['type'] = type;
+    request.fields['description'] = description;
+    // IDs de mission - différents alias pour compat backend
+    request.fields['missionId'] = missionId.toString();
+    request.fields['mission_id'] = missionId.toString();
+    request.fields['mission'] = missionId.toString();
+    // Alias pour les champs sémantiques
+    request.fields['typeLitige'] = type;
+    request.fields['litigeType'] = type;
+    request.fields['descriptionLitige'] = description;
+    request.fields['motif'] = description;
+
+    print('🧪 Litige payload -> type: ' + type + ', missionId: ' + missionId.toString());
+    print('🧪 Description length: ' + description.length.toString());
+    print('🧪 Champs envoyés: ' + request.fields.keys.join(', '));
+
+    try {
+      // Nom par défaut
+      request.files.add(await http.MultipartFile.fromPath('document', documentPath!));
+      // Alias commun
+      request.files.add(await http.MultipartFile.fromPath('fichier', documentPath));
+    } catch (e) {
+      // Continuer sans fichier en cas d'erreur de lecture
+      print('⚠️ Impossible d\'ajouter le document: $e');
+    }
+
+    final streamed = await request.send();
+    final response = await http.Response.fromStream(streamed);
+
+    print('📨 Création de litige (multipart)');
+    print('📥 Status: ${response.statusCode}');
+    print('📥 Body: ${response.body}');
+    if (response.statusCode >= 400 && response.body.isEmpty) {
+      print('⚠️ Réponse vide: possible noms de champs différents côté backend.');
+    }
+
+    try {
+      final decoded = json.decode(response.body);
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        if (decoded is Map<String, dynamic>) return decoded;
+        return {'success': true, 'data': decoded};
+      }
+      String msg = 'Erreur ${response.statusCode}';
+      if (decoded is Map<String, dynamic>) {
+        if (decoded['message'] is String && (decoded['message'] as String).trim().isNotEmpty) {
+          msg = decoded['message'];
+        } else if (decoded['error'] is String && (decoded['error'] as String).trim().isNotEmpty) {
+          msg = decoded['error'];
+        }
+      }
+      throw Exception(msg);
+    } catch (e) {
+      if (e is Exception) rethrow;
+      throw Exception('Erreur lors de la création du litige: $e');
     }
   }
 
