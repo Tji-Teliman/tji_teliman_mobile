@@ -678,12 +678,21 @@ Widget _buildHeader(BuildContext context, double height) {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Bienvenue sur Tji teliman',
+                    'Bienvenue sur Tji Teliman',
                     style: GoogleFonts.poppins(
-                      color: Colors.white70,
-                      fontSize: 16,
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w500,
+                      shadows: [
+                        Shadow(
+                          color: Colors.black26,
+                          offset: Offset(0, 1),
+                          blurRadius: 2,
+                        ),
+                      ],
                     ),
                   ),
+                  const SizedBox(height: 6),
                   Text(
                     userName.isNotEmpty ? userName : "Chargement...",
                     style: GoogleFonts.poppins(

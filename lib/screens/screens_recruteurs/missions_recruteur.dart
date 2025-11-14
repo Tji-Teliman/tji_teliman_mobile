@@ -4,6 +4,7 @@ import '../../widgets/custom_header.dart';
 import '../../widgets/custom_bottom_nav_bar_recruteur.dart';
 import 'publier_mission.dart';
 import 'detail_mission_recruteur.dart';
+import 'candidature_missions.dart';
 import 'message_conversation_recruteur.dart';
 import 'home_recruteur.dart';
 import 'profil_recruteur.dart';
@@ -294,117 +295,191 @@ class _MissionsRecruteurScreenState extends State<MissionsRecruteurScreen> {
             ),
           ],
         ),
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: SizedBox(
-              width: 56,
-              height: 56,
-                child: Image.network(
-                  _convertPhotoPathToUrl(mission.categorieUrlPhoto) ?? '',
-                  fit: BoxFit.cover,
-                  loadingBuilder: (context, child, loadingProgress) {
-                    if (loadingProgress == null) return child;
-                    return Container(
-                      color: primaryBlue.withOpacity(0.08),
-                      child: const Center(
-                        child: CircularProgressIndicator(strokeWidth: 2, color: primaryBlue),
-                      ),
-                    );
-                  },
-                  errorBuilder: (c, e, s) {
-                    print('❌ Erreur chargement image: ${_convertPhotoPathToUrl(mission.categorieUrlPhoto)}');
-                    print('   Erreur: $e');
-                    return Container(
-                      color: primaryBlue.withOpacity(0.08),
-                      child: const Icon(Icons.image_not_supported, color: Colors.grey),
-                    );
-                  },
-                ),
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    mission.titre,
-                    style: GoogleFonts.poppins(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    '${mission.nombreCandidatures} Candidatures',
-                    style: GoogleFonts.poppins(
-                      fontSize: 13,
-                      color: Colors.grey.shade600,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: _getStatusColor(_mapStatus(mission.statut)).withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: _getStatusColor(_mapStatus(mission.statut)).withOpacity(0.3),
-                      ),
-                    ),
-                    child: Text(
-                      _getStatusLabel(_mapStatus(mission.statut)),
-                      style: GoogleFonts.poppins(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: _getStatusColor(_mapStatus(mission.statut)),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 12),
-            GestureDetector(
-              onTap: () async {
-                final deleted = await Navigator.of(context).push<bool>(
-                  MaterialPageRoute(
-                    builder: (_) => DetailMissionRecruteurScreen(
-                      missionData: {
-                        'missionId': mission.id,
-                        'missionTitle': mission.titre,
-                        'description': mission.description,
-                        'competences': mission.exigence,
-                        'latitude': mission.latitude,
-                        'longitude': mission.longitude,
-                        'location': mission.adresse,
-                        'dateDebut': mission.dateDebut,
-                        'dateFin': mission.dateFin,
-                        'timeFrom': mission.heureDebut,
-                        'timeTo': mission.heureFin,
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: SizedBox(
+                    width: 56,
+                    height: 56,
+                    child: Image.network(
+                      _convertPhotoPathToUrl(mission.categorieUrlPhoto) ?? '',
+                      fit: BoxFit.cover,
+                      loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) return child;
+                        return Container(
+                          color: primaryBlue.withOpacity(0.08),
+                          child: const Center(
+                            child: CircularProgressIndicator(strokeWidth: 2, color: primaryBlue),
+                          ),
+                        );
+                      },
+                      errorBuilder: (c, e, s) {
+                        print('❌ Erreur chargement image: ${_convertPhotoPathToUrl(mission.categorieUrlPhoto)}');
+                        print('   Erreur: $e');
+                        return Container(
+                          color: primaryBlue.withOpacity(0.08),
+                          child: const Icon(Icons.image_not_supported, color: Colors.grey),
+                        );
                       },
                     ),
                   ),
-                );
-                if (deleted == true) {
-                  _loadMissions();
-                }
-              },
-              child: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade100,
-                  borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(
-                  Icons.visibility_outlined,
-                  color: Colors.black54,
-                  size: 20,
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              mission.titre,
+                              style: GoogleFonts.poppins(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black87,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: _getStatusColor(_mapStatus(mission.statut)).withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: _getStatusColor(_mapStatus(mission.statut)).withOpacity(0.3),
+                              ),
+                            ),
+                            child: Text(
+                              _getStatusLabel(_mapStatus(mission.statut)),
+                              style: GoogleFonts.poppins(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: _getStatusColor(_mapStatus(mission.statut)),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        '${mission.nombreCandidatures} Candidatures',
+                        style: GoogleFonts.poppins(
+                          fontSize: 13,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                // Bouton Candidatures
+                GestureDetector(
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => CandidatureMissionsScreen(
+                          missionTitle: mission.titre,
+                          missionId: mission.id,
+                        ),
+                      ),
+                    );
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: primaryGreen.withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: primaryGreen.withOpacity(0.25)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: primaryGreen.withOpacity(0.15),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.people_outline, color: primaryGreen, size: 18),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Candidatures',
+                          style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: primaryGreen),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                // Bouton Détails
+                GestureDetector(
+                  onTap: () async {
+                    final deleted = await Navigator.of(context).push<bool>(
+                      MaterialPageRoute(
+                        builder: (_) => DetailMissionRecruteurScreen(
+                          missionData: {
+                            'missionId': mission.id,
+                            'missionTitle': mission.titre,
+                            'description': mission.description,
+                            'competences': mission.exigence,
+                            'latitude': mission.latitude,
+                            'longitude': mission.longitude,
+                            'location': mission.adresse,
+                            'dateDebut': mission.dateDebut,
+                            'dateFin': mission.dateFin,
+                            'timeFrom': mission.heureDebut,
+                            'timeTo': mission.heureFin,
+                            'statut': mission.statut,
+                          },
+                        ),
+                      ),
+                    );
+                    if (deleted == true) {
+                      _loadMissions();
+                    }
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: primaryBlue.withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: primaryBlue.withOpacity(0.25)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: primaryBlue.withOpacity(0.15),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.info_outline, color: primaryBlue, size: 18),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Détails',
+                          style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: primaryBlue),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
