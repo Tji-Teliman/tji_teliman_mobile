@@ -73,7 +73,7 @@ class _HomeRecruteurScreenState extends State<HomeRecruteurScreen> {
     super.initState();
     _loadUserData();
     _loadUnreadNotificationsCount();
-    _notificationBadgeTimer = Timer.periodic(const Duration(seconds: 45), (_) {
+    _notificationBadgeTimer = Timer.periodic(const Duration(seconds: 2), (_) {
       _loadUnreadNotificationsCount();
     });
   }
@@ -1015,7 +1015,7 @@ if (missionsResponse.success) {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
               child: Text(
-                _pendingMissionIds.length <= 1 ? 'Payer via l\'application' : 'Choisir une mission à payer',
+                _pendingMissionIds.length <= 1 ? 'Passer au Paiement' : 'Choisir une mission à payer',
                 style: GoogleFonts.poppins(
                   fontWeight: FontWeight.w700,
                   fontSize: 13,
@@ -1024,19 +1024,6 @@ if (missionsResponse.success) {
             ),
           ),
           const SizedBox(height: 6),
-          Center(
-            child: GestureDetector(
-              onTap: _confirmCashPayment,
-              child: Text(
-                'Confirmer Paiement en Espèces.',
-                style: GoogleFonts.poppins(
-                  color: Colors.blue,
-                  fontSize: 14,
-                  decoration: TextDecoration.underline,
-                ),
-              ),
-            ),
-          ),
         ],
       ),
     );

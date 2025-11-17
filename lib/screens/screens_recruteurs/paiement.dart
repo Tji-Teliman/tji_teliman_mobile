@@ -38,11 +38,14 @@ class _PaiementScreenState extends State<PaiementScreen> {
   @override
   void initState() {
     super.initState();
-    // Prefill amount from provided montant if parseable
+    // Prefill amount from provided montant if parseable, and add 2% fee
     final digits = RegExp(r'\d+[\d\s]*').stringMatch(widget.montant) ?? '';
     final normalized = digits.replaceAll(RegExp(r'\s+'), '');
     if (normalized.isNotEmpty) {
-      _amountController.text = normalized;
+      final base = double.tryParse(normalized) ?? 0;
+      final fee = base * 0.02;
+      final total = base + fee;
+      _amountController.text = total.round().toString();
     }
     // Prefill phone if provided
     if (widget.phone != null && widget.phone!.trim().isNotEmpty) {
@@ -172,7 +175,7 @@ class _PaiementScreenState extends State<PaiementScreen> {
                   // Payment details card
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.all(20.0),
+                    padding: const EdgeInsets.all(16.0),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(12),
@@ -185,53 +188,65 @@ class _PaiementScreenState extends State<PaiementScreen> {
                         ),
                       ],
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Amount
-                        Text(
-                          'Montant',
-                          style: GoogleFonts.poppins(
-                            fontSize: 14,
-                            color: Colors.grey.shade600,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          widget.montant,
-                          style: GoogleFonts.poppins(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black87,
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        
-                        // Horizontal line separator
-                        Divider(
-                          color: Colors.grey.shade300,
-                          thickness: 1,
-                        ),
-                        const SizedBox(height: 20),
-                        
-                        // Payment method
-                        Text(
-                          'Méthode de paiement',
-                          style: GoogleFonts.poppins(
-                            fontSize: 14,
-                            color: Colors.grey.shade600,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          'Orange Money',
-                          style: GoogleFonts.poppins(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black87,
-                          ),
-                        ),
-                      ],
+                    child: Builder(
+                      builder: (context) {
+                        final digits = RegExp(r'\d+[\d\s]*').stringMatch(widget.montant) ?? '';
+                        final normalized = digits.replaceAll(RegExp(r'\s+'), '');
+                        double base = 0;
+                        if (normalized.isNotEmpty) {
+                          base = double.tryParse(normalized) ?? 0;
+                        }
+                        final fee = base * 0.02;
+                        final total = base + fee;
+
+                        String fmt(double v) => v.round().toString() + ' FCFA';
+
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'Détails du paiement',
+                              style: GoogleFonts.poppins(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.black87,
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+
+                            _buildDetailRow('Montant de la mission:', base > 0 ? fmt(base) : widget.montant),
+                            const SizedBox(height: 4),
+                            _buildDetailRow('Frais:', base > 0 ? fmt(fee) : '-'),
+                            const SizedBox(height: 4),
+                            _buildDetailRow('Montant total à payer:', base > 0 ? fmt(total) : _amountController.text),
+
+                            const SizedBox(height: 12),
+                            Divider(
+                              color: Colors.grey.shade300,
+                              thickness: 1,
+                            ),
+                            const SizedBox(height: 8),
+
+                            Text(
+                              'Méthode de paiement',
+                              style: GoogleFonts.poppins(
+                                fontSize: 13,
+                                color: Colors.grey.shade600,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Orange Money',
+                              style: GoogleFonts.poppins(
+                                fontSize: 15,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black87,
+                              ),
+                            ),
+                          ],
+                        );
+                      },
                     ),
                   ),
                   const SizedBox(height: 30),
@@ -419,11 +434,12 @@ class _PaiementScreenState extends State<PaiementScreen> {
             ),
             const SizedBox(height: 15),
 
-            // Champ montant
+            // Champ montant (montant total avec frais, non modifiable)
             _buildTextField(
               controller: _amountController,
               hintText: 'Montant à payer en FCFA',
               keyboardType: TextInputType.number,
+              readOnly: true,
             ),
             const SizedBox(height: 30),
 
@@ -441,6 +457,32 @@ class _PaiementScreenState extends State<PaiementScreen> {
             _buildDetailRow('Jeune:', widget.jeune),
             const SizedBox(height: 8),
             _buildDetailRow('Missions:', widget.mission),
+            const SizedBox(height: 8),
+            Builder(
+              builder: (context) {
+                final digits = RegExp(r'\d+[\d\s]*').stringMatch(widget.montant) ?? '';
+                final normalized = digits.replaceAll(RegExp(r'\s+'), '');
+                double base = 0;
+                if (normalized.isNotEmpty) {
+                  base = double.tryParse(normalized) ?? 0;
+                }
+                final fee = base * 0.02;
+                final total = base + fee;
+
+                String fmt(double v) => v.round().toString() + ' FCFA';
+
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildDetailRow('Montant de la mission:', base > 0 ? fmt(base) : widget.montant),
+                    const SizedBox(height: 4),
+                    _buildDetailRow('Frais:', base > 0 ? fmt(fee) : '-'),
+                    const SizedBox(height: 4),
+                    _buildDetailRow('Montant total à payer:', base > 0 ? fmt(total) : _amountController.text),
+                  ],
+                );
+              },
+            ),
             const SizedBox(height: 30),
 
             // Bouton Payer
@@ -496,6 +538,7 @@ class _PaiementScreenState extends State<PaiementScreen> {
     required TextEditingController controller,
     required String hintText,
     TextInputType keyboardType = TextInputType.text,
+    bool readOnly = false,
   }) {
     return Container(
       decoration: BoxDecoration(
@@ -513,6 +556,7 @@ class _PaiementScreenState extends State<PaiementScreen> {
       child: TextField(
         controller: controller,
         keyboardType: keyboardType,
+        readOnly: readOnly,
         decoration: InputDecoration(
           hintText: hintText,
           hintStyle: GoogleFonts.poppins(

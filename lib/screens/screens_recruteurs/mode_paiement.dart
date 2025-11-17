@@ -207,6 +207,7 @@ class _ModePaiementScreenState extends State<ModePaiementScreen> {
       setState(() { _loading = false; });
     }
   }
+
   void _handleOrangeMoneyPayment() async {
     // Navigate to Orange Money payment confirmation
     final result = await Navigator.of(context).push(
@@ -250,212 +251,89 @@ class _ModePaiementScreenState extends State<ModePaiementScreen> {
       }
     }
   }
-
-  void _handleCashPayment() {
-    // Show confirmation dialog for cash payment
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) {
-        return Dialog(
-          backgroundColor: Colors.white, // White background
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Container(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                // Warning Icon (Triangle) in a circle
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF59E0B).withOpacity(0.37), // 37% opacity
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.warning,
-                    color: const Color(0xFFF59E0B), // Orange color
-                    size: 50,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                
-                // Title "Confirmer le paiement en espèces"
-                Text(
-                  'Confirmer le paiement\nen espèces',
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.poppins(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                
-                // Explanatory text
-                Text(
-                  'En choisissant cette option, vous confirmez que le paiement a été effectué directement au jeune. En cas de litige, l\'équipe Tji Teliman se basera sur cette confirmation.',
-                  textAlign: TextAlign.left,
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    color: Colors.black87,
-                    height: 1.5,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                
-                // Question
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    'Voulez-vous continuer ?',
-                    style: GoogleFonts.poppins(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black87,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                
-                // Confirm Button
-                SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.of(context).pop(); // Close dialog
-                      // Show success dialog
-                      showDialog(
-                        context: context,
-                        builder: (context) {
-                          return Dialog(
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            child: Padding(
-                              padding: const EdgeInsets.all(24.0),
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.all(16),
-                                    decoration: BoxDecoration(
-                                      color: primaryGreen.withOpacity(0.1),
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: Icon(
-                                      Icons.check_circle_outline,
-                                      color: primaryGreen,
-                                      size: 48,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 16),
-                                  Text(
-                                    'Paiement en espèces confirmé',
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.black87,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    'Votre transaction a été enregistrée avec succès.',
-                                    textAlign: TextAlign.center,
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 14,
-                                      color: Colors.black54,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 24),
-                                  SizedBox(
-                                    width: double.infinity,
-                                    height: 50,
-                                    child: ElevatedButton(
-                                      onPressed: () {
-                                        Navigator.of(context).pop(); // Close dialog
-                                        Navigator.of(context).pop(true); // Go back with success
-                                      },
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: primaryGreen,
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(12),
-                                        ),
-                                      ),
-                                      child: Text(
-                                        'OK',
-                                        style: GoogleFonts.poppins(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFF59E0B), // Orange #F59E0B
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(25),
-                      ),
-                      elevation: 4,
-                      shadowColor: const Color(0xFFF59E0B).withOpacity(0.3),
-                    ),
-                    child: Text(
-                      'Oui, confirme le paiement',
-                      style: GoogleFonts.poppins(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                
-                // Cancel Button
-                SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.of(context).pop(); // Close dialog
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFF59E0B).withOpacity(0.54), // 54% opacity
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(25),
-                      ),
-                      elevation: 0,
-                      shadowColor: Colors.transparent,
-                    ),
-                    child: Text(
-                      'Annuler',
-                      style: GoogleFonts.poppins(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
+  
+  void _handleMoovMoneyPayment() async {
+    final result = await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => PaiementScreen(
+          jeune: _jeuneName.isNotEmpty ? _jeuneName : '-',
+          mission: _missionTitle.isNotEmpty ? _missionTitle : '-',
+          montant: _amountText.isNotEmpty ? _amountText : '-',
+          phone: _jeunePhone.isNotEmpty ? _jeunePhone : null,
+          candidatureId: _candidatureId ?? widget.candidatureId,
+        ),
+      ),
     );
+    if (!mounted) return;
+    if (result == true) {
+      Navigator.of(context).pop(true);
+      return;
+    }
+    if (result is Map) {
+      final map = Map<String, dynamic>.from(result as Map);
+      final paid = map['paid'] == true;
+      final goRate = map['rate'] == true;
+      if (paid == true) {
+        if (goRate == true) {
+          await Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => NoterJeune(
+                candidatureId: map['candidatureId'] as int?,
+                jeuneName: (map['jeuneName'] ?? '-') as String,
+                mission: (map['mission'] ?? '-') as String,
+                montant: (map['montant'] ?? '-') as String,
+                dateFin: (map['dateFin'] ?? '') as String,
+              ),
+            ),
+          );
+        }
+        if (!mounted) return;
+        Navigator.of(context).pop(true);
+        return;
+      }
+    }
+  }
+
+  void _handleWavePayment() async {
+    final result = await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => PaiementScreen(
+          jeune: _jeuneName.isNotEmpty ? _jeuneName : '-',
+          mission: _missionTitle.isNotEmpty ? _missionTitle : '-',
+          montant: _amountText.isNotEmpty ? _amountText : '-',
+          phone: _jeunePhone.isNotEmpty ? _jeunePhone : null,
+          candidatureId: _candidatureId ?? widget.candidatureId,
+        ),
+      ),
+    );
+    if (!mounted) return;
+    if (result == true) {
+      Navigator.of(context).pop(true);
+      return;
+    }
+    if (result is Map) {
+      final map = Map<String, dynamic>.from(result as Map);
+      final paid = map['paid'] == true;
+      final goRate = map['rate'] == true;
+      if (paid == true) {
+        if (goRate == true) {
+          await Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => NoterJeune(
+                candidatureId: map['candidatureId'] as int?,
+                jeuneName: (map['jeuneName'] ?? '-') as String,
+                mission: (map['mission'] ?? '-') as String,
+                montant: (map['montant'] ?? '-') as String,
+                dateFin: (map['dateFin'] ?? '') as String,
+              ),
+            ),
+          );
+        }
+        if (!mounted) return;
+        Navigator.of(context).pop(true);
+        return;
+      }
+    }
   }
 
   @override
@@ -559,64 +437,184 @@ class _ModePaiementScreenState extends State<ModePaiementScreen> {
             ),
             const SizedBox(height: 40),
             
-            // Orange Money Payment Button (Green)
-            SizedBox(
-              width: double.infinity,
-              height: 56,
-              child: ElevatedButton.icon(
-                onPressed: _handleOrangeMoneyPayment,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: primaryGreen,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(25),
-                  ),
-                  elevation: 4,
-                  shadowColor: Colors.black.withOpacity(0.15),
-                ),
-                icon: const Icon(
-                  Icons.phone_android,
+            // Orange Money card
+            InkWell(
+              onTap: _handleOrangeMoneyPayment,
+              borderRadius: BorderRadius.circular(18),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                decoration: BoxDecoration(
                   color: Colors.white,
-                  size: 24,
+                  borderRadius: BorderRadius.circular(18),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.04),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
-                label: Text(
-                  'Payer via Orange Money',
-                  style: GoogleFonts.poppins(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFA500).withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(Icons.phone_android, color: Color(0xFFFFA500)),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Orange Money',
+                            style: GoogleFonts.poppins(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black87,
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            'Paiement sécurisé via Orange Money',
+                            style: GoogleFonts.poppins(
+                              fontSize: 12,
+                              color: Colors.grey.shade600,
+                              height: 1.3,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Icon(Icons.chevron_right, color: Colors.grey),
+                  ],
                 ),
               ),
             ),
-            const SizedBox(height: 15),
-            
-            // Cash Payment Button (White with border)
-            SizedBox(
-              width: double.infinity,
-              height: 56,
-              child: OutlinedButton.icon(
-                onPressed: _handleCashPayment,
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: Colors.black87, width: 1.5),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(25),
-                  ),
-                  backgroundColor: Colors.white,
-                  elevation: 2,
-                  shadowColor: Colors.black.withOpacity(0.1),
+            const SizedBox(height: 12),
+
+            // Moov Money card
+            InkWell(
+              onTap: _handleMoovMoneyPayment,
+              borderRadius: BorderRadius.circular(18),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(18),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.03),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
-                icon: const Icon(
-                  Icons.money,
-                  color: Colors.black87,
-                  size: 24,
+                child: Row(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF2563EB).withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(Icons.sim_card, color: Color(0xFF2563EB)),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Moov Money',
+                            style: GoogleFonts.poppins(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black87,
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            'Payer avec votre compte Moov',
+                            style: GoogleFonts.poppins(
+                              fontSize: 12,
+                              color: Colors.grey.shade600,
+                              height: 1.3,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Icon(Icons.chevron_right, color: Colors.grey),
+                  ],
                 ),
-                label: Text(
-                  'J\'ai payé le jeune en espèces',
-                  style: GoogleFonts.poppins(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                  ),
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // Wave card
+            InkWell(
+              onTap: _handleWavePayment,
+              borderRadius: BorderRadius.circular(18),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(18),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.03),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0EA5E9).withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(Icons.waves, color: Color(0xFF0EA5E9)),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Wave',
+                            style: GoogleFonts.poppins(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black87,
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            'Payer rapidement via Wave',
+                            style: GoogleFonts.poppins(
+                              fontSize: 12,
+                              color: Colors.grey.shade600,
+                              height: 1.3,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Icon(Icons.chevron_right, color: Colors.grey),
+                  ],
                 ),
               ),
             ),

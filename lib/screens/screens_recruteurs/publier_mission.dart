@@ -478,7 +478,148 @@ class _PublierMissionScreenState extends State<PublierMissionScreen> {
   }
 
   void _submit() {
-    _publishMission();
+    if (!_validateFormAndShowErrors()) return;
+    _showConfirmPublishDialog();
+  }
+
+  void _showConfirmPublishDialog() {
+    final raw = _remunerationController.text.trim();
+    final baseAmount = double.tryParse(raw) ?? 0;
+    final fee = baseAmount * 0.02;
+    final total = baseAmount + fee;
+
+    String _formatAmount(double value) {
+      final intVal = value.round();
+      final str = intVal.toString();
+      final reg = RegExp(r'(?=(?!^)(\d{3})+\b)');
+      return str.replaceAllMapped(reg, (m) => ' ' + m.group(0)!);
+    }
+
+    final baseText = _formatAmount(baseAmount) + ' CFA';
+    final feeText = _formatAmount(fee) + ' CFA';
+    final totalText = _formatAmount(total) + ' CFA';
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) {
+        return Dialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 22, 20, 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 42,
+                      height: 42,
+                      decoration: BoxDecoration(
+                        color: primaryGreen.withOpacity(0.12),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.info, color: primaryGreen),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Confirmer la publication',
+                        style: GoogleFonts.poppins(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black87,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Avant de publier cette mission, veuillez confirmer le montant associé à la mission ainsi que les frais appliqués.',
+                  style: GoogleFonts.poppins(fontSize: 12, color: Colors.black87, height: 1.4),
+                ),
+                const SizedBox(height: 14),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF9FAFB),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.grey.shade300),
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('Montant de la mission', style: GoogleFonts.poppins(fontSize: 12, color: Colors.black87)),
+                          Text(baseText, style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.black87)),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('Frais de la mission', style: GoogleFonts.poppins(fontSize: 12, color: Colors.black87)),
+                          Text(feeText, style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.black87)),
+                        ],
+                      ),
+                      const Divider(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('Montant total à payer', style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.black87)),
+                          Text(totalText, style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w700, color: primaryGreen)),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () {
+                          Navigator.of(ctx).pop();
+                        },
+                        style: OutlinedButton.styleFrom(
+                          side: BorderSide(color: Colors.grey.shade400),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+                        ),
+                        child: Text(
+                          'Annuler',
+                          style: GoogleFonts.poppins(fontWeight: FontWeight.w500, color: Colors.black87),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.of(ctx).pop();
+                          _publishMission();
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: primaryGreen,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+                          elevation: 0,
+                        ),
+                        child: Text(
+                          'Confirmer',
+                          style: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: Colors.white),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   Future<void> _publishMission() async {
