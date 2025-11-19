@@ -68,7 +68,7 @@ class _HomeJeuneScreenState extends State<HomeJeuneScreen> {
     _loadUserData();
     _loadUnreadNotificationsCount();
     _loadUnreadMessagesCount();
-    _notificationBadgeTimer = Timer.periodic(const Duration(seconds: 2), (_) {
+    _notificationBadgeTimer = Timer.periodic(const Duration(seconds: 5), (_) {
       _loadUnreadNotificationsCount();
       _loadUnreadMessagesCount();
 

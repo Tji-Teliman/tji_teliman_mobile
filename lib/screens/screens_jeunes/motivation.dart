@@ -94,10 +94,10 @@ class _MotivationScreenState extends State<MotivationScreen> {
                   height: 44,
                   child: ElevatedButton(
                     onPressed: () {
+                      // Ferme le popup et remplace l'écran de motivation par la liste des missions
                       Navigator.of(ctx).pop();
-                      Navigator.of(context).pushAndRemoveUntil(
+                      Navigator.of(context).pushReplacement(
                         MaterialPageRoute(builder: (c) => const MissionsScreen()),
-                        (route) => false,
                       );
                     },
                     style: ElevatedButton.styleFrom(

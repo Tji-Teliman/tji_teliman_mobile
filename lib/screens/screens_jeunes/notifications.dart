@@ -295,8 +295,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       _errorMessage = null;
     });
     try {
-      // 1) Fetch notifications
-      final data = await UserService.getMesNotifications();
+      // 1) Fetch notifications SANS les marquer comme lues pour l'affichage initial
+      //    ainsi, les nouvelles notifications ont encore estLue=false et peuvent être mises en évidence.
+      final data = await UserService.getMesNotifications(marquerCommeLues: false);
       
       // Mapper les notifications (async maintenant)
       final mapped = <NotificationItem>[];
@@ -305,10 +306,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         mapped.add(item);
       }
       
-      // Marquer toutes les notifications actuelles comme vues localement
-      // Cela permet de les considérer comme lues la prochaine fois qu'on récupère les données
-      // Mais elles s'afficheront comme non lues cette fois-ci si elles n'ont pas été vues avant
-      await NotificationStorageService.markAllCurrentNotificationsAsSeen(data);
+      // 2) En arrière-plan, informer le backend que l'utilisateur a consulté ses notifications
+      //    en appelant l'endpoint avec marquerCommeLues=true. On ne met pas à jour l'UI avec ce résultat.
+      //    Les prochains appels (par exemple depuis la home) verront estLue=true.
+      // ignore: unawaited_futures
+      UserService.getMesNotifications(marquerCommeLues: true);
       // 2) Fetch pending payments to auto-disable payment actions already completed elsewhere
       try {
         _pendingPaymentMissionIds.clear();
@@ -431,32 +433,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     interlocuteurId = _toInt(n['interlocuteurId'] ?? n['recruteurId']);
     recruteurPhoto = (n['recruteurPhoto'] ?? '').toString();
 
-    // Utiliser la méthode qui prend en compte le stockage local
+    // S'appuyer désormais uniquement sur le backend pour l'état lu/non lu
     final isReadBackend = UserService.isNotificationRead(n);
     final estLueRaw = n['estLue'] ?? n['est_lue'] ?? n['lue'];
-    
-    // Vérifier si elle a été vue localement
     final id = n['id'];
-    bool isRead = false; // Par défaut, non lue
-    
-    if (id != null) {
-      final idInt = id is int ? id : int.tryParse(id.toString());
-      if (idInt != null) {
-        final seenLocally = await NotificationStorageService.isNotificationSeenLocally(idInt);
-        // Logique : 
-        // - Si vue localement, elle est lue
-        // - Si backend dit non lue, elle est non lue
-        // - Si backend dit lue mais pas vue localement, elle est non lue (marquée automatiquement)
-        isRead = seenLocally;
-      }
-    }
-    
-    // Si le backend dit explicitement non lue, elle est non lue
-    if (!isReadBackend) {
-      isRead = false;
-    }
-    
-    print('🔔 Notification mapping: id=$id, estLue=$estLueRaw, isReadBackend=$isReadBackend, isRead=$isRead, type=${n['type']}');
+    final bool isRead = isReadBackend;
+
+    print('🔔 Notification mapping (backend only): id=$id, estLue=$estLueRaw, isReadBackend=$isReadBackend, isRead=$isRead, type=${n['type']}');
 
     return NotificationItem(
       title: title.isEmpty ? _defaultTitleForType(type) : title,

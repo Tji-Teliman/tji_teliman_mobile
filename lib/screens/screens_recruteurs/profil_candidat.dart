@@ -584,15 +584,8 @@ class _ProfilCandidatScreenState extends State<ProfilCandidatScreen> {
                   height: 42,
                   child: ElevatedButton(
                     onPressed: () {
+                      // Ferme uniquement le popup et reste sur la page ProfilCandidat
                       Navigator.of(ctx).pop();
-                      Navigator.of(context).pushReplacement(
-                        MaterialPageRoute(
-                          builder: (_) => CandidatureMissionsScreen(
-                            missionTitle: widget.missionTitle,
-                            missionId: widget.missionId,
-                          ),
-                        ),
-                      );
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: color,

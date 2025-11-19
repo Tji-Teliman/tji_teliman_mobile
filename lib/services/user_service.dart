@@ -203,30 +203,25 @@ class UserService {
   }
 
   static Future<int> getUnreadNotificationsCount() async {
-    final notifications = await getMesNotifications();
+    // Récupère les notifications SANS les marquer comme lues
+    final notifications = await getMesNotifications(marquerCommeLues: false);
     int unread = 0;
     for (final notif in notifications) {
       final backendRead = isNotificationRead(notif);
-      bool seenLocally = false;
-      final idAny = notif['id'];
-      if (idAny != null) {
-        final id = idAny is int ? idAny : int.tryParse(idAny.toString());
-        if (id != null) {
-          seenLocally = await NotificationStorageService.isNotificationSeenLocally(id);
-        }
-      }
-      final isUnread = !backendRead || !seenLocally;
-      if (isUnread) {
+      if (!backendRead) {
         unread++;
       }
     }
     return unread;
   }
 
-  static Future<List<Map<String, dynamic>>> getMesNotifications() async {
+  static Future<List<Map<String, dynamic>>> getMesNotifications({bool marquerCommeLues = false}) async {
     final token = await TokenService.getToken();
+    final uri = Uri.parse('${ApiConfig.baseUrl}$_mesNotificationsEndpoint')
+        .replace(queryParameters: marquerCommeLues ? {'marquerCommeLues': 'true'} : null);
+
     final response = await http.get(
-      Uri.parse('${ApiConfig.baseUrl}$_mesNotificationsEndpoint'),
+      uri,
       headers: {
         'Content-Type': 'application/json',
         if (token != null) 'Authorization': 'Bearer $token',
