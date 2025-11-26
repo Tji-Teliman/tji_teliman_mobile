@@ -43,10 +43,15 @@ class _MessageConversationScreenState extends State<MessageConversationScreen> {
     });
     try {
       final list = await MessageService.getConversations();
+      final adminList = await MessageService.getAdminConversations();
+      
+      final allConversations = [...adminList, ...list];
+      allConversations.sort((a, b) => b.dateDernierMessage.compareTo(a.dateDernierMessage));
+
       if (!mounted) return;
       setState(() {
-        _conversations = list;
-        _totalUnreadMessages = list.fold<int>(
+        _conversations = allConversations;
+        _totalUnreadMessages = allConversations.fold<int>(
           0,
           (sum, conv) => sum + (conv.messagesNonLus > 0 ? conv.messagesNonLus : 0),
         );
@@ -94,12 +99,15 @@ class _MessageConversationScreenState extends State<MessageConversationScreen> {
       children: [
         InkWell(
           onTap: () async {
+            final isAdmin = conversation.litigeId != null;
             await Navigator.of(context).push(
               MaterialPageRoute(
                 builder: (context) => ChatScreen(
                   interlocutorName: conversation.fullName,
                   destinataireId: conversation.destinataireId,
                   interlocutorPhotoUrl: conversation.resolvedPhotoUrl,
+                  isReadOnly: isAdmin,
+                  litigeId: conversation.litigeId,
                 ),
               ),
             );
@@ -126,6 +134,14 @@ class _MessageConversationScreenState extends State<MessageConversationScreen> {
                 decoration: const BoxDecoration(color: primaryBlue, borderRadius: BorderRadius.all(Radius.circular(2))),
               ),
             Builder(builder: (_) {
+              if (conversation.litigeId != null) {
+                 return const CircleAvatar(
+                  radius: 25,
+                  backgroundColor: lightGrey,
+                  child: Icon(Icons.admin_panel_settings, color: primaryBlue, size: 30),
+                );
+              }
+
               final url = conversation.resolvedPhotoUrl;
               if (url != null) {
                 return CircleAvatar(

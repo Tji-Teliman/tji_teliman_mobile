@@ -53,10 +53,27 @@ class _MessageConversationScreenState extends State<MessageConversationScreen> {
     });
     try {
       final list = await MessageService.getConversations();
+      final adminList = await MessageService.getAdminConversations();
+      
+      // Merge lists
+      // We don't need to force name here anymore as fromAdminJson does it.
+      // But we might want to ensure they are distinct.
+      
+      final allConversations = [...adminList, ...list];
+      
+      // Sort by date if needed, but backend usually sorts. 
+      // If we merge, we might lose sorting.
+      // Let's sort by dateDernierMessage descending.
+      // dateDernierMessage is String, might need parsing. 
+      // For now, just prepend admin messages or append? 
+      // Usually admin messages are important. Let's put them at top or sort.
+      // Simple sort:
+      allConversations.sort((a, b) => b.dateDernierMessage.compareTo(a.dateDernierMessage));
+
       if (!mounted) return;
       setState(() {
-        _conversations = list;
-        _totalUnreadMessages = list.fold<int>(
+        _conversations = allConversations;
+        _totalUnreadMessages = allConversations.fold<int>(
           0,
           (sum, conv) => sum + (conv.messagesNonLus > 0 ? conv.messagesNonLus : 0),
         );
@@ -107,11 +124,16 @@ class _MessageConversationScreenState extends State<MessageConversationScreen> {
       children: [
         InkWell(
           onTap: () async {
+            // Check if it's an admin conversation
+            final isAdmin = conversation.litigeId != null;
+            
             await Navigator.of(context).push(
               MaterialPageRoute(
                 builder: (context) => ChatScreen(
                   interlocutorName: conversation.fullName,
                   destinataireId: conversation.destinataireId,
+                  isReadOnly: isAdmin,
+                  litigeId: conversation.litigeId,
                 ),
               ),
             );
@@ -140,6 +162,14 @@ class _MessageConversationScreenState extends State<MessageConversationScreen> {
               ),
             // Photo de profil ou icône générique
             Builder(builder: (_) {
+              if (conversation.litigeId != null) {
+                 return const CircleAvatar(
+                  radius: 25,
+                  backgroundColor: lightGrey,
+                  child: Icon(Icons.admin_panel_settings, color: primaryBlue, size: 30),
+                );
+              }
+
               final url = conversation.resolvedPhotoUrl;
               if (url != null) {
                 return CircleAvatar(

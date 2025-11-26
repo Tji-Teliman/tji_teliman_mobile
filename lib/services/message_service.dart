@@ -12,6 +12,7 @@ class ConversationSummary {
   final String dateDernierMessage; // keep raw string for now
   final int messagesNonLus;
   final String typeDernierMessage;
+  final int? litigeId; // For admin conversations
 
   ConversationSummary({
     required this.destinataireId,
@@ -22,6 +23,7 @@ class ConversationSummary {
     required this.dateDernierMessage,
     required this.messagesNonLus,
     required this.typeDernierMessage,
+    this.litigeId,
   });
 
   String get fullName {
@@ -59,6 +61,30 @@ class ConversationSummary {
       dateDernierMessage: (json['dateDernierMessage'] ?? '').toString(),
       messagesNonLus: _toInt(json['messagesNonLus']) ?? 0,
       typeDernierMessage: (json['typeDernierMessage'] ?? '').toString(),
+      litigeId: _toInt(json['litigeId']),
+    );
+  }
+
+  factory ConversationSummary.fromAdminJson(Map<String, dynamic> json) {
+    String dateRaw = (json['dateDernierMessage'] ?? '').toString();
+    String dateFormatted = dateRaw;
+    try {
+      if (dateRaw.isNotEmpty) {
+        final dt = DateTime.parse(dateRaw);
+        dateFormatted = "${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}";
+      }
+    } catch (_) {}
+
+    return ConversationSummary(
+      destinataireId: 0, // Not used for admin
+      destinataireNom: 'Admin-Systeme',
+      destinatairePrenom: '',
+      destinatairePhoto: null, // Will be handled by UI
+      dernierMessage: (json['dernierMessage'] ?? '').toString(),
+      dateDernierMessage: dateFormatted,
+      messagesNonLus: _toInt(json['messagesNonLus']) ?? 0,
+      typeDernierMessage: 'TEXT',
+      litigeId: _toInt(json['litigeId']),
     );
   }
 }
@@ -71,6 +97,7 @@ int? _toInt(dynamic v) {
 
 class MessageService {
   static const String _conversationsEndpoint = '/api/messages/conversations';
+  static const String _adminConversationsEndpoint = '/api/litiges/messages-admin/conversations';
   static const String _conversationEndpoint = '/api/messages/conversation';
   static const String _sendTextEndpoint = '/api/messages/texte';
 
@@ -102,6 +129,60 @@ class MessageService {
           .toList();
     }
     throw Exception('Erreur lors de la récupération des conversations: ${response.statusCode}');
+  }
+
+  static Future<List<ConversationSummary>> getAdminConversations() async {
+    final token = await TokenService.getToken();
+    final url = Uri.parse(ApiConfig.baseUrl + _adminConversationsEndpoint);
+
+    final response = await http.get(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        if (token != null) 'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final decoded = json.decode(response.body);
+      List dataList;
+      if (decoded is Map<String, dynamic> && decoded['data'] is List) {
+        dataList = decoded['data'];
+      } else if (decoded is List) {
+        dataList = decoded;
+      } else {
+        dataList = const [];
+      }
+      return dataList
+          .whereType<Map<String, dynamic>>()
+          .map((e) => ConversationSummary.fromAdminJson(e))
+          .toList();
+    }
+    // If 404 or empty, just return empty list to avoid breaking UI
+    if (response.statusCode == 404) return [];
+    
+    throw Exception('Erreur lors de la récupération des conversations admin: ${response.statusCode}');
+  }
+
+  static Future<List<Map<String, dynamic>>> getAdminMessages({required int litigeId}) async {
+    final token = await TokenService.getToken();
+    final url = Uri.parse('${ApiConfig.baseUrl}/api/litiges/$litigeId/messages-admin');
+    final response = await http.get(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        if (token != null) 'Authorization': 'Bearer $token',
+      },
+    );
+    if (response.statusCode == 200) {
+      final decoded = json.decode(response.body);
+      if (decoded is Map<String, dynamic> && decoded['data'] is List) {
+        return (decoded['data'] as List).cast<Map<String, dynamic>>();
+      }
+      if (decoded is List) return decoded.cast<Map<String, dynamic>>();
+      return <Map<String, dynamic>>[];
+    }
+    throw Exception('Erreur lors du chargement des messages admin: ${response.statusCode}');
   }
 
   static Future<int> getTotalUnreadMessagesCount() async {

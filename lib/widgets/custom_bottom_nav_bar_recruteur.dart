@@ -100,7 +100,7 @@ class _CustomBottomNavBarRecruteurState extends State<CustomBottomNavBarRecruteu
     final item = navItems[index];
     final isSelected = _selectedIndex == index;
     // COULEUR POUR LES ICÔNES ET TEXTES NON SÉLECTIONNÉS (MODIFIÉ)
-    final Color defaultColor = Colors.black;
+    final Color defaultColor = Colors.black; 
     final bool isDiscussionIcon = index == 3;
     final bool showBadge = _badgeCount > 0 && isDiscussionIcon;
 
@@ -119,7 +119,7 @@ class _CustomBottomNavBarRecruteurState extends State<CustomBottomNavBarRecruteu
                     Stack(
                       clipBehavior: Clip.none,
                       children: [
-                        Icon(item['icon'], color: defaultColor, size: 24),
+                    Icon(item['icon'], color: defaultColor, size: 24), 
                         if (showBadge)
                           Positioned(
                             top: -6,
@@ -183,36 +183,36 @@ class _CustomBottomNavBarRecruteurState extends State<CustomBottomNavBarRecruteu
           clipBehavior: Clip.none,
           children: [
             Container(
-              width: itemSize, 
-              height: itemSize,
+          width: itemSize, 
+          height: itemSize,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: selectedIconColor.withOpacity(0.2),
+                blurRadius: 10,
+                spreadRadius: 2,
+              ),
+            ],
+          ),
+          child: Center(
+            child: Container(
+              width: 45, // Taille du cercle vert clair
+              height: 45,
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: lightGreenBackground.withOpacity(0.8), 
                 shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: selectedIconColor.withOpacity(0.2),
-                    blurRadius: 10,
-                    spreadRadius: 2,
-                  ),
-                ],
               ),
               child: Center(
-                child: Container(
-                  width: 45, // Taille du cercle vert clair
-                  height: 45,
-                  decoration: BoxDecoration(
-                    color: lightGreenBackground.withOpacity(0.8), 
-                    shape: BoxShape.circle,
-                  ),
-                  child: Center(
-                    child: Icon(
-                      navItems[_selectedIndex]['icon'], 
-                      color: selectedIconColor,
-                      size: 30,
-                    ),
-                  ),
+                child: Icon(
+                  navItems[_selectedIndex]['icon'], 
+                  color: selectedIconColor,
+                  size: 30,
                 ),
               ),
+            ),
+          ),
             ),
             if (_selectedIndex == 3 && _badgeCount > 0)
               Positioned(

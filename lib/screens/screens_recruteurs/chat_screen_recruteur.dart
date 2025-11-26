@@ -20,8 +20,17 @@ class ChatScreen extends StatefulWidget {
   final String interlocutorName;
   final int destinataireId;
   final String? interlocutorPhotoUrl;
+  final bool isReadOnly;
+  final int? litigeId;
 
-  const ChatScreen({super.key, required this.interlocutorName, required this.destinataireId, this.interlocutorPhotoUrl});
+  const ChatScreen({
+    super.key, 
+    required this.interlocutorName, 
+    required this.destinataireId, 
+    this.interlocutorPhotoUrl,
+    this.isReadOnly = false,
+    this.litigeId,
+  });
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
@@ -48,11 +57,26 @@ class _ChatScreenState extends State<ChatScreen> {
       _error = null;
     });
     try {
-      final data = await MessageService.getConversationMessages(destinataireId: widget.destinataireId);
+      final List<Map<String, dynamic>> data;
+      if (widget.litigeId != null) {
+        data = await MessageService.getAdminMessages(litigeId: widget.litigeId!);
+      } else {
+        data = await MessageService.getConversationMessages(destinataireId: widget.destinataireId);
+      }
+      
       if (!mounted) return;
       final list = data.map((m) {
         final contenu = (m['contenu'] ?? '').toString();
-        final date = (m['dateMessage'] ?? '').toString();
+        String date = (m['dateMessage'] ?? '').toString();
+
+        // Format date if it's an admin message (likely ISO)
+        if (widget.litigeId != null && date.isNotEmpty) {
+           try {
+             final dt = DateTime.parse(date);
+             date = "${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}";
+           } catch (_) {}
+        }
+
         final expNom = (m['expediteurNom'] ?? '').toString();
         final expPrenom = (m['expediteurPrenom'] ?? '').toString();
         final senderFull = (expPrenom + ' ' + expNom).trim();
@@ -249,7 +273,7 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
           ),
           
-          Container(
+          !widget.isReadOnly ? Container(
             decoration: const BoxDecoration(
               color: Colors.white,
               border: Border(top: BorderSide(color: Color(0xFFE0E0E0), width: 1.0)),
@@ -300,7 +324,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 ),
               ),
             ),
-          ),
+          ) : const SizedBox.shrink(), // Hide input if read only
         ],
       ),
       
