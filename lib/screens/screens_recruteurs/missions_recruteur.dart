@@ -11,6 +11,7 @@ import 'profil_recruteur.dart';
 import '../../services/user_service.dart';
 import '../../models/mission_recruteur_response.dart' as mr;
 import '../../config/api_config.dart';
+import '../../services/mission_service.dart';
 
 const Color primaryGreen = Color(0xFF10B981);
 const Color primaryBlue = Color(0xFF2563EB);
@@ -59,10 +60,16 @@ class _MissionsRecruteurScreenState extends State<MissionsRecruteurScreen> {
   }
 
   List<mr.Mission> get _filteredMissions {
+    // Filtrer d'abord les missions annulées
+    final activeMissions = _allMissions.where((m) {
+      final s = m.statut.toUpperCase();
+      return !s.contains('ANNULE') && !s.contains('CANCEL');
+    }).toList();
+
     if (_searchQuery.isEmpty) {
-      return _allMissions;
+      return activeMissions;
     }
-    return _allMissions
+    return activeMissions
         .where((mission) => mission.titre.toLowerCase().contains(_searchQuery.toLowerCase()))
         .toList();
   }
@@ -387,6 +394,163 @@ class _MissionsRecruteurScreenState extends State<MissionsRecruteurScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
+                // Bouton Annuler (Seulement si en attente)
+                if (_mapStatus(mission.statut) == MissionStatus.pending) ...[
+                  GestureDetector(
+                    onTap: () async {
+                      final confirmed = await showDialog<bool>(
+                        context: context,
+                        builder: (ctx) {
+                          return Dialog(
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(20, 22, 20, 16),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Container(
+                                    width: 54,
+                                    height: 54,
+                                    decoration: BoxDecoration(color: Colors.red.withOpacity(0.12), shape: BoxShape.circle),
+                                    child: const Icon(Icons.delete_outline, color: Colors.red, size: 30),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Text('Annuler la mission', style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w700)),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    'Voulez-vous vraiment annuler cette mission ?',
+                                    textAlign: TextAlign.center,
+                                    style: GoogleFonts.poppins(fontSize: 12, color: Colors.black87),
+                                  ),
+                                  const SizedBox(height: 14),
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: OutlinedButton(
+                                          onPressed: () => Navigator.of(ctx).pop(false),
+                                          style: OutlinedButton.styleFrom(
+                                            side: BorderSide(color: Colors.grey.shade300),
+                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                            padding: const EdgeInsets.symmetric(vertical: 12),
+                                          ),
+                                          child: Text('Non', style: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: Colors.black87)),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 10),
+                                      Expanded(
+                                        child: ElevatedButton(
+                                          onPressed: () => Navigator.of(ctx).pop(true),
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Colors.red,
+                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                            padding: const EdgeInsets.symmetric(vertical: 12),
+                                          ),
+                                          child: Text('Oui, Annuler', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600)),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      );
+
+                      if (confirmed == true) {
+                        try {
+                          // Utilisation de la nouvelle méthode cancelMission (PUT)
+                          final success = await MissionService.cancelMission(mission.id);
+                          if (success) {
+                            if (!context.mounted) return;
+                            await showDialog(
+                              context: context,
+                              builder: (ctx) {
+                                return Dialog(
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                  child: Padding(
+                                    padding: const EdgeInsets.fromLTRB(20, 22, 20, 16),
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      crossAxisAlignment: CrossAxisAlignment.center,
+                                      children: [
+                                        Container(
+                                          width: 54,
+                                          height: 54,
+                                          decoration: BoxDecoration(color: primaryGreen.withOpacity(0.15), shape: BoxShape.circle),
+                                          child: const Icon(Icons.check, color: primaryGreen, size: 30),
+                                        ),
+                                        const SizedBox(height: 12),
+                                        Text('Mission annulée', style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w700)),
+                                        const SizedBox(height: 6),
+                                        Text(
+                                          'La mission a été annulée avec succès.',
+                                          textAlign: TextAlign.center,
+                                          style: GoogleFonts.poppins(fontSize: 12, color: Colors.black87),
+                                        ),
+                                        const SizedBox(height: 14),
+                                        SizedBox(
+                                          width: double.infinity,
+                                          height: 42,
+                                          child: ElevatedButton(
+                                            onPressed: () => Navigator.of(ctx).pop(),
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: primaryGreen,
+                                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                            ),
+                                            child: Text('OK', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600)),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
+                            );
+                            _loadMissions();
+                          } else {
+                            if (!context.mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Erreur lors de l\'annulation'), backgroundColor: Colors.red),
+                            );
+                          }
+                        } catch (e) {
+                          if (!context.mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Erreur: $e'), backgroundColor: Colors.red),
+                          );
+                        }
+                      }
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.red.withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.red.withOpacity(0.25)),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.red.withOpacity(0.15),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.cancel_outlined, color: Colors.red, size: 18),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Annuler',
+                            style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.red),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                ],
                 // Bouton Candidatures
                 GestureDetector(
                   onTap: () {

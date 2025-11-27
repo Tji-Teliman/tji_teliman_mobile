@@ -3,6 +3,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'splash_screen_3.dart';
 import 'screens_jeunes/registre_jeune.dart';
 
+import 'dart:ui'; // Add this import
+
 class SplashScreen2 extends StatefulWidget {
   const SplashScreen2({super.key});
 
@@ -76,23 +78,30 @@ class _SplashScreen2State extends State<SplashScreen2> with SingleTickerProvider
                         padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 60.0),
                         child: Align(
                           alignment: Alignment.topCenter,
-                          child: SizedBox(
-                            width: double.infinity,
-                            child: Text(
-                              'DÉCOUVREZ DES MISSIONS RAPIDES PRÈS DE CHEZ VOUS',
-                              textAlign: TextAlign.center,
-                              style: GoogleFonts.inter(
-                                fontSize: 20, // Taille réduite
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                                height: 1.2,
-                                shadows: [
-                                  Shadow(
-                                    color: Colors.black.withOpacity(0.5),
-                                    blurRadius: 4,
-                                    offset: const Offset(0, 2),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(20),
+                            child: BackdropFilter(
+                              filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
+                              child: Container(
+                                padding: const EdgeInsets.all(20.0),
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withOpacity(0.3),
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color: Colors.white.withOpacity(0.1),
+                                    width: 1.5,
                                   ),
-                                ],
+                                ),
+                                child: Text(
+                                  'DÉCOUVREZ DES MISSIONS RAPIDES PRÈS DE CHEZ VOUS.',
+                                  textAlign: TextAlign.center,
+                                  style: GoogleFonts.inter(
+                                    fontSize: 20, // Taille réduite
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                    height: 1.2,
+                                  ),
+                                ),
                               ),
                             ),
                           ),

@@ -3,6 +3,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'splash_screen_5.dart';
 import 'screens_jeunes/registre_jeune.dart';
 
+import 'dart:ui'; // Add this import
+
 class SplashScreen4 extends StatefulWidget {
   const SplashScreen4({super.key});
 
@@ -74,21 +76,31 @@ class _SplashScreen4State extends State<SplashScreen4> with SingleTickerProvider
                       padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 60.0),
                       child: Align(
                         alignment: Alignment.topCenter,
-                        child: Text(
-                          'GAGNER FACILEMENT , PAYÉ RAPIDEMENT',
-                          textAlign: TextAlign.center,
-                          style: GoogleFonts.inter(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                            height: 1.2,
-                            shadows: [
-                              Shadow(
-                                color: Colors.black.withOpacity(0.4),
-                                blurRadius: 3,
-                                offset: Offset(0, 1),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(20),
+                          child: BackdropFilter(
+                            filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
+                            child: Container(
+                              padding: const EdgeInsets.all(20.0),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withOpacity(0.3),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: Colors.white.withOpacity(0.1),
+                                  width: 1.5,
+                                ),
                               ),
-                            ],
+                              child: Text(
+                                'GAGNER FACILEMENT , PAYÉ RAPIDEMENT.',
+                                textAlign: TextAlign.center,
+                                style: GoogleFonts.inter(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                  height: 1.2,
+                                ),
+                              ),
+                            ),
                           ),
                         ),
                       ),
@@ -135,7 +147,7 @@ class _SplashScreen4State extends State<SplashScreen4> with SingleTickerProvider
                             children: [
                               SizedBox(height: gapBeforeBrand),
                               Text(
-                                'Tchi teliman',
+                                'Tji teliman',
                                 style: GoogleFonts.inter(
                                   fontSize: 28,
                                   fontWeight: FontWeight.bold,

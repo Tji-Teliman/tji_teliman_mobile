@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../widgets/custom_header.dart';
-import 'paiement.dart';
+import 'paiement.dart' as OM;
+import 'paiement_moov.dart' as Moov;
+import 'paiement_wave.dart' as Wave;
 import '../../services/mission_service.dart';
 import '../../services/user_service.dart';
 import '../../services/payment_service.dart';
@@ -212,7 +214,7 @@ class _ModePaiementScreenState extends State<ModePaiementScreen> {
     // Navigate to Orange Money payment confirmation
     final result = await Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => PaiementScreen(
+        builder: (context) => OM.PaiementScreen(
           jeune: _jeuneName.isNotEmpty ? _jeuneName : '-',
           mission: _missionTitle.isNotEmpty ? _missionTitle : '-',
           montant: _amountText.isNotEmpty ? _amountText : '-',
@@ -255,7 +257,7 @@ class _ModePaiementScreenState extends State<ModePaiementScreen> {
   void _handleMoovMoneyPayment() async {
     final result = await Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => PaiementScreen(
+        builder: (context) => Moov.PaiementScreen(
           jeune: _jeuneName.isNotEmpty ? _jeuneName : '-',
           mission: _missionTitle.isNotEmpty ? _missionTitle : '-',
           montant: _amountText.isNotEmpty ? _amountText : '-',
@@ -297,7 +299,7 @@ class _ModePaiementScreenState extends State<ModePaiementScreen> {
   void _handleWavePayment() async {
     final result = await Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => PaiementScreen(
+        builder: (context) => Wave.PaiementScreen(
           jeune: _jeuneName.isNotEmpty ? _jeuneName : '-',
           mission: _missionTitle.isNotEmpty ? _missionTitle : '-',
           montant: _amountText.isNotEmpty ? _amountText : '-',

@@ -82,6 +82,32 @@ class MissionService {
   }
 
   // Supprimer une mission
+  // Annuler une mission (PUT)
+  static Future<bool> cancelMission(int missionId) async {
+    try {
+      final token = await TokenService.getToken();
+      final response = await http.put(
+        Uri.parse('${ApiConfig.baseUrl}/api/missions/$missionId/annuler'),
+        headers: {
+          'Content-Type': 'application/json',
+          if (token != null) 'Authorization': 'Bearer $token',
+        },
+      );
+      
+      print('🚫 Annulation mission $missionId');
+      print('📥 Status: ${response.statusCode}');
+      
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        return true;
+      }
+      return false;
+    } catch (e) {
+      print('❌ Erreur annulation mission: $e');
+      rethrow;
+    }
+  }
+
+  // Supprimer une mission (DELETE) - Gardé pour compatibilité si besoin
   static Future<bool> deleteMission(int missionId) async {
     try {
       final token = await TokenService.getToken();

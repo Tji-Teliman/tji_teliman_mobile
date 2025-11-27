@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'splash_sreen4_recruteur.dart';
 import 'register_recruteur.dart';
+import 'dart:ui';
 
 class SplashScreen3Recruteur extends StatefulWidget {
   const SplashScreen3Recruteur({super.key});
@@ -76,23 +77,30 @@ class _SplashScreen3RecruteurState extends State<SplashScreen3Recruteur> with Si
                         padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 60.0),
                         child: Align(
                           alignment: Alignment.topCenter,
-                          child: SizedBox(
-                            width: double.infinity,
-                            child: Text(
-                              'DÉCOUVREZ DES MISSIONS RAPIDES PRÈS DE CHEZ VOUS',
-                              textAlign: TextAlign.center,
-                              style: GoogleFonts.poppins(
-                                fontSize: 18, // Taille réduite
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                                height: 1.2,
-                                shadows: [
-                                  Shadow(
-                                    color: Colors.black.withOpacity(0.5),
-                                    blurRadius: 4,
-                                    offset: const Offset(0, 2),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(20),
+                            child: BackdropFilter(
+                              filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
+                              child: Container(
+                                padding: const EdgeInsets.all(20.0),
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withOpacity(0.3),
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color: Colors.white.withOpacity(0.1),
+                                    width: 1.5,
                                   ),
-                                ],
+                                ),
+                                child: Text(
+                                  'TROUVEZ DES TALENTS QUALIFIÉS, PRÊTS À INTERVENIR IMMÉDIATEMENT.',
+                                  textAlign: TextAlign.center,
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 17, // Taille réduite
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                    height: 1.2,
+                                  ),
+                                ),
                               ),
                             ),
                           ),

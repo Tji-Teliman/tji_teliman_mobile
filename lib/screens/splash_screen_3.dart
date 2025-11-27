@@ -3,6 +3,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'splash_screen_4.dart';
 import 'screens_jeunes/registre_jeune.dart';
 
+import 'dart:ui'; // Add this import
+
 class SplashScreen3 extends StatefulWidget {
   const SplashScreen3({super.key});
 
@@ -72,23 +74,30 @@ class _SplashScreen3State extends State<SplashScreen3> with SingleTickerProvider
                     padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 60.0),
                     child: Align(
                       alignment: Alignment.topCenter,
-                      child: SizedBox(
-                        width: double.infinity,
-                        child: Text(
-                          'MARRE DE L\'ATTENTE ? CHEZ NOUS\nTON TALENT NE PREND PAS LA\nPOUSSIÈRE.',
-                          textAlign: TextAlign.center,
-                          style: GoogleFonts.inter(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                            height: 1.2,
-                            shadows: [
-                              Shadow(
-                                color: Colors.black.withOpacity(0.45),
-                                blurRadius: 4,
-                                offset: const Offset(0, 2),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(20),
+                        child: BackdropFilter(
+                          filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
+                          child: Container(
+                            padding: const EdgeInsets.all(20.0),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withOpacity(0.3),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: Colors.white.withOpacity(0.1),
+                                width: 1.5,
                               ),
-                            ],
+                            ),
+                            child: Text(
+                              'MARRE DE L\'ATTENTE ? CHEZ NOUS TON TALENT NE PREND PAS LA POUSSIÈRE.',
+                              textAlign: TextAlign.center,
+                              style: GoogleFonts.inter(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                                height: 1.2,
+                              ),
+                            ),
                           ),
                         ),
                       ),
@@ -111,7 +120,7 @@ class _SplashScreen3State extends State<SplashScreen3> with SingleTickerProvider
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
                         Text(
-                          'Tchi Teliman',
+                          'Tji Teliman',
                           style: GoogleFonts.inter(
                             fontSize: 28,
                             fontWeight: FontWeight.bold,
