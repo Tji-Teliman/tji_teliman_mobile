@@ -14,7 +14,7 @@ const Color primaryGreen = Color(0xFF10B981);
 const Color headerGradientEndBlue = Color(0xFF2563EB); 
 const Color backgroundColor = Colors.white; 
 const Color inputFieldBorderColor = Color(0xFFE0E0E0); 
-const double fieldBorderRadius = 15.0; 
+const double fieldBorderRadius = 30.0; 
 
 // --- CHEMINS DES IMAGES (PNG) ---
 const String headerImagePath = 'assets/images/header.png'; 
@@ -194,27 +194,36 @@ class _RegistrationFormState extends State<RegistrationForm> {
     super.dispose();
   }
 
-  // Style des champs de texte AVEC BORDURE
+  // Helper pour l'ombre et les coins arrondis
+  Widget _buildInputShadow(Widget child) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(fieldBorderRadius),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: child,
+    );
+  }
+
+  // Style des champs de texte SANS BORDURE (géré par le conteneur)
   InputDecoration _inputDecoration(String hint, {IconData? suffixIcon, VoidCallback? suffixOnTap}) {
     return InputDecoration(
       hintText: hint,
       hintStyle: const TextStyle(color: Colors.black54, fontSize: 14),
-      fillColor: Colors.white,
+      fillColor: Colors.transparent,
       filled: true,
-      contentPadding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 15.0), 
+      contentPadding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 20.0),
       
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(fieldBorderRadius), 
-        borderSide: const BorderSide(color: inputFieldBorderColor, width: 1), 
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(fieldBorderRadius), 
-        borderSide: const BorderSide(color: inputFieldBorderColor, width: 1), 
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(fieldBorderRadius), 
-        borderSide: const BorderSide(color: primaryGreen, width: 2), 
-      ),
+      border: InputBorder.none,
+      enabledBorder: InputBorder.none,
+      focusedBorder: InputBorder.none,
       suffixIcon: suffixIcon != null
           ? GestureDetector(
               onTap: suffixOnTap,
@@ -330,28 +339,32 @@ class _RegistrationFormState extends State<RegistrationForm> {
       Row(
         children: <Widget>[
           Expanded(
-            child: TextFormField(
-              controller: _nomController,
-              decoration: _inputDecoration('Nom'),
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'Le nom est requis';
-                }
-                return null;
-              },
+            child: _buildInputShadow(
+              TextFormField(
+                controller: _nomController,
+                decoration: _inputDecoration('Nom'),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Le nom est requis';
+                  }
+                  return null;
+                },
+              ),
             ),
           ),
           const SizedBox(width: 8), 
           Expanded(
-            child: TextFormField(
-              controller: _prenomController,
-              decoration: _inputDecoration('Prenom'),
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'Le prénom est requis';
-                }
-                return null;
-              },
+            child: _buildInputShadow(
+              TextFormField(
+                controller: _prenomController,
+                decoration: _inputDecoration('Prenom'),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Le prénom est requis';
+                  }
+                  return null;
+                },
+              ),
             ),
           ),
         ],
@@ -359,52 +372,58 @@ class _RegistrationFormState extends State<RegistrationForm> {
       const SizedBox(height: 15), 
       
       // Champ Genre
-      DropdownButtonFormField<String>(
-        decoration: _inputDecoration('Genre'),
-        isExpanded: true,
-        value: _selectedGenre, 
-        items: genres.map<DropdownMenuItem<String>>((String value) {
-          return DropdownMenuItem<String>(child: Text(value), value: value);
-        }).toList(),
-        validator: (value) {
-          if (value == null) {
-            return 'Le genre est requis';
-          }
-          return null;
-        },
-        onChanged: (String? newValue) {
-          setState(() {
-            _selectedGenre = newValue;
-          });
-        },
+      _buildInputShadow(
+        DropdownButtonFormField<String>(
+          decoration: _inputDecoration('Genre'),
+          isExpanded: true,
+          value: _selectedGenre, 
+          items: genres.map<DropdownMenuItem<String>>((String value) {
+            return DropdownMenuItem<String>(child: Text(value), value: value);
+          }).toList(),
+          validator: (value) {
+            if (value == null) {
+              return 'Le genre est requis';
+            }
+            return null;
+          },
+          onChanged: (String? newValue) {
+            setState(() {
+              _selectedGenre = newValue;
+            });
+          },
+        ),
       ),
       const SizedBox(height: 15), 
       
-      TextFormField(
-        controller: _emailController,
-        keyboardType: TextInputType.emailAddress,
-        decoration: _inputDecoration('Email (facultatif)'),
-        validator: (value) {
-          if (value != null && value.trim().isNotEmpty) {
-            // Validation basique de l'email
-            if (!value.contains('@') || !value.contains('.')) {
-              return 'Email invalide';
+      _buildInputShadow(
+        TextFormField(
+          controller: _emailController,
+          keyboardType: TextInputType.emailAddress,
+          decoration: _inputDecoration('Email (facultatif)'),
+          validator: (value) {
+            if (value != null && value.trim().isNotEmpty) {
+              // Validation basique de l'email
+              if (!value.contains('@') || !value.contains('.')) {
+                return 'Email invalide';
+              }
             }
-          }
-          return null;
-        },
+            return null;
+          },
+        ),
       ),
       const SizedBox(height: 15), 
-      TextFormField(
-        controller: _telephoneController,
-        keyboardType: TextInputType.phone,
-        decoration: _inputDecoration('Telephone'),
-        validator: (value) {
-          if (value == null || value.trim().isEmpty) {
-            return 'Le téléphone est requis';
-          }
-          return null;
-        },
+      _buildInputShadow(
+        TextFormField(
+          controller: _telephoneController,
+          keyboardType: TextInputType.phone,
+          decoration: _inputDecoration('Telephone'),
+          validator: (value) {
+            if (value == null || value.trim().isEmpty) {
+              return 'Le téléphone est requis';
+            }
+            return null;
+          },
+        ),
       ),
       const SizedBox(height: 15), 
       
@@ -412,24 +431,26 @@ class _RegistrationFormState extends State<RegistrationForm> {
       const SizedBox(height: 15), 
 
       // Type de Recruteur (toujours visible pour ce formulaire)
-      DropdownButtonFormField<String>(
-        decoration: _inputDecoration('Type de Recruteur'),
-        isExpanded: true,
-        value: _selectedRecruiterType, 
-        items: recruiterTypes.map<DropdownMenuItem<String>>((String value) {
-          return DropdownMenuItem<String>(child: Text(value), value: value);
-        }).toList(),
-        validator: (value) {
-          if (value == null) {
-            return 'Le type de recruteur est requis';
-          }
-          return null;
-        },
-        onChanged: (String? newValue) {
-          setState(() {
-            _selectedRecruiterType = newValue;
-          });
-        },
+      _buildInputShadow(
+        DropdownButtonFormField<String>(
+          decoration: _inputDecoration('Type de Recruteur'),
+          isExpanded: true,
+          value: _selectedRecruiterType, 
+          items: recruiterTypes.map<DropdownMenuItem<String>>((String value) {
+            return DropdownMenuItem<String>(child: Text(value), value: value);
+          }).toList(),
+          validator: (value) {
+            if (value == null) {
+              return 'Le type de recruteur est requis';
+            }
+            return null;
+          },
+          onChanged: (String? newValue) {
+            setState(() {
+              _selectedRecruiterType = newValue;
+            });
+          },
+        ),
       ),
       const SizedBox(height: 15), 
     ];
@@ -437,50 +458,54 @@ class _RegistrationFormState extends State<RegistrationForm> {
 
     // Ajout des champs communs de fin (Mot de passe, Confirmer Mot de passe, Bouton)
     formWidgets.addAll([
-      TextFormField(
-        controller: _passwordController,
-        obscureText: !_isPasswordVisible,
-        decoration: _inputDecoration(
-          'Mot de Passe',
-          suffixIcon: _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
-          suffixOnTap: () {
-            setState(() {
-              _isPasswordVisible = !_isPasswordVisible;
-            });
+      _buildInputShadow(
+        TextFormField(
+          controller: _passwordController,
+          obscureText: !_isPasswordVisible,
+          decoration: _inputDecoration(
+            'Mot de Passe',
+            suffixIcon: _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+            suffixOnTap: () {
+              setState(() {
+                _isPasswordVisible = !_isPasswordVisible;
+              });
+            },
+          ),
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return 'Le mot de passe est requis';
+            }
+            if (value.length < 6) {
+              return 'Le mot de passe doit contenir au moins 6 caractères';
+            }
+            return null;
           },
         ),
-        validator: (value) {
-          if (value == null || value.isEmpty) {
-            return 'Le mot de passe est requis';
-          }
-          if (value.length < 6) {
-            return 'Le mot de passe doit contenir au moins 6 caractères';
-          }
-          return null;
-        },
       ),
       const SizedBox(height: 15), 
-      TextFormField(
-        controller: _confirmPasswordController,
-        obscureText: !_isConfirmPasswordVisible,
-        decoration: _inputDecoration(
-          'Confirmez Mot de Passe',
-          suffixIcon: _isConfirmPasswordVisible ? Icons.visibility : Icons.visibility_off,
-          suffixOnTap: () {
-            setState(() {
-              _isConfirmPasswordVisible = !_isConfirmPasswordVisible;
-            });
+      _buildInputShadow(
+        TextFormField(
+          controller: _confirmPasswordController,
+          obscureText: !_isConfirmPasswordVisible,
+          decoration: _inputDecoration(
+            'Confirmez Mot de Passe',
+            suffixIcon: _isConfirmPasswordVisible ? Icons.visibility : Icons.visibility_off,
+            suffixOnTap: () {
+              setState(() {
+                _isConfirmPasswordVisible = !_isConfirmPasswordVisible;
+              });
+            },
+          ),
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return 'Veuillez confirmer le mot de passe';
+            }
+            if (value != _passwordController.text) {
+              return 'Les mots de passe ne correspondent pas';
+            }
+            return null;
           },
         ),
-        validator: (value) {
-          if (value == null || value.isEmpty) {
-            return 'Veuillez confirmer le mot de passe';
-          }
-          if (value != _passwordController.text) {
-            return 'Les mots de passe ne correspondent pas';
-          }
-          return null;
-        },
       ),
       const SizedBox(height: 25), 
       
@@ -490,7 +515,7 @@ class _RegistrationFormState extends State<RegistrationForm> {
         style: ElevatedButton.styleFrom(
           backgroundColor: primaryGreen, 
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(15.0), 
+            borderRadius: BorderRadius.circular(30.0), 
           ),
           minimumSize: const Size(double.infinity, 50), 
           elevation: 5,

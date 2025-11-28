@@ -16,7 +16,7 @@ const Color headerGradientEndBlue = Color(0xFF2563EB);
 const Color backgroundColor = Colors.white; 
 const Color inputFieldBorderColor = Color(0xFFE0E0E0); 
 const Color iconColorOrange = Color(0xFFF59E0B); 
-const double fieldBorderRadius = 15.0; 
+const double fieldBorderRadius = 30.0; 
 const double buttonBorderRadius = 15.0; 
 
 // --- CHEMINS DES IMAGES (PNG) ---
@@ -180,13 +180,31 @@ class _LoginFormState extends State<LoginForm> {
   final _formKey = GlobalKey<FormState>();
   final _authService = AuthService();
 
+  // Helper pour l'ombre et les coins arrondis
+  Widget _buildInputShadow(Widget child) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(fieldBorderRadius),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: child,
+    );
+  }
+
   InputDecoration _inputDecoration(String hint, {IconData? prefixIcon, IconData? suffixIcon, Function? suffixOnTap}) {
     return InputDecoration(
       hintText: hint,
       hintStyle: const TextStyle(color: Colors.black54, fontSize: 14),
-      fillColor: Colors.white,
+      fillColor: Colors.transparent,
       filled: true,
-      contentPadding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 15.0), 
+      contentPadding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 20.0),
       
       prefixIcon: prefixIcon != null 
           ? Icon(prefixIcon, color: iconColorOrange, size: 20) 
@@ -199,18 +217,9 @@ class _LoginFormState extends State<LoginForm> {
             )
           : null,
       
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(fieldBorderRadius), 
-        borderSide: const BorderSide(color: inputFieldBorderColor, width: 1), 
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(fieldBorderRadius), 
-        borderSide: const BorderSide(color: inputFieldBorderColor, width: 1), 
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(fieldBorderRadius), 
-        borderSide: const BorderSide(color: primaryGreen, width: 2), 
-      ),
+      border: InputBorder.none,
+      enabledBorder: InputBorder.none,
+      focusedBorder: InputBorder.none,
     );
   }
 
@@ -315,46 +324,50 @@ Future<void> _handleLogin() async {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
             // Champ Téléphone
-            TextFormField(
-              controller: _telephoneController,
-              keyboardType: TextInputType.phone, 
-              decoration: _inputDecoration(
-                '90-00-00-00', 
-                prefixIcon: Icons.phone_android,
+            _buildInputShadow(
+              TextFormField(
+                controller: _telephoneController,
+                keyboardType: TextInputType.phone, 
+                decoration: _inputDecoration(
+                  '90-00-00-00', 
+                  prefixIcon: Icons.phone_android,
+                ),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Le numéro de téléphone est requis';
+                  }
+                  // Validation basique du format téléphone
+                  if (value.trim().length < 8) {
+                    return 'Numéro de téléphone invalide';
+                  }
+                  return null;
+                },
               ),
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'Le numéro de téléphone est requis';
-                }
-                // Validation basique du format téléphone
-                if (value.trim().length < 8) {
-                  return 'Numéro de téléphone invalide';
-                }
-                return null;
-              },
             ),
             const SizedBox(height: 15), 
             
             // Champ Mot de Passe
-            TextFormField(
-              controller: _passwordController,
-              obscureText: !_isPasswordVisible, 
-              decoration: _inputDecoration(
-                '••••••••••', 
-                prefixIcon: Icons.lock,
-                suffixIcon: _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
-                suffixOnTap: () {
-                  setState(() {
-                    _isPasswordVisible = !_isPasswordVisible;
-                  });
-                }
+            _buildInputShadow(
+              TextFormField(
+                controller: _passwordController,
+                obscureText: !_isPasswordVisible, 
+                decoration: _inputDecoration(
+                  '••••••••••', 
+                  prefixIcon: Icons.lock,
+                  suffixIcon: _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                  suffixOnTap: () {
+                    setState(() {
+                      _isPasswordVisible = !_isPasswordVisible;
+                    });
+                  }
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Le mot de passe est requis';
+                  }
+                  return null;
+                },
               ),
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Le mot de passe est requis';
-                }
-                return null;
-              },
             ),
             const SizedBox(height: 10), 
             
